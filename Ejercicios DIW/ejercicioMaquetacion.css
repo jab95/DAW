@@ -1,14 +1,84 @@
+body {
+  height: 700px;
+  background-color: hsl(0, 0%, 80%);
+}
+h1 {
+  text-align: center;
+  font-family: "Franklin Gothic Medium", "Arial Narrow", Arial, sans-serif;
+}
+#uno {
+  background-color: peru;
+  height: 12%;
+  width: 75%;
+  top: 13%;
+  left: 12%;
+  text-align: center;
+  border-color: rgb(44, 18, 18);
+}
+#dos {
+  background-color: yellow;
+  border-color: goldenrod;
+  top: 30%;
+  left: 5%;
+}
+#tres {
+  background-color: aqua;
+  border-color: darkcyan;
+  text-align: right;
+  top: 30%;
+  right: 5%;
+}
+#cuatro {
+  background-color: rgb(100, 182, 89);
+  border-color: rgb(26, 102, 26);
+  height: 40%;
+  width: 37%;
+  top: 45%;
+  left: 30%;
+  z-index: 1;
+  text-align: center;
+}
+#cinco {
+  background-color: indianred;
+  border-color: darkorchid;
+  top: 73%;
+  left: 5%;
+}
+#seis {
+  background-color: rosybrown;
+  border-color: saddlebrown;
+  text-align: right;
+  top: 73%;
+  right: 5%;
+}
 
-body{
+div {
+  font-family: "Franklin Gothic Medium", "Arial Narrow", Arial, sans-serif;
+  border-style: solid;
+  position: absolute;
+}
+
+div:hover {
+  z-index: 3;
+}
+
+.igual {
+  height: 35%;
+  width: 35%;
+}
+
+/*POSICIONADO CON FLOAAAATTT*/
+
+/* 
+body {
     height: 700px;
-    background-color:hsl(0,0%,80%);
-}
-h1{
+    background-color: hsl(0, 0%, 80%);
+  }
+  h1 {
     text-align: center;
-    font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
-  
-}
-#uno{
+    font-family: "Franklin Gothic Medium", "Arial Narrow", Arial, sans-serif;
+  }
+  #uno {
     background-color: peru;
     height: 12%;
     width: 75%;
@@ -16,24 +86,24 @@ h1{
     left: 12%;
     text-align: center;
     border-color: rgb(44, 18, 18);
-    
-}
-#dos{
-    background-color:yellow ;
-    border-color:goldenrod;
+    float: left;
+  }
+  #dos {
+    background-color: yellow;
+    border-color: goldenrod;
     top: 30%;
+    float: right;
     left: 5%;
-}
-#tres{
+  }
+  #tres {
     background-color: aqua;
     border-color: darkcyan;
     text-align: right;
+    float: left;
     top: 30%;
     right: 5%;
-
-}
-#cuatro{
-
+  }
+  #cuatro {
     background-color: rgb(100, 182, 89);
     border-color: rgb(26, 102, 26);
     height: 40%;
@@ -42,38 +112,34 @@ h1{
     left: 30%;
     z-index: 1;
     text-align: center;
-
-}
-#cinco{
-
+    position: absolute;
+  }
+  #cinco {
     background-color: indianred;
     border-color: darkorchid;
     top: 73%;
     left: 5%;
-
-}
-#seis{
-
+    float: left;
+  }
+  #seis {
     background-color: rosybrown;
     border-color: saddlebrown;
     text-align: right;
+    float: right;
     top: 73%;
     right: 5%;
-
-}
-
-div{
-    font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
+  }
+  
+  div {
+    font-family: "Franklin Gothic Medium", "Arial Narrow", Arial, sans-serif;
     border-style: solid;
-    position: absolute;
-    
-}
-
-div:hover{
+  }
+  
+  div:hover {
     z-index: 3;
-}
-
-.igual{
+  }
+  
+  .igual {
     height: 35%;
     width: 35%;
-}
+  } */

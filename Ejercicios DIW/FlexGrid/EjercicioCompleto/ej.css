@@ -1,90 +1,102 @@
-/* *{
-    box-sizing: border-box;
-} 
-A LA HORA DE CONTAR LA ANCHURA QUE TENGA EN CUENTA EL PADDING Y BORDER
-
-*/
-
-header{
-    text-align: center;
-    border-bottom-style: solid;
-
+* {
+  box-sizing: border-box;
 }
 
-.prueba{
-    display: flex;
-    justify-content: space-around;
-    margin-top: 15px;
+h1,
+h4,
+p {
+  margin: 0px;
 }
 
-nav div{
-    padding: 10px;
+body {
+  background-color: white;
+}
+.container {
+  color: #666666;
+  font-family: "Lobster", cursive;
+  margin: 20px auto;
+  width: 90%;
 }
 
-.prueba article{
-    width: 45%;
+/* El contenedor flex para la primera fila de contenido */
+.content_wrapper {
+  display: flex;
+  flex-wrap: wrap;
+  margin-bottom: 1em;
+  justify-content: space-between;
 }
 
-.articles{
-    display: flex;
-    flex-direction: row;
-    justify-content: flex-end;
-    border-bottom-style: solid;
+header {
+  border-bottom: 1px solid #666666;
+  margin-bottom: 1em;
+  padding: 1em;
+  text-align: center;
+  width: 100%;
 }
 
-.prueba img{
-    width: 100%;
-    border-radius: 10px;
-}
-.grande{
-    width: 80%;
-}
-.grande  img{
-    width: 75% ;
-    height: 220px;
+/* El menú */
+nav {
+  padding: 1em;
+  width: 10%;
 }
 
-main{
-    border-style: solid;
-    text-align: center;
-    padding: 10px;
-    border-radius: 10px;
-    margin-right: 15px;
-
+nav div {
+  margin-bottom: 20px;
 }
 
-article{
-    border-style: solid;
-    text-align: center;
-    padding: 10px;
-    border-radius: 10px;
-
+/* El elemento principal */
+main {
+  border: 1px solid #aaaaaa;
+  border-radius: 1em;
+  height: 400px;
+  padding: 1em;
+  text-align: center;
+  width: 54%;
 }
 
-.articles img{
-    width: 100%;
-    height: 200px;
-    border-radius: 10px;
-
+main img {
+  border-radius: 1em;
+  height: 70%;
+  width: 80%;
 }
 
-.articles article{
-    text-align: center;
-    margin-top: 15px;
-    margin-left: 15px;
-    margin-bottom: 15px;
-    width: 27%;
+.content_wrapper article:nth-of-type(1) {
+  height: 400px;
 }
 
-nav{
-    width: 20%;
+/* Artículo. Imágenes pequeñas */
+article {
+  border: 1px solid #aaaaaa;
+  border-radius: 1em;
+  height: 300px;
+  padding: 1em;
+  text-align: center;
+  width: 32%;
 }
 
-footer{
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+.articles {
+  display: flex;
+  justify-content: space-between;
+  margin-left: 10%;
 }
 
+article img {
+  border-radius: 1em;
+  height: 60%;
+  width: 100%;
+}
 
+/* Pie de la página */
+/* Pie de la página */
+footer {
+  align-items: center;
+  border-top: 1px solid #666666;
+  display: flex;
+  justify-content: space-between;
+  margin-top: 1em;
+  padding: 2em;
+}
 
+footer img {
+  width: 50px;
+}

@@ -19,7 +19,6 @@
         for ($i=0; $i < sizeof($arrayBi[$fila]) ; $i++) { 
                $arrayFinal[] = $arrayBi[$fila][$j];
             }
-        }
 
         return $arrayFinal;
     
@@ -31,7 +30,6 @@
         for ($i=0; $i < sizeof($arrayBi) ; $i++) { 
                  $arrayFinal[] = $arrayBi[$i][$columna];
             }
-        }
 
         return $arrayFinal;
     

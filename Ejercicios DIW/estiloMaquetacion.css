@@ -29,7 +29,6 @@
 #textoCab {
   position: absolute;
   left: 380px;
-  top: 10px;
 }
 #telefono {
   position: absolute;
@@ -54,28 +53,28 @@
 
 #contenido {
   background-color: gray;
-  float: left;
   width: 600px;
+  float: left;
   height: 100%;
 }
 
 #menu-derecha {
   background-color: orangered;
-  float: left;
   width: 135px;
+  float: left;
   height: 49%;
 }
 #menu-derecha-2 {
   background-color: darkorange;
-  float: left;
   width: 135px;
+  float: left;
   height: 49%;
 }
 
 #pie {
   background-color: blue;
-  clear: both;
   height: 30px;
+  clear: both;
 }
 
 div {

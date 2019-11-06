@@ -1,0 +1,21 @@
+#cabecera {
+  background-color: green;
+  height: 50px;
+  padding: 5px;
+  float: left;
+}
+
+#barra-lateral {
+  background-color: green;
+  height: fit-content;
+  padding: 5px;
+  float: left;
+}
+
+#pie {
+  background-color: green;
+  height: 50px;
+  padding: 5px;
+  clear: both;
+  /* float: left; */
+}

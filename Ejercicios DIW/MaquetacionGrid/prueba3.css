@@ -1,34 +1,32 @@
 .layout {
-    height: 300px;
-    width: 500px;
-    border: 2px solid gray;
-    display: grid;
-    grid-template-columns: repeat(2, 150px);
-    grid-template-rows: repeat(2, 1fr);
-    justify-items: stretch;
-    align-items: flex-start;
-    justify-content: center;
+  height: 300px;
+  width: 500px;
+  border: 2px solid gray;
+  display: grid;
+  grid-template-columns: repeat(2, 150px);
+  grid-template-rows: repeat(2, 1fr);
+  align-items: flex-start;
 }
 
 .cell {
-    color: #333;
-    border-radius: 3px;
-    padding: 20px;
-    font-size: 40px;
+  color: #333;
+  border-radius: 3px;
+  padding: 20px;
+  font-size: 40px;
 }
 
 .a {
-    background: Crimson;
+  background: Crimson;
 }
 
 .b {
-    background: Khaki;
+  background: Khaki;
 }
 
 .c {
-    background: MediumTurquoise;
+  background: MediumTurquoise;
 }
 
 .d {
-    background: coral;
+  background: coral;
 }
