@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <title></title>
+    <script>
+        var elementos = [];
+
+        function cambia(valor) {
+
+            var palabra = document.getElementById("elemento").value;
+
+            switch (valor) {
+                case 1:
+                    elementos.push(palabra);
+                    break;
+                case 2:
+                    elementos.pop();
+                    break;
+                case 3:
+                    elementos.unshift(palabra);
+
+                    break;
+                case 4:
+                    elementos.shift();
+
+                    break;
+            }
+
+            console.log(elementos);
+        }
+    </script>
+</head>
+
+<body>
+    <input type="text" name="" id="elemento"><br>
+    <button id="push" onclick="cambia(1)">Inserta ultimo</button>
+    <button id="pop" onclick="cambia(2)">Borra ultimo</button>
+    <button id="push" onclick="cambia(3)">Inserta principio</button>
+    <button id="push" onclick="cambia(4)">Borra principio</button>
+    </bo</bo </bo </body> </html>

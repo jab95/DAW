@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+    <script>
+        
+        function Grupo(descripcion,nAlumnos){
+
+            this.descripcion = descripcion;
+            this.nAlumnos = nAlumnos;
+
+        }
+
+        function Instituto(codigo,nombre,grupos){
+            this.codigo=codigo;
+            this.nombre=nombre;
+            this.grupos=grupos;
+        }
+
+        //Para añadir propiedades o metodos despues de tener el objeto creado
+        Instituto.prototype.cuantosGrupos = function(){
+            return this.grupos.length;
+        }
+
+        Instituto.prototype.getCodigo = function(){
+            return this.codigo;
+        }
+
+        Instituto.prototype.totalAlumnos = function(){
+            let total=0;
+            this.grupos.forEach(element => {
+                total +=element.nAlumnos;
+            });
+
+            return total;
+            }
+            
+
+
+
+
+        let daw2 = new Grupo("DAW2",12);
+        let daw1 = new Grupo("DAW1",20);
+        let insti = new Instituto("1234","Romero vargas",[daw2,daw1]);
+
+        console.log(`EL instituto ${insti.nombre} de codigo ${insti.getCodigo()} tiene ${insti.cuantosGrupos()} grupos en total ${insti.totalAlumnos()}`);
+
+
+
+
+    </script>
+</head>
+<body>
+    
+</body>
+</html>

@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+    <script src="ej1.js" type="text/javascript"></script>
+</head>
+
+<body>
+    <form action="cambia_cuenta.php" method="post" onsubmit="return ValidarDatos()">
+        <h1>Configuracion de usuario</h1>
+        <h2>Inicio de sesion</h2>
+        <p>Cuando quieres que windows te vuelva a pedir que inicies sesion
+            <select name="sesion" id="inicioSesion">
+                <option value="1">Cuando el pc se activa tras haberse suspendido</option>
+                <option value="nunca">Nunca</option>
+            </select>
+        </p>
+        <h2>Contraseña</h2>
+        <p>Nueva contraseña:
+            <input type="password" name="pass" id="contra1">
+            <p id="errorContra" style="color: red;"></p>
+        </p>
+        <p>Vuelve a escribir la contraseña:
+            <input type="password" name="pass2" id="contra2">
+            <p id="errorContra2" style="color: red;"></p>
+        </p>
+        <p>Indicio de contraseña:
+            <textarea name="indicio" id="indicio" cols="30" rows="2" required></textarea>
+            <p id="errorIndicio" style="color: red;"></p>
+        </p>
+        <h2>Privacidad</h2>
+        <p><input type="checkbox" name="privacidad" id=""> Mostrar detalles de la cuenta en la pantalla de inicio de
+            sesión</p>
+        <input type="submit" value="Aceptar">
+    </form>
+</body>
+
+</html>

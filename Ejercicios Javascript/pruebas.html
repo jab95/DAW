@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+
+    <script>
+        // function Cambia(valor){
+        //         valor="Pulsado";
+
+        // }
+
+        function Cambia() {
+
+            document.getElementById("campoTexto").value = document.getElementById("boton").innerHTML;
+
+        }
+
+        function main(){
+
+            document.getElementById("campoTexto").onfocus = function(){this.value="aa"};
+
+        }
+        
+        window.addEventListener("load",main);
+
+    </script>
+
+
+
+</head>
+
+<body>
+
+    <input type="text" id="campoTexto">
+    <button id="boton" onclick="Cambia()">Pulsame</button>
+    <!-- <button id="boton" onclick="Cambia(this.innerHTML)">Pulsame</button> -->
+
+
+
+</body>
+
+</html>

@@ -1,0 +1,79 @@
+
+body{
+    height: 700px;
+    background-color:hsl(0,0%,80%);
+}
+h1{
+    text-align: center;
+    font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
+  
+}
+#uno{
+    background-color: peru;
+    height: 12%;
+    width: 75%;
+    top: 13%;
+    left: 12%;
+    text-align: center;
+    border-color: rgb(44, 18, 18);
+    
+}
+#dos{
+    background-color:yellow ;
+    border-color:goldenrod;
+    top: 30%;
+    left: 5%;
+}
+#tres{
+    background-color: aqua;
+    border-color: darkcyan;
+    text-align: right;
+    top: 30%;
+    right: 5%;
+
+}
+#cuatro{
+
+    background-color: rgb(100, 182, 89);
+    border-color: rgb(26, 102, 26);
+    height: 40%;
+    width: 37%;
+    top: 45%;
+    left: 30%;
+    z-index: 1;
+    text-align: center;
+
+}
+#cinco{
+
+    background-color: indianred;
+    border-color: darkorchid;
+    top: 73%;
+    left: 5%;
+
+}
+#seis{
+
+    background-color: rosybrown;
+    border-color: saddlebrown;
+    text-align: right;
+    top: 73%;
+    right: 5%;
+
+}
+
+div{
+    font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
+    border-style: solid;
+    position: absolute;
+    
+}
+
+div:hover{
+    z-index: 3;
+}
+
+.igual{
+    height: 35%;
+    width: 35%;
+}

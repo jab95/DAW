@@ -1,0 +1,161 @@
+using System.Windows.Forms;
+
+namespace BRSLibReyes.Mensajes
+{
+    public enum Boton { OK, OKCancel, YesNoCancel, YesNo, AbortRetryIgnore };
+    public enum Icono { Information, Error, Warning, Question };
+
+    /// <summary>
+    /// Biblioteca de funciones utilizada para mostrar mensajes y almacenar las cadenas en el idioma de la aplicación
+    /// </summary>
+    public class BRSLibMensajes
+    {
+        /// <summary>
+        /// Función para mostrar mensajes por pantalla
+        /// </summary>
+        /// <param name="_cMensaje">El mensaje a mostrar</param>
+        /// <param name="_cTitulo">El título a mostrar</param>
+        /// <param name="_eBoton">El tipo de botones a utilizar</param>
+        /// <param name="_eIcono">El icono a mostrar junto al mensaje</param>
+        /// <param name="_nBotonDefecto">La posición del icono a activar por defecto, empezando por la izquierda. 0 toma la opción menos invasiva por defecto</param>
+        /// <returns>Un dialog result con el resultado tras el cierre del mensaje</returns>
+        public static DialogResult Mostrar(string _cMensaje, string _cTitulo = " ", Boton _eBoton = Boton.OK, Icono _eIcono = Icono.Information, int _nBotonDefecto = 0)
+        {
+            string cMensaje = _cMensaje;
+            string cTitulo = _cTitulo;
+            MessageBoxIcon icon;
+            MessageBoxButtons buttons;
+            MessageBoxDefaultButton defaultButton;
+
+            // Seleccionamos el tipo de icono a mostrar
+            switch (_eIcono)
+            {
+                case Icono.Information: icon = MessageBoxIcon.Information; break;
+                case Icono.Error: icon = MessageBoxIcon.Error; break;
+                case Icono.Warning: icon = MessageBoxIcon.Warning; break;
+                case Icono.Question: icon = MessageBoxIcon.Question; break;
+                default: icon = MessageBoxIcon.Information; break;
+            }
+
+            // Seleccionamos el tipo de botones a mostrar
+            switch (_eBoton)
+            {
+                case Boton.OK: buttons = MessageBoxButtons.OK; break;
+                case Boton.OKCancel: buttons = MessageBoxButtons.OKCancel; break;
+                case Boton.YesNoCancel: buttons = MessageBoxButtons.YesNoCancel; break;
+                case Boton.YesNo: buttons = MessageBoxButtons.YesNo; break;
+                case Boton.AbortRetryIgnore: buttons = MessageBoxButtons.AbortRetryIgnore; break;
+                default: buttons = MessageBoxButtons.OK; break;
+            }
+
+            // Seleccionamos el botón por defecto
+            switch (_nBotonDefecto)
+            {
+                case 1: defaultButton = MessageBoxDefaultButton.Button1; break;
+                case 2: defaultButton = MessageBoxDefaultButton.Button2; break;
+                case 3: defaultButton = MessageBoxDefaultButton.Button3; break;
+                default:
+                    switch (_eBoton)
+                    {
+                        case Boton.OKCancel: defaultButton = MessageBoxDefaultButton.Button2; break;
+                        case Boton.YesNoCancel: defaultButton = MessageBoxDefaultButton.Button3; break;
+                        case Boton.YesNo: defaultButton = MessageBoxDefaultButton.Button2; break;
+                        case Boton.AbortRetryIgnore: defaultButton = MessageBoxDefaultButton.Button3; break;
+                        default: defaultButton = MessageBoxDefaultButton.Button1; break;
+                    }
+                    break;
+            }
+
+            // Añadimos el nombre de la aplicación al mensaje
+            if (cTitulo.Vacio())
+            {
+                switch (_eIcono)
+                {
+                    case Icono.Information: cTitulo = TitulosMessageBox.Informacion; break;
+                    case Icono.Error: cTitulo = TitulosMessageBox.Error; break;
+                    case Icono.Warning: cTitulo = TitulosMessageBox.Advertencia; break;
+                    case Icono.Question: cTitulo = TitulosMessageBox.Confirmacion; break;
+                    default: cTitulo = TitulosMessageBox.Informacion; break;
+                }
+
+                if (!BRSLib.cNombreApp.Vacio())
+                    cTitulo += BRSLib.cNombreApp;
+            }
+            else
+            {
+                if (!BRSLib.cNombreApp.Vacio())
+                {
+                    if (BRSLib.cNombreApp.ToUpper() == cTitulo.Trim().ToUpper())
+                        cTitulo = cTitulo + " - " + TitulosMessageBox.Informacion;
+                    else
+                        cTitulo = BRSLib.cNombreApp + " - " + cTitulo.Trim();
+                }
+            }
+
+            return MessageBox.Show(cMensaje, cTitulo, buttons, icon, defaultButton);
+        }
+
+        /// <summary>
+        /// Cadenas para el título de las ventanas de MessageBox
+        /// </summary>
+        public class TitulosMessageBox
+        {
+            /// <summary>ADVERTENCIA</summary>
+            public static string Advertencia = "ADVERTENCIA";
+            /// <summary>CONFIRMACIÓN</summary>
+            public static string Confirmacion = "CONFIRMACIÓN";
+            /// <summary>ERROR</summary>
+            public static string Error = "ERROR";
+            /// <summary>INFORMACIÓN</summary>
+            public static string Informacion = "INFORMACIÓN";
+        }
+
+        /// <summary>
+        /// Cadenas para mostrar mensajes de errores genéricos
+        /// </summary>
+        public class ErroresGenericos
+        {
+            /// <summary>
+            /// No ha sido posible establecer conexión con {0}
+            /// <para/>{0} La url de la conexión a establecer
+            /// </summary>
+            public static string ImposibleConectarAUrl = "No ha sido posible establecer conexión con {0}";
+            /// <summary>No se ha localizado la base de datos BRS-ERP. ¿Desea generarla?</summary>
+            public static string NoExisteBDBRSERP = "No se ha localizado la base de datos BRS-ERP. ¿Desea generarla?";
+        }
+
+        /// <summary>
+        /// Cadenas de mensajes durante la instalación de la base de datos principal
+        /// </summary>
+        public class InstalacionBD
+        {
+            /// <summary>Descargando estructura de la base de datos</summary>
+            public static string DescargandoEstructuraBD = "Descargando estructura de la base de datos";
+            /// <summary>Descomprimiendo archivos de la base de datos</summary>
+            public static string DescomprimiendoArchivosBD = "Descomprimiendo archivos de la base de datos";
+        }
+
+        /// <summary>
+        /// Cadenas de mensajes durante la actualización de la aplicación
+        /// </summary>
+        public class Actualizacion
+        {
+            /// <summary>!No ha sido posible verificar actualizaciones!</summary>
+            public static string ImposibleVerificarActualizaciones = "!No ha sido posible verificar actualizaciones!";
+            /// <summary>Nueva versión disponible</summary>
+            public static string NuevaVersionDisponibleFTP = "Nueva versión disponible";
+            /// <summary>Versión instalada</summary>
+            public static string VersionInstalada = "Versión instalada";
+            /// <summary>Versión servidor FTP</summary>
+            public static string VersionServidor = "Versión servidor FTP";
+            /// <summary>Pulse 'Aceptar' para comenzar la actualización o 'Cancelar' para salir.</summary>
+            public static string AceptarCancelarActualizacion = "Pulse 'Aceptar' para comenzar la actualización o 'Cancelar' para salir.";
+            /// <summary>Se ha cancelado la actualización. Debe ser un usuario con permisos de administrador.</summary>
+            public static string NoAdministrador = "Se ha cancelado la actualización. Debe ser un usuario con permisos de administrador.";
+            /// <summary>¡No se encuentra la aplicación BRSAct!</summary>
+            public static string AplicacionNoEncontrada = "¡No se encuentra la aplicación BRSAct!";
+            /// <summary>Hay una nueva versión disponible en el servidor</summary>
+            public static string NuevaVersionDisponibleServidor = "Hay una nueva versión disponible en el servidor.";
+        }
+    }
+}

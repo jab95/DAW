@@ -1,0 +1,499 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Net;
+using System.Text;
+
+namespace BRSLibReyes
+{
+    public delegate void CollectDirectoryDelegate(string nombreDirectorio);
+    public delegate void CollectFilesDelegate(string nombreFichero, string tamanoFicheroKb, string fechaCreacion);
+    public delegate void DisplayDownloadDelegate(long totalFileSize, long actualFileSize);
+    public delegate void DisplayUploadDelegate(long totalFileSize, long actualFileSize);
+
+
+    /// <summary>
+    /// Clase para trabajar con un servidor FTP
+    /// </summary>
+    public class BRSLibFTP
+    {
+        public List<string> listDirectoryCollection;
+        public Dictionary<string, string> listFileCollection;
+
+        public event DisplayDownloadDelegate downloadFile;
+        public event DisplayUploadDelegate uploadFile;
+        public event CollectFilesDelegate displayCollectFiles;
+        public event CollectDirectoryDelegate displayCollectDirectory;
+
+        public bool FtpModeUsePassive { get; set; }
+        public string CurrentDirectory { get; set; }
+        public string FtpServer { get; set; }
+        public int? FtpPort { get; set; }
+        public string FtpUserName { get; set; }
+        public string FtpPassword { get; set; }
+
+        public BRSLibFTP(string ftpServer, string ftpUserName, string ftpPassword, int? ftpPort = 21)
+        {
+            FtpServer = ftpServer;
+            FtpUserName = ftpUserName;
+            FtpPassword = ftpPassword;
+            FtpPort = ftpPort;
+        }
+
+        /// <summary>
+        /// Monta un dirección del servidor ftp a partir de su raiz
+        /// </summary>
+        /// <param name="path"></param>
+        /// <returns></returns>
+        private string MountURI(string path)
+        {
+            var uri = FtpServer;
+
+            if (!uri.StartsWith("ftp://") && !(uri.StartsWith("sftp://")))
+            {
+                uri = "ftp://" + uri;
+            }
+
+            if (uri.EndsWith("/"))
+            {
+                uri = uri.Substring(0, uri.Length - 1);
+            }
+
+            uri += ":" + FtpPort;
+
+            if (!path.StartsWith("/"))
+            {
+                uri += "/";
+            }
+
+            uri += path;
+
+            return uri;
+        }
+
+        /// <summary>
+        /// Devuelve un array con las características de un fichero
+        /// </summary>
+        /// <param name="filesString">La línea del fichero</param>
+        /// <returns></returns>
+        private static string[] ResolveFiles(string filesString)
+        {
+            var sb = new StringBuilder();
+            var flag = false;
+            foreach (char ch in filesString.ToCharArray())
+            {
+                if (ch == ' ')
+                {
+                    if (!flag)
+                        sb.Append("#");
+                    flag = true;
+                }
+                else
+                {
+                    sb.Append(ch);
+                    flag = false;
+                }
+            }
+            return sb.ToString().Split('#');
+        }
+
+        /// <summary>
+        /// Elimina los espacios en blanco
+        /// </summary>
+        /// <param name="processString"></param>
+        /// <returns></returns>
+        private static string RemoveWhiteSpaces(string processString)
+        {
+            var sb = new StringBuilder();
+            foreach (char ch in processString.ToCharArray())
+            {
+                if (ch != ' ')
+                    sb.Append(ch);
+            }
+            return sb.ToString();
+        }
+
+        /// <summary>
+        /// Lista un directorio
+        /// </summary>
+        /// <param name="url">La ruta hacia el directorio a partir de la raiz del ftp</param>
+        /// <returns></returns>
+        public string ListDirectories(string url)
+        {
+            this.listDirectoryCollection = new List<string>();
+            try
+            {
+                var ftpWebRequest = (FtpWebRequest)WebRequest.Create(new Uri(MountURI(url)));
+                ftpWebRequest.Credentials = new NetworkCredential(this.FtpUserName, this.FtpPassword);
+                ftpWebRequest.UsePassive = this.FtpModeUsePassive;
+                ftpWebRequest.KeepAlive = false;
+                ftpWebRequest.Method = WebRequestMethods.Ftp.ListDirectory;
+                ftpWebRequest.UseBinary = true;
+                var response = (FtpWebResponse)ftpWebRequest.GetResponse();
+                using (StreamReader streamReader = new StreamReader(response.GetResponseStream()))
+                {
+                    for (string processString = streamReader.ReadLine(); processString != null; processString = streamReader.ReadLine())
+                    {
+                        this.listDirectoryCollection.Add(processString);
+                        if (this.displayCollectDirectory != null)
+                            this.displayCollectDirectory(processString);
+                        //if (processString.StartsWith("d"))
+                        //{
+                        //    var str2 = RemoveWhiteSpaces(processString);
+                        //    var directoryDate = str2.Substring(0, str2.IndexOf("<DIR>", 0));
+                        //    var str3 = str2.Substring(str2.IndexOf("<DIR>", 0) + 5, str2.Length - (str2.IndexOf("<DIR>", 0) + 5));
+                        //    this.listDirectoryCollection.Add(str3);
+                        //    this.displayCollectDirectory(str3);
+                        //}
+                    }
+                }
+                response.Close();
+                return "ok";
+            }
+            catch (Exception ex)
+            {
+                return "error-" + ex.Message;
+            }
+        }
+
+        /// <summary>
+        /// Lista los ficheros de un directorio
+        /// </summary>
+        /// <param name="url">La ruta hacia el directorio a partir de la raiz del ftp</param>
+        /// <returns></returns>
+        public string ListFiles(string url)
+        {
+            this.listFileCollection = new Dictionary<string, string>(100000);
+            try
+            {
+                var ftpWebRequest = (FtpWebRequest)WebRequest.Create(new Uri(MountURI(url)));
+                ftpWebRequest.Credentials = new NetworkCredential(this.FtpUserName, this.FtpPassword);
+                ftpWebRequest.KeepAlive = false;
+                ftpWebRequest.UsePassive = this.FtpModeUsePassive;
+                ftpWebRequest.Method = WebRequestMethods.Ftp.ListDirectoryDetails;
+                ftpWebRequest.UseBinary = true;
+                var response = (FtpWebResponse)ftpWebRequest.GetResponse();
+                using (StreamReader streamReader = new StreamReader(response.GetResponseStream()))
+                {
+                    for (string str2 = streamReader.ReadLine(); str2 != null; str2 = streamReader.ReadLine())
+                    {
+                        if (str2.IndexOf("<DIR>", 0) != -1)
+                        {
+                            var str3 = RemoveWhiteSpaces(str2);
+                            str3.Substring(0, str3.IndexOf("<DIR>", 0));
+                            str3.Substring(str3.IndexOf("<DIR>", 0) + 5, str3.Length - (str3.IndexOf("<DIR>", 0) + 5));
+                        }
+                        else
+                        {
+                            var strArray = ResolveFiles(str2);
+                            var listFileCollection = this.listFileCollection;
+                            var key = strArray[3].ToString();
+                            var num = int.Parse(strArray[2].ToString()) / 1024;
+                            var str3 = num.ToString();
+                            listFileCollection.Add(key, str3);
+                            var fileName = strArray[3].ToString();
+                            num = int.Parse(strArray[2].ToString()) / 1024;
+                            var fileSizeKb = num.ToString();
+                            var dateCreation = strArray[0] + "-" + strArray[1];
+                            displayCollectFiles?.Invoke(fileName, fileSizeKb, dateCreation);
+                        }
+                    }
+                }
+                response.Close();
+                return response.StatusDescription.ToString();
+            }
+            catch (Exception ex)
+            {
+                return "error-" + ex.Message;
+            }
+        }
+
+        /// <summary>
+        /// Crea un directorio en el servidor
+        /// </summary>
+        /// <param name="serverUri">La ruta hacia el directorio a partir de la raiz del ftp</param>
+        /// <returns></returns>
+        public string FtpMakeDirectory(string serverUri)
+        {
+            try
+            {
+                string[] split = serverUri.Split('/');
+
+                for (int i = 0; i < split.Length; i++)
+                {
+                    string rutaRaiz = "";
+                    string rutaComprobar = "";
+                    string rutaInsertar = "";
+
+                    if (i == 0)
+                    {
+                        rutaRaiz = "";
+                        rutaComprobar = split[0];
+                        rutaInsertar = split[0];
+                    }
+                    //else if (i == 1)
+                    //{
+                    //    rutaRaiz = split[0];
+                    //    rutaComprobar = split[0] + "/" + split[1];
+                    //    rutaInsertar = split[0] + "/" + split[1];
+                    //}
+                    else
+                    {
+                        string[] splitAntesIndice = split.Select((ruta, indice) => new { ruta, indice }).Where(t => t.indice < i).Select(t => t.ruta).ToArray();
+                        string[] splitHastaIndice = split.Select((ruta, indice) => new { ruta, indice }).Where(t => t.indice <= i).Select(t => t.ruta).ToArray();
+                        rutaRaiz = string.Join("/", splitAntesIndice);
+                        rutaComprobar = split[i - 1] + "/" + split[i];
+                        rutaInsertar = string.Join("/", splitHastaIndice);
+                    }
+
+                    string resultado = ListDirectories(rutaRaiz);
+                    if (resultado.StartsWith("error"))
+                    {
+                        return resultado;
+                    }
+                    else
+                    {
+                        if (!listDirectoryCollection.Contains(rutaComprobar))
+                        {
+                            FtpMakeDirectoryAux(rutaInsertar);
+                        }
+                    }
+                }
+
+                return "ok";
+            }
+            catch (Exception ex)
+            {
+                if (ex is WebException wex)
+                {
+                    var response = (FtpWebResponse)wex.Response;
+                    if (response.StatusCode == FtpStatusCode.ClosingData)
+                    {
+                        response.Close();
+                        return "ok-La ruta ya existía";
+                    }
+                    else
+                    {
+                        return "error-" + ex.Message;
+                    }
+                }
+                else
+                {
+                    return "error-" + ex.Message;
+                }
+            }
+        }
+
+        private string FtpMakeDirectoryAux(string serverUri)
+        {
+            var ftpWebRequest = (FtpWebRequest)WebRequest.Create(new Uri(MountURI(serverUri)));
+            ftpWebRequest.Credentials = new NetworkCredential(this.FtpUserName, this.FtpPassword);
+            ftpWebRequest.UsePassive = this.FtpModeUsePassive;
+            ftpWebRequest.KeepAlive = false;
+            ftpWebRequest.UseBinary = true;
+            ftpWebRequest.Method = WebRequestMethods.Ftp.MakeDirectory;
+            var response = (FtpWebResponse)ftpWebRequest.GetResponse();
+            response.Close();
+            return response.StatusDescription.ToString();
+        }
+
+        /// <summary>
+        /// Elimina un directorio del servidor
+        /// </summary>
+        /// <param name="serverUri">La ruta hacia el directorio a partir de la raiz del ftp</param>
+        /// <returns></returns>
+        public string FtpRemoveDirectory(string serverUri)
+        {
+            try
+            {
+                var ftpWebRequest = (FtpWebRequest)WebRequest.Create(new Uri(MountURI(serverUri)));
+                ftpWebRequest.Credentials = new NetworkCredential(this.FtpUserName, this.FtpPassword);
+                ftpWebRequest.UsePassive = this.FtpModeUsePassive;
+                ftpWebRequest.KeepAlive = false;
+                ftpWebRequest.UseBinary = true;
+                ftpWebRequest.Method = WebRequestMethods.Ftp.RemoveDirectory;
+                var response = (FtpWebResponse)ftpWebRequest.GetResponse();
+                response.Close();
+                return response.StatusDescription.ToString();
+            }
+            catch (Exception ex)
+            {
+                return "error-" + ex.Message;
+            }
+        }
+
+        /// <summary>
+        /// Borra un fichero del servidor
+        /// </summary>
+        /// <param name="serverUri">La ruta hacia el fichero a partir de la raiz del ftp</param>
+        /// <returns></returns>
+        public string FtpDeleteFile(string serverUri)
+        {
+            try
+            {
+                var ftpWebRequest = (FtpWebRequest)WebRequest.Create(new Uri(MountURI(serverUri)));
+                ftpWebRequest.Credentials = new NetworkCredential(this.FtpUserName, this.FtpPassword);
+                ftpWebRequest.UsePassive = this.FtpModeUsePassive;
+                ftpWebRequest.KeepAlive = false;
+                ftpWebRequest.UseBinary = true;
+                ftpWebRequest.Method = WebRequestMethods.Ftp.DeleteFile;
+                var response = (FtpWebResponse)ftpWebRequest.GetResponse();
+                response.Close();
+                return response.StatusDescription.ToString();
+            }
+            catch (Exception ex)
+            {
+                return "error-" + ex.Message;
+            }
+        }
+
+        /// <summary>
+        /// Sube un fichero al servidor
+        /// </summary>
+        /// <param name="fileName">Ruta local del fichero a subir</param>
+        /// <param name="url">La ruta hacia el fichero que queremos subir a partir de la raiz del ftp</param>
+        /// <returns></returns>
+        public string FtpFileUpload(string fileName, string url)
+        {
+            try
+            {
+                var fileInfo = new FileInfo(fileName);
+                var ftpWebRequest = (FtpWebRequest)WebRequest.Create(new Uri(MountURI(url)));
+                ftpWebRequest.Credentials = new NetworkCredential(this.FtpUserName, this.FtpPassword);
+                ftpWebRequest.UsePassive = this.FtpModeUsePassive;
+                ftpWebRequest.KeepAlive = false;
+                ftpWebRequest.Method = WebRequestMethods.Ftp.UploadFile;
+                ftpWebRequest.UseBinary = true;
+                ftpWebRequest.ContentLength = fileInfo.Length;
+                var length1 = fileInfo.Length / 100L;
+                var buffer = new byte[length1];
+                using (var fileStream = fileInfo.OpenRead())
+                using (var response = (FtpWebResponse)ftpWebRequest.GetResponse())
+                using (var requestStream = ftpWebRequest.GetRequestStream())
+                {
+                    var count = fileStream.Read(buffer, 0, (int)length1);
+                    var length2 = fileStream.Length;
+                    while (count != 0)
+                    {
+                        requestStream.Write(buffer, 0, count);
+                        count = fileStream.Read(buffer, 0, (int)length1);
+                        length2 -= (long)count;
+                        if (length2 > 0L && this.uploadFile != null)
+                            this.uploadFile(fileStream.Length, length2);
+                    }
+                    requestStream.Close();
+                    ftpWebRequest = null;
+                    return response.StatusDescription.ToString();
+                }
+            }
+            catch (Exception ex)
+            {
+                return "error-" + ex.Message;
+            }
+        }
+
+        /// <summary>
+        /// Sube un fichero al servidor
+        /// </summary>
+        /// <param name="fileName">Ruta local del fichero a subir</param>
+        /// <param name="url">La ruta hacia el fichero que queremos subir a partir de la raiz del ftp</param>
+        /// <returns></returns>
+        public string FtpFileUpload2(string fileName, string url)
+        {
+            try
+            {
+                var fileInfo = new FileInfo(fileName);
+                var ftpWebRequest = (FtpWebRequest)WebRequest.Create(new Uri(MountURI(url)));
+                ftpWebRequest.Credentials = new NetworkCredential(this.FtpUserName, this.FtpPassword);
+                ftpWebRequest.UsePassive = this.FtpModeUsePassive;
+                ftpWebRequest.KeepAlive = false;
+                ftpWebRequest.Method = WebRequestMethods.Ftp.UploadFile;
+                ftpWebRequest.UseBinary = true;
+                ftpWebRequest.ContentLength = fileInfo.Length;
+
+                byte[] fileContents;
+                using (StreamReader sourceStream = new StreamReader(fileName))
+                {
+                    fileContents = Encoding.UTF8.GetBytes(sourceStream.ReadToEnd());
+                }
+
+                ftpWebRequest.ContentLength = fileContents.Length;
+
+                using (Stream requestStream = ftpWebRequest.GetRequestStream())
+                {
+                    requestStream.Write(fileContents, 0, fileContents.Length);
+                }
+
+                using (FtpWebResponse response = (FtpWebResponse)ftpWebRequest.GetResponse())
+                {
+                    return response.StatusDescription.ToString();
+                }
+            }
+            catch (Exception ex)
+            {
+                return "error-" + ex.Message;
+            }
+        }
+
+        /// <summary>
+        /// Obtiene el tamaño de un fichero en el servidor
+        /// </summary>
+        /// <param name="url">La ruta hacia el fichero sobre el que queremos saber su tamaño</param>
+        /// <returns></returns>
+        private long FtpFileSize(string url)
+        {
+            var ftpWebRequest = (FtpWebRequest)WebRequest.Create(new Uri(MountURI(url)));
+            ftpWebRequest.Credentials = new NetworkCredential(this.FtpUserName, this.FtpPassword);
+            ftpWebRequest.Method = WebRequestMethods.Ftp.GetFileSize;
+            ftpWebRequest.UseBinary = true;
+            ftpWebRequest.UsePassive = this.FtpModeUsePassive;
+            var response2 = (FtpWebResponse)ftpWebRequest.GetResponse();
+            var contentLength = response2.ContentLength;
+            response2.Close();
+            return contentLength;
+        }
+
+        /// <summary>
+        /// Descarga un fichero del servidor
+        /// </summary>
+        /// <param name="fileUrl">La ruta hacia el fichero que queremos descargar a partir de la raiz del ftp</param>
+        /// <param name="downloadPath">Ruta local hacia donde descargar el fichero </param>
+        /// <returns></returns>
+        public string FtpFileDownload(string fileUrl, string downloadPath)
+        {
+            try
+            {
+                var ftpWebRequest = (FtpWebRequest)WebRequest.Create(new Uri(MountURI(fileUrl)));
+                ftpWebRequest.Credentials = new NetworkCredential(this.FtpUserName, this.FtpPassword);
+                ftpWebRequest.UsePassive = this.FtpModeUsePassive;
+                ftpWebRequest.UseBinary = true;
+                ftpWebRequest.KeepAlive = false;
+                ftpWebRequest.Method = WebRequestMethods.Ftp.DownloadFile;
+                var response = (FtpWebResponse)ftpWebRequest.GetResponse();
+                var responseStream = response.GetResponseStream();
+                using (var fileStream = new FileStream(downloadPath, FileMode.Create, FileAccess.Write))
+                {
+                    var nowFileSize = this.FtpFileSize(fileUrl);
+                    var buffer = new byte[nowFileSize / 100L];
+                    var count = responseStream.Read(buffer, 0, buffer.Length);
+                    var totalFileSize = nowFileSize;
+                    while (count != 0)
+                    {
+                        fileStream.Write(buffer, 0, count);
+                        count = responseStream.Read(buffer, 0, buffer.Length);
+                        nowFileSize -= (long)count;
+                        if (nowFileSize > 0L && this.downloadFile != null)
+                            this.downloadFile(totalFileSize, nowFileSize);
+                    }
+                }
+                responseStream.Close();
+                return response.StatusDescription.ToString();
+            }
+            catch (Exception ex)
+            {
+                return "error-" + ex.Message;
+            }
+        }
+    }
+}

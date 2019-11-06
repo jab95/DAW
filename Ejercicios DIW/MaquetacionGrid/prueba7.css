@@ -1,0 +1,57 @@
+.cell {
+    background: lightslategrey;
+    height: 70px;
+    border: crimson;
+    border-style: solid;
+    border-radius: 5px;
+    padding: 5px;
+}
+
+.header {
+    grid-area: header;
+}
+
+.articulo {
+    grid-area: articulo;
+    height: 300px;
+}
+
+
+.footer {
+    grid-area: footer;
+}
+
+.nav {
+    grid-area: nav;
+    height: 50px;
+}
+
+.sidebar {
+    grid-area: sidebar;
+    height: 300px;
+
+}
+
+.anuncio {
+    grid-area: anuncio;
+}
+
+
+.contenedor {
+    display: grid;
+    grid-gap: 10px;
+    grid-template-columns: repeat(2, 1fr 2fr);
+    grid-template-areas:
+        "header header"
+        "nav nav"
+        "sidebar articulo"
+        "anuncio footer"
+
+    /* TAMBIEN HAY OTRA FORMA DE HACERLO MAS SIMPLE SIN TEMPLATE-COLUMNS  */
+
+    /* grid-template-areas:
+    "header header header"
+    "nav nav nav"
+    "sidebar articulo articulo"
+    "anuncio footer footer" */
+}

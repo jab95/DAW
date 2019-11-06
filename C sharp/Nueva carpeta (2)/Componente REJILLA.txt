@@ -1,0 +1,1304 @@
+using BRSERP.BD;
+using BRSERP.Modelos.Contabilidad;
+using Npgsql;
+using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Drawing;
+using System.Linq;
+using System.Reflection;
+using System.Text;
+using System.Windows.Forms;
+using Telerik.WinControls.UI;
+using Timers = System.Timers;
+
+namespace BRSERP
+{
+    public partial class BRSGridViewV2 : RadGridView
+    {
+        #region Variables
+
+        /// <summary>Fuente a aplicar en la tabla</summary>
+        Font f = new Font(BRSLib.acFuenteMantenimientos[0], float.Parse(BRSLib.acFuenteMantenimientos[1]));
+        Timers.Timer temporizadorWidthChanged = new Timers.Timer(BRSLib.tiempoWidthChanged);
+        bool SelectionChangedActivo = true;
+
+        /* VARIABLES PARA PERMITIR CAMBIAR EL LABEL */
+        public delegate void delegadoCambiarLabel(string mensaje);
+        public event delegadoCambiarLabel EventoCambiarLabel;
+
+        #endregion
+
+        public BRSCheckboxColumn cabeceraSeleccionMultiple;
+
+        List<GridViewRowInfo> listaFilasSeleccionadas = new List<GridViewRowInfo>();
+
+        public List<GridViewRowInfo> FilasSeleccionadas
+        {
+            get { return listaFilasSeleccionadas; }
+        }
+
+        private Dictionary<string, Dictionary<string, object>> listaClavesSeleccionadas = new Dictionary<string, Dictionary<string, object>>();
+
+        public Dictionary<string, Dictionary<string, object>> ClavesSeleccionadas
+        {
+            get { return listaClavesSeleccionadas; }
+        }
+
+        public string CodigoSeleccionado
+        {
+            get
+            {
+                if (ClavePrimaria != null)
+                {
+                    string cCodigoSeleccionado = "";
+                    for (int i = 0; i < ClavePrimaria.Length; i++)
+                    {
+                        if (i != 0) cCodigoSeleccionado += "-";
+                        switch (i)
+                        {
+                            case 0: cCodigoSeleccionado += BRSLib.cCodigoSeleccionado; break;
+                            case 1: cCodigoSeleccionado += BRSLib.cCodigoSeleccionado2; break;
+                            case 2: cCodigoSeleccionado += BRSLib.cCodigoSeleccionado3; break;
+                            case 3: cCodigoSeleccionado += BRSLib.cCodigoSeleccionado4; break;
+                        }
+                    }
+
+                    return cCodigoSeleccionado;
+                }
+                else
+                {
+                    return "";
+                }
+            }
+        }
+
+        public string[] ValoresClavePrimaria
+        {
+            get
+            {
+                if (ClavePrimaria != null)
+                {
+                    List<string> valores = new List<string>();
+
+                    for (int i = 0; i < ClavePrimaria.Length; i++)
+                    {
+                        switch (i)
+                        {
+                            case 0: valores.Add(BRSLib.cCodigoSeleccionado); break;
+                            case 1: valores.Add(BRSLib.cCodigoSeleccionado2); break;
+                            case 2: valores.Add(BRSLib.cCodigoSeleccionado3); break;
+                            case 3: valores.Add(BRSLib.cCodigoSeleccionado4); break;
+                        }
+                    }
+
+                    return valores.ToArray();
+                }
+                else
+                {
+                    return null;
+                }
+            }
+        }
+
+        #region Propiedades
+
+        [Browsable(false)]
+        public bool LeaveTabla { get; set; }
+        [Browsable(false)]
+        public Keys TeclaPulsada { get; set; }
+
+        [Browsable(false)]
+        /// <summary>Indica si podemos desplazarnos por la rejilla desde el registro pulsando Control</summary>
+        public bool DesplazamientoCTRL { get { return ((MasterTemplate.SortDescriptors.Count == 0) && MasterTemplate.GroupDescriptors.Count == 0) ? true : false; } }
+
+        private bool lMostrarPegar;
+        [Description("Mostrar opción de pegar en el menú contextual"),
+        Category("Contenido"),
+        DefaultValue(false),
+        Browsable(true)]
+        public bool MostrarPegar
+        {
+            get { return lMostrarPegar; }
+            set { lMostrarPegar = value; }
+        }
+
+        private RadLabel _label;
+        [Description("Label de la rejilla"),
+        Category("BRS Data"),
+        Browsable(true)]
+        public RadLabel Label
+        {
+            get { return _label; }
+            set { _label = value; }
+        }
+
+        //[Description("Clave primaria de la rejilla"),
+        //    Category("BRS Data"),
+        //    Browsable(true)]
+        //public string[] ClavePrimaria { get; set; }
+
+        //[Description("Cadena de conexión a la base de datos"),
+        //    Category("BRS Data"),
+        //    Browsable(true)]
+        //public string CadenaConexion { get; set; }
+
+        //[Description("Nombre de la tabla a la que pertenece la rejilla"),
+        //    Category("BRS Data"),
+        //    Browsable(true)]
+        //public string Tabla { get; set; }
+
+        //[Description("Nombre de los campos de la tabla"),
+        //    Category("BRS Data"),
+        //    Browsable(true)]
+        //public string[] NombreCampos { get; set; }
+
+        //[Description("Nombre del xml"),
+        //    Category("BRS Data"),
+        //    Browsable(true)]
+        //public string NombreXML { get; set; }
+
+        public bool ListaPorClavePrimaria = false;
+        public string[] ClavePrimaria;
+        public string[] CamposGuardar;
+        public string CadenaConexion;
+        public string Tabla;
+        public string[] NombreCampos;
+        public string NombreXML;
+
+        #endregion
+
+        #region Constructores
+
+        public BRSGridViewV2()
+        {
+            InitializeComponent();
+            temporizadorWidthChanged.Elapsed += WidthChangedTimerElapsed;
+            temporizadorWidthChanged.SynchronizingObject = this;
+        }
+
+        public BRSGridViewV2(IContainer container)
+        {
+            container.Add(this);
+
+            InitializeComponent();
+
+            temporizadorWidthChanged.Elapsed += WidthChangedTimerElapsed;
+            temporizadorWidthChanged.SynchronizingObject = this;
+
+            CellFormatting += BRSGridViewV2_CellFormatting;
+            Columns.CollectionChanged += Columns_CollectionChanged;
+
+            this.ThemeClassName = "Telerik.WinControls.UI.RadGridView";
+        }
+
+        public void EstablecerPropiedades(string _cadenaConexion, string _tabla, string[] _clavePrimaria, string[] _nombreCampos, string _nombreXML, RadLabel _label)
+        {
+            CadenaConexion = _cadenaConexion;
+            Tabla = _tabla;
+            ClavePrimaria = _clavePrimaria;
+            NombreCampos = _nombreCampos;
+            NombreXML = _nombreXML;
+            Label = _label;
+        }
+
+        #endregion
+
+        private void Columns_CollectionChanged(object sender, Telerik.WinControls.Data.NotifyCollectionChangedEventArgs e)
+        {
+            if (e.Action == Telerik.WinControls.Data.NotifyCollectionChangedAction.Move)
+            {
+                SaveLayout();
+            }
+        }
+
+        private void BRSGridViewV2_CellFormatting(object sender, CellFormattingEventArgs e)
+        {
+            e.CellElement.Font = f;
+            base.OnCellFormatting(sender, e);
+        }
+
+        #region Eventos sobreescritos
+
+        protected override void OnLeave(EventArgs e)
+        {
+            base.OnLeave(e);
+            LeaveTabla = true;
+        }
+
+        protected override void OnMouseDown(MouseEventArgs e)
+        {
+            // Si estamos editando, anulamos el click del ratón
+            if (!this.IsInEditMode)
+                base.OnMouseDown(e);
+        }
+
+        protected override void OnMouseWheel(MouseEventArgs e)
+        {
+            // Si estamos editando, anulamos el scroll del ratón
+            if (!this.IsInEditMode)
+                base.OnMouseWheel(e);
+        }
+
+        protected override void OnGroupByChanging(object sender, GridViewCollectionChangingEventArgs e)
+        {
+            base.OnGroupByChanging(sender, e);
+        }
+
+        protected override void OnGroupExpanded(object sender, GroupExpandedEventArgs e)
+        {
+            base.OnGroupExpanded(sender, e);
+        }
+
+        protected override void OnGroupByChanged(object sender, GridViewCollectionChangedEventArgs e)
+        {
+            base.OnGroupByChanged(sender, e);
+        }
+
+        protected override void OnGroupExpanding(object sender, GroupExpandingEventArgs e)
+        {
+            base.OnGroupExpanding(sender, e);
+        }
+
+        protected override void OnGroupSummaryEvaluate(object sender, GroupSummaryEvaluationEventArgs e)
+        {
+            base.OnGroupSummaryEvaluate(sender, e);
+        }
+
+        protected override void OnCellValueChanged(object sender, GridViewCellEventArgs e)
+        {
+            base.OnCellValueChanged(sender, e);
+            if (Columns.Contains(BRSLibRejilla.cColumnaSeleccionMultiple))
+            {
+                if (e.Column.Name == BRSLibRejilla.cColumnaSeleccionMultiple)
+                {
+                    if (e.Value == null || !(bool)e.Value)
+                    {
+                        if (ListaPorClavePrimaria)
+                        {
+                            string clave = "";
+                            foreach (var campo in ClavePrimaria)
+                            {
+                                if (!clave.Vacio()) clave += "||";
+                                clave += Convert.ToString(Rows[e.RowIndex].Cells[campo].Value);
+                            }
+
+                            if (listaClavesSeleccionadas.ContainsKey(clave))
+                            {
+                                listaClavesSeleccionadas.Remove(clave);
+                                ActualizarContadorRegistros();
+                            }
+                        }
+                        else
+                        {
+
+                            if (listaFilasSeleccionadas.Contains(Rows[e.RowIndex]))
+                            {
+                                listaFilasSeleccionadas.Remove(Rows[e.RowIndex]);
+                                ActualizarContadorRegistros();
+                            }
+                        }
+                    }
+                    else
+                    {
+                        if (ListaPorClavePrimaria)
+                        {
+                            string clave = "";
+                            foreach (var campo in ClavePrimaria)
+                            {
+                                if (!clave.Vacio()) clave += "||";
+                                clave += Convert.ToString(Rows[e.RowIndex].Cells[campo].Value);
+                            }
+
+                            if (!listaClavesSeleccionadas.ContainsKey(clave))
+                            {
+                                Dictionary<string, object> campos = new Dictionary<string, object>();
+                                foreach (var campo in CamposGuardar)
+                                {
+                                    campos.Add(campo, Rows[e.RowIndex].Cells[campo].Value);
+                                }
+
+                                listaClavesSeleccionadas.Add(clave, campos);
+                                ActualizarContadorRegistros();
+                            }
+                        }
+                        else
+                        {
+                            if (!listaFilasSeleccionadas.Contains(Rows[e.RowIndex]))
+                            {
+                                listaFilasSeleccionadas.Add(Rows[e.RowIndex]);
+                                ActualizarContadorRegistros();
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        protected override void OnSelectionChanged(object sender, EventArgs e)
+        {
+            if (SelectionChangedActivo)
+            {
+                ActualizarContadorRegistros();
+                base.OnSelectionChanged(sender, e);
+            }
+        }
+
+        protected override void OnSortChanged(object sender, GridViewCollectionChangedEventArgs e)
+        {
+            ActualizarContadorRegistros();
+            base.OnSortChanged(sender, e);
+        }
+
+        protected override void OnColumnWidthChanged(object sender, ColumnWidthChangedEventArgs args)
+        {
+            if (temporizadorWidthChanged.Enabled) temporizadorWidthChanged.Stop();
+            temporizadorWidthChanged.Start();
+            base.OnColumnWidthChanged(sender, args);
+        }
+
+        protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
+        {
+            Keys key = keyData & Keys.KeyCode;
+
+            if (this.CurrentCell != null)
+            {
+                if (this.CurrentCell.IsInEditMode)
+                {
+                    TeclaPulsada = key;
+                    // En función de la tecla pulsada podemos hacer diferentes cosas.
+                    //switch (key)
+                    //{
+                    //    case Keys.Escape:
+                    //        TeclaEscape = true;
+                    //        break;
+
+                    //    case Keys.Tab:
+                    //        BRSLib.MostrarMensaje("TAB");
+                    //        break;
+                    //}
+                }
+            }
+
+            return base.ProcessCmdKey(ref msg, keyData);
+        }
+
+        #endregion
+
+        #region Otros eventos
+
+        private void WidthChangedTimerElapsed(object sender, EventArgs e)
+        {
+            if (temporizadorWidthChanged.Enabled)
+            {
+                temporizadorWidthChanged.Stop();
+                SaveLayout();
+            }
+        }
+
+        #endregion
+
+        #region Funciones para trabajar con registros
+
+        /// <summary>
+        /// Función que devuelve si la tabla tiene un registro seleccionado
+        /// </summary>
+        /// <param name="_mostrarMensaje">Indica si queremos mostrar mensaje de no seleccionados o no</param>
+        /// <returns>Verdadero o falso</returns>
+        public bool RegistroSeleccionado(bool _mostrarMensaje = true)
+        {
+            bool registroSeleccionado = false;
+
+            if (CurrentRow == null || CurrentRow.Index == -1 || SelectedRows.Count == 0 || RowCount == 0)
+            {
+                if (_mostrarMensaje)
+                    BRSLib.MostrarMensaje(Cadenas.NoRegistroSeleccionado);
+            }
+            else
+            {
+                registroSeleccionado = true;
+            }
+
+            return registroSeleccionado;
+        }
+
+        /// <summary>
+        /// Función que devuelve si la tabla tiene registros marcados
+        /// </summary>
+        /// <param name="_mostrarMensaje">Indica si queremos mostrar mensaje de no marcados o no</param>
+        /// <returns></returns>
+        public bool RegistroMarcado(bool _mostrarMensaje = true)
+        {
+            bool registroMarcado = false;
+
+            if (FilasSeleccionadas.Count == 0)
+            {
+                if (_mostrarMensaje)
+                    BRSLib.MostrarMensaje(Cadenas.NoRegistroMarcado);
+            }
+            else
+            {
+                registroMarcado = true;
+            }
+
+            return registroMarcado;
+        }
+
+        /// <summary>
+        /// Función que devuelve si el campo indicado de la fila actual se encuentra vacío
+        /// </summary>
+        /// <param name="_nombreCampo">El nombre de la columna a buscar</param>
+        /// <returns></returns>
+        public bool CampoVacio(string _nombreCampo)
+        {
+            return string.IsNullOrWhiteSpace(Convert.ToString(CurrentRow.Cells[_nombreCampo].Value));
+        }
+
+        /// <summary>
+        /// Recupera el campo indicado de la fila actual como un string
+        /// </summary>
+        /// <param name="_nombreCampo">El nombre de la columna a recuperar</param>
+        /// <returns></returns>
+        public string GetString(string _nombreCampo)
+        {
+            return Convert.ToString(CurrentRow.Cells[_nombreCampo].Value);
+        }
+
+        /// <summary>
+        /// Recupera el campo indicado de la fila actual como un string
+        /// </summary>
+        /// <param name="_nombreCampo">El nombre de la columna a recuperar</param>
+        /// <returns></returns>
+        public int GetInt(string _nombreCampo)
+        {
+            return Convert.ToInt32(CurrentRow.Cells[_nombreCampo].Value);
+        }
+
+        #region Añadir registros a la rejilla
+
+        /// <summary>
+        /// Función para añadir un registro de la base de datos a una rejilla
+        /// </summary>
+        /// <param name="_lSeleccionMulti">Si es una rejilla con columna de selección múltiple</param>
+        public void AnadirRegistroRejilla(bool _lSeleccionMulti = false)
+        {
+            object[] aoValoresClavePrimaria = ValoresClavePrimaria;
+            AnadirRegistroRejilla(aoValoresClavePrimaria, _lSeleccionMulti);
+        }
+
+        /// <summary>
+        /// Función para añadir un registro de la base de datos a una rejilla
+        /// </summary>
+        /// <param name="_oValorClavePrimaria">Valor de la clave primaria del registro a insertar</param>
+        /// <param name="_lSeleccionMulti">Si es una rejilla con columna de selección múltiple</param>
+        /// <exception cref="Exception">Cuando ocurre algún error</exception>
+        public void AnadirRegistroRejilla(object _oValorClavePrimaria, bool _lSeleccionMulti = false)
+        {
+            object[] aoValoresClavePrimaria = { _oValorClavePrimaria };
+            AnadirRegistroRejilla(aoValoresClavePrimaria, _lSeleccionMulti);
+        }
+
+        /// <summary>
+        /// Función para añadir un registro de la base de datos a una rejilla
+        /// </summary>
+        /// <param name="_aoValoresClavePrimaria">Valores de la clave primaria del registro a insertar</param>
+        /// <param name="_lSeleccionMulti">Si es una rejilla con columna de selección múltiple</param>
+        /// <exception cref="Exception">Cuando ocurre algún error</exception>
+        public void AnadirRegistroRejilla(object[] _aoValoresClavePrimaria, bool _lSeleccionMulti = false)
+        {
+            using (NpgsqlConnection oConexion = new NpgsqlConnection(CadenaConexion))
+            {
+                using (NpgsqlCommand oComando = oConexion.CreateCommand())
+                {
+                    try
+                    {
+                        oConexion.Open();
+                        AnadirRegistroRejilla(oComando, _aoValoresClavePrimaria, _lSeleccionMulti);
+                    }
+                    catch (Exception)
+                    {
+                        throw;
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Función para añadir un registro de la base de datos a una rejilla
+        /// </summary>
+        /// <param name="_oComando">Un objeto comando para mantener la transacción</param>
+        /// <param name="_oValorClavePrimaria">Valor de la clave primaria del registro a insertar</param>
+        /// <param name="_lSeleccionMulti">Si es una rejilla con columna de selección múltiple</param>
+        /// <exception cref="Exception">Cuando ocurre algún error</exception>
+        public void AnadirRegistroRejilla(NpgsqlCommand _oComando, object _oValorClavePrimaria, bool _lSeleccionMulti = false)
+        {
+            object[] aoValoresClavePrimaria = { _oValorClavePrimaria };
+            AnadirRegistroRejilla(_oComando, aoValoresClavePrimaria, _lSeleccionMulti);
+        }
+
+        /// <summary>
+        /// Función para añadir un registro de la base de datos a una rejilla
+        /// </summary>
+        /// <param name="_oComando">Un objeto comando para mantener la transacción</param>
+        /// <param name="_aoValoresClavePrimaria">Valores de la clave primaria del registro a insertar</param>
+        /// <param name="_lSeleccionMulti">Si es una rejilla con columna de selección múltiple</param>
+        /// <exception cref="Exception">Cuando ocurre algún error</exception>
+        public void AnadirRegistroRejilla(NpgsqlCommand _oComando, object[] _aoValoresClavePrimaria, bool _lSeleccionMulti = false)
+        {
+            try
+            {
+                BRSLib.WriteLogDebug("Añadiendo nuevos valores a la rejilla de la ventana " + FindForm().Name, nameof(BRSGridViewV2), MethodBase.GetCurrentMethod().Name);
+
+                // Generamos la SQL
+                StringBuilder cSQL = new StringBuilder("SELECT * FROM " + Tabla + " WHERE ");
+                for (int i = 0; i < ClavePrimaria.Length; i++)
+                {
+                    if (i != 0)
+                        cSQL.Append(" AND ");
+                    cSQL.Append(ClavePrimaria[i] + " = :param" + i);
+                }
+
+                _oComando.CommandText = cSQL.ToString();
+                _oComando.Parameters.Clear();
+
+                for (int i = 0; i < _aoValoresClavePrimaria.Length; i++)
+                {
+                    _oComando.Parameters.Add(new NpgsqlParameter("param" + i, _aoValoresClavePrimaria[i]));
+                }
+
+                BRSLib.WriteLogDebug(BRSLibBD.AnalizarNpgsqlCommand(_oComando), nameof(BRSLibBD), MethodBase.GetCurrentMethod().Name, BRSLog.PALABRA_CLAVE.CONSULTA, "", BRSLog.LINEAVACIA.NO, null, _oComando);
+
+                using (NpgsqlDataReader oDataReader = _oComando.ExecuteReader())
+                {
+                    while (oDataReader.Read())
+                    {
+                        if (Columns.Count <= 0)
+                        { // Si el grid está vacío generamos las columnas
+                            BRSLibRejilla.CargarConfig(this, Tabla, NombreCampos, new string[] { }, BRSLib.nUsuario, NombreXML, true, _lSeleccionMulti, _oComando.Connection.ConnectionString);
+                        }
+
+                        // Pasamos los datos del DataReader a cada columna del nuevo registro
+                        GridViewDataRowInfo rowInfo = new GridViewDataRowInfo(MasterView);
+                        for (int i = 0; i < ColumnCount; i++)
+                        {
+                            if (Columns[i].Name != BRSLibRejilla.cColumnaSeleccionMultiple)
+                                rowInfo.Cells[i].Value = oDataReader[Columns[i].FieldName.Split(" AS ")[0]];
+                        }
+                        Rows.Add(rowInfo);
+                    }
+                }
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
+
+        #endregion
+
+        #region Modificar registros de la rejilla
+
+        /// <summary>
+        /// Función para modificar un registro de una rejilla con los datos de la base de datos
+        /// </summary>
+        /// <exception cref="Exception">Cuando ocurre algún error</exception>
+        public void ModificarRegistroRejilla()
+        {
+            object[] aoValoresClavePrimaria = ValoresClavePrimaria;
+            ModificarRegistroRejilla(aoValoresClavePrimaria);
+        }
+
+        /// <summary>
+        /// Función para modificar un registro de una rejilla con los datos de la base de datos
+        /// </summary>
+        /// <param name="_oValorClavePrimaria">Valor de la clave primaria del registro a modificar</param>
+        /// <exception cref="Exception">Cuando ocurre algún error</exception>
+        public void ModificarRegistroRejilla(object _oValorClavePrimaria)
+        {
+            object[] aoValoresClavePrimaria = { _oValorClavePrimaria };
+            ModificarRegistroRejilla(aoValoresClavePrimaria);
+        }
+
+        /// <summary>
+        /// Función para modificar un registro de una rejilla con los datos de la base de datos
+        /// </summary>
+        /// <param name="_aoValoresClavePrimaria">Valores de la clave primaria del registro a modificar</param>
+        /// <exception cref="Exception">Cuando ocurre algún error</exception>
+        public void ModificarRegistroRejilla(params object[] _aoValoresClavePrimaria)
+        {
+            using (NpgsqlConnection oConexion = new NpgsqlConnection(CadenaConexion))
+            {
+                using (NpgsqlCommand oComando = oConexion.CreateCommand())
+                {
+                    try
+                    {
+                        oConexion.Open();
+                        ModificarRegistroRejilla(oComando, _aoValoresClavePrimaria);
+                    }
+                    catch (Exception)
+                    {
+                        throw;
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Función para modificar un registro de una rejilla con los datos de la base de datos
+        /// </summary>
+        /// <param name="_oComando">Un objeto comando para mantener la transacción</param>
+        /// <param name="_oValorClavePrimaria">Valor de la clave primaria del registro a modificar</param>
+        /// <exception cref="Exception">Cuando ocurre algún error</exception>
+        public void ModificarRegistroRejilla(NpgsqlCommand _oComando, object _oValorClavePrimaria)
+        {
+            object[] aoValoresClavePrimaria = { _oValorClavePrimaria };
+            ModificarRegistroRejilla(_oComando, _oValorClavePrimaria);
+        }
+
+        /// <summary>
+        /// Función para modificar un registro de una rejilla con los datos de la base de datos
+        /// </summary>
+        /// <param name="_oComando">Un objeto comando para mantener la transacción</param>
+        /// <param name="_aoValoresClavePrimaria">Valores de la clave primaria del registro a modificar</param>
+        /// <exception cref="Exception">Cuando ocurre algún error</exception>
+        public void ModificarRegistroRejilla(NpgsqlCommand _oComando, params object[] _aoValoresClavePrimaria)
+        {
+            try
+            {
+                BRSLib.WriteLogDebug("Modificando valores de la rejilla de la ventana " + FindForm().Name, nameof(BRSGridViewV2), MethodBase.GetCurrentMethod().Name);
+
+                // Generamos la SQL
+                StringBuilder cSQL = new StringBuilder("SELECT * FROM " + Tabla + " WHERE ");
+                for (int i = 0; i < ClavePrimaria.Length; i++)
+                {
+                    if (i != 0)
+                        cSQL.Append(" AND ");
+                    cSQL.Append(ClavePrimaria[i] + " = :param" + i);
+                }
+
+                _oComando.CommandText = cSQL.ToString();
+                _oComando.Parameters.Clear();
+
+                for (int i = 0; i < _aoValoresClavePrimaria.Length; i++)
+                {
+                    _oComando.Parameters.Add(new NpgsqlParameter("param" + i, _aoValoresClavePrimaria[i]));
+                }
+
+                BRSLib.WriteLogDebug(BRSLibBD.AnalizarNpgsqlCommand(_oComando), nameof(BRSLibBD), MethodBase.GetCurrentMethod().Name, BRSLog.PALABRA_CLAVE.CONSULTA, "", BRSLog.LINEAVACIA.NO, null, _oComando);
+
+                using (NpgsqlDataReader oDataReader = _oComando.ExecuteReader())
+                {
+                    while (oDataReader.Read())
+                    {
+                        for (int i = 0; i < ColumnCount; i++)
+                        {
+                            if (Columns[i].Name != BRSLibRejilla.cColumnaSeleccionMultiple)
+                                CurrentRow.Cells[i].Value = oDataReader[Columns[i].FieldName.Split(" AS ")[0]];
+                        }
+                    }
+                }
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
+
+        #endregion
+
+        #region Quitar registros de la rejilla
+
+        /// <summary>
+        /// Función que borra el registro seleccionado de la rejilla
+        /// </summary>
+        public void QuitarRegistro()
+        {
+            try
+            {
+                if (RegistroSeleccionado(false))
+                {
+                    listaFilasSeleccionadas.Remove(CurrentRow);
+                    CurrentRow.Delete();
+                    if (RowCount == 0)
+                        Columns.Clear();
+                    ActualizarContadorRegistros();
+                }
+            }
+            catch (Exception)
+            {
+                throw;
+                throw;
+            }
+        }
+
+        #endregion
+
+        #region Encontrar y añadir registros a la rejilla
+
+        /// <summary>
+        /// Función para realizar una consulta a la base de datos a través del registro
+        /// y añadir los registros encontrados a la rejilla
+        /// </summary>
+        /// <param name="_lSeleccionMulti">Si es una rejilla con columna de selección múltiple</param>
+        /// <param name="_orderBy">El orden en que queremos mostrar los registros</param>
+        /// <param name="_lMostrarNoEncontrados">Si queremos mostrar o no si no se encontraron registros</param>
+        /// <param name="_cCondicion">Parámetro adicional para la consulta</param>
+        /// /// <param name="_asignarFoco">Si queremos asignar el foco tras la búsqueda</param>
+        /// <exception cref="Exception">Cuando ocurre algún error</exception>
+        public void EncontrarRegistroRejilla(bool _lSeleccionMulti = false, string _orderBy = null, bool _lMostrarNoEncontrados = true, string _cCondicion = null, bool _asignarFoco = true)
+        {
+            using (NpgsqlConnection oConexion = new NpgsqlConnection(CadenaConexion))
+            {
+                using (NpgsqlCommand oComando = oConexion.CreateCommand())
+                {
+                    try
+                    {
+                        oConexion.Open();
+                        EncontrarRegistroRejilla(oComando, _lSeleccionMulti, _orderBy, _lMostrarNoEncontrados, _cCondicion, _asignarFoco);
+                    }
+                    catch (Exception)
+                    {
+                        throw;
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Función para realizar una consulta a la base de datos a través del registro
+        /// y añadir los registros encontrados a la rejilla
+        /// </summary>
+        /// <param name="_oComando">Un objeto comando para mantener las transacciones</param>
+        /// <param name="_lSeleccionMulti">Si es una rejilla con columna de selección múltiple</param>
+        /// <param name="_orderBy">El orden en que queremos mostrar los registros</param>
+        /// <param name="_lMostrarNoEncontrados">Si queremos mostrar o no si no se encontraron registros</param>
+        /// <param name="_cCondicion">Parámetro adicional para la consulta</param>
+        /// <param name="_asignarFoco">Si queremos asignar el foco tras la búsqueda</param>
+        /// <exception cref="Exception">Cuando ocurre algún error</exception>
+        public void EncontrarRegistroRejilla(NpgsqlCommand _oComando, bool _lSeleccionMulti = false, string _orderBy = null, bool _lMostrarNoEncontrados = true, string _cCondicion = null, bool _asignarFoco = true)
+        {
+            try
+            {
+                // Ponemos el cursor de espera
+                Cursor.Current = Cursors.WaitCursor;
+                // Ocultamos la rejilla
+                Visible = false;
+                // Eliminamos el contenido
+                Rows.Clear();
+                Columns.Clear();
+                //Application.DoEvents;
+
+                string cNombreCodigo, cNombrecodigo2 = null, cNombreCodigo3 = null;
+                cNombreCodigo = ClavePrimaria[0];
+                if (ClavePrimaria.Length > 1)
+                    cNombrecodigo2 = ClavePrimaria[1];
+                if (ClavePrimaria.Length > 2)
+                    cNombreCodigo3 = ClavePrimaria[2];
+
+                // Buscamos los registros
+                BRSLibBD.EncontrarPostgres_GESTION(this, Tabla, cNombreCodigo, cNombrecodigo2, _oComando.Connection.ConnectionString, _orderBy, _cCondicion, cNombreCodigo3, NombreCampos, _lMostrarNoEncontrados);
+
+                if (RowCount > 0)
+                { // Si hay mas de un registro cargamos la configuración de la rejilla
+                    BRSLibRejilla.CargarConfig(this, Tabla, NombreCampos, new string[] { }, BRSLib.nUsuario, NombreXML, true, _lSeleccionMulti, _oComando.Connection.ConnectionString);
+                    CurrentRow = Rows[0];
+                    CurrentColumn = Columns[0];
+                }
+
+                ActualizarContadorRegistros();
+            }
+            catch (Exception)
+            {
+                //Application.DoEvents;
+                throw;
+            }
+            finally
+            {
+                // Mostramos la rejilla, le damos foco y recuperamos el cursor normal
+                Visible = true;
+                if (_asignarFoco) Focus();
+                Cursor.Current = Cursors.WaitCursor;
+            }
+        }
+
+        #endregion
+
+        #region Encontrar rápido
+
+        /// <summary>
+        /// Función para realizar una consulta a la base de datos a la base de datos a través de los campos de búsqueda rápida
+        /// y añadir los registros encontrados a la rejilla
+        /// </summary>
+        /// <param name="_oTextBox">Textbox donde se encuentra el valor a encontrar</param>
+        /// <param name="_cCondicion">Condición especial para la búsqueda</param>
+        /// <param name="_cOrderBy">El orden en que queremos mostrar los registros</param>
+        /// <param name="_acCamposBuscarTodo">Campos donde queremos encontrar al buscar por todo</param>
+        /// <param name="_lSeleccionMulti">Si es una rejilla con columna de selección múltiple</param>
+        /// <param name="_lCampoTipoArray">Si el campo buscado es de tipo array</param>
+        /// <param name="_lCampoTipoCuenta">Si el campo buscado es de tipo cuenta</param>
+        /// <exception cref="Exception">Cuando ocurre algún error</exception>
+        public void EncontrarRapidoRegistroRejilla(RadTextBox _oTextBox, string _cCondicion = null, string _cOrderBy = null, string[] _acCamposBuscarTodo = null, bool _lSeleccionMulti = false, bool _lCampoTipoArray = false, bool _lCampoTipoCuenta = false)
+        {
+            using (NpgsqlConnection oConexion = new NpgsqlConnection(CadenaConexion))
+            {
+                using (NpgsqlCommand oComando = oConexion.CreateCommand())
+                {
+                    try
+                    {
+                        oConexion.Open();
+                        RadTextBox[] aoTextBox = { _oTextBox };
+                        EncontrarRapidoRegistroRejilla(oComando, aoTextBox, _cCondicion, _cOrderBy, _acCamposBuscarTodo, _lSeleccionMulti, _lCampoTipoArray, _lCampoTipoCuenta);
+                    }
+                    catch (Exception)
+                    {
+                        throw;
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Función para realizar una consulta a la base de datos a la base de datos a través de los campos de búsqueda rápida
+        /// y añadir los registros encontrados a la rejilla
+        /// </summary>
+        /// <param name="_oComando">Un objecto comando para mantener la transacción</param>
+        /// <param name="_oTextBox">Textbox donde se encuentra el valor a encontrar</param>
+        /// <param name="_cCondicion">Condición especial para la búsqueda</param>
+        /// <param name="_cOrderBy">El orden en que queremos mostrar los registros</param>
+        /// <param name="_acCamposBuscarTodo">Campos donde queremos encontrar al buscar por todo</param>
+        /// <param name="_lSeleccionMulti">Si es una rejilla con columna de selección múltiple</param>
+        /// <param name="_lCampoTipoArray">Si el campo buscado es de tipo array</param>
+        /// <param name="_lCampoTipoCuenta">Si el campo buscado es de tipo cuenta</param>
+        /// <exception cref="Exception">Cuando ocurre algún error</exception>
+        public void EncontrarRapidoRegistroRejilla(NpgsqlCommand _oComando, RadTextBox _oTextBox, string _cCondicion = null, string _cOrderBy = null, string[] _acCamposBuscarTodo = null, bool _lSeleccionMulti = false, bool _lCampoTipoArray = false, bool _lCampoTipoCuenta = false)
+        {
+            try
+            {
+                RadTextBox[] aoTextBox = { _oTextBox };
+                EncontrarRapidoRegistroRejilla(_oComando, aoTextBox, _cCondicion, _cOrderBy, _acCamposBuscarTodo, _lSeleccionMulti, _lCampoTipoArray, _lCampoTipoCuenta);
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Función para realizar una consulta a la base de datos a la base de datos a través de los campos de búsqueda rápida
+        /// y añadir los registros encontrados a la rejilla
+        /// </summary>
+        /// <param name="_aoTextBox">Array de Textbox donde se encuentran los valores a encontrar</param>
+        /// <param name="_cCondicion">Condición especial para la búsqueda</param>
+        /// <param name="_cOrderBy">El orden en que queremos mostrar los registros</param>
+        /// <param name="_acCamposBuscarTodo">Campos donde queremos encontrar al buscar por todo</param>
+        /// <param name="_lSeleccionMulti">Si es una rejilla con columna de selección múltiple</param>
+        /// <param name="_lCampoTipoArray">Si el campo buscado es de tipo array</param>
+        /// <param name="_lCampoTipoCuenta">Si el campo buscado es de tipo cuenta</param>
+        /// <exception cref="Exception">Cuando ocurre algún error</exception>
+        public void EncontrarRapidoRegistroRejilla(RadTextBox[] _aoTextBox, string _cCondicion = null, string _cOrderBy = null, string[] _acCamposBuscarTodo = null, bool _lSeleccionMulti = false, bool _lCampoTipoArray = false, bool _lCampoTipoCuenta = false)
+        {
+            using (NpgsqlConnection oConexion = new NpgsqlConnection(CadenaConexion))
+            {
+                using (NpgsqlCommand oComando = oConexion.CreateCommand())
+                {
+                    try
+                    {
+                        oConexion.Open();
+                        EncontrarRapidoRegistroRejilla(oComando, _aoTextBox, _cCondicion, _cOrderBy, _acCamposBuscarTodo, _lSeleccionMulti, _lCampoTipoArray, _lCampoTipoCuenta);
+                    }
+                    catch (Exception)
+                    {
+                        throw;
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Función para realizar una consulta a la base de datos a la base de datos a través de los campos de búsqueda rápida
+        /// y añadir los registros encontrados a la rejilla
+        /// </summary>
+        /// <param name="_oComando">Un objeto comando para mantener la transacción</param>
+        /// <param name="_aoTextBox">Array de Textbox donde se encuentran los valores a encontrar</param>
+        /// <param name="_cCondicion">Condición especial para la búsqueda</param>
+        /// <param name="_cOrderBy">El orden en que queremos mostrar los registros</param>
+        /// <param name="_acCamposBuscarTodo">Campos donde queremos encontrar al buscar por todo</param>
+        /// <param name="_lSeleccionMulti">Si es una rejilla con columna de selección múltiple</param>
+        /// <param name="_lCampoTipoArray">Si el campo buscado es de tipo array</param>
+        /// <param name="_lCampoTipoCuenta">Si el campo buscado es de tipo cuenta</param>
+        /// <exception cref="Exception">Cuando ocurre algún error</exception>
+        public void EncontrarRapidoRegistroRejilla(NpgsqlCommand _oComando, RadTextBox[] _aoTextBox, string _cCondicion = null, string _cOrderBy = null, string[] _acCamposBuscarTodo = null, bool _lSeleccionMulti = false, bool _lCampoTipoArray = false, bool _lCampoTipoCuenta = false)
+        {
+            try
+            {
+                // Generamos la SQL. Si trae un array de campos a buscar construimos el select con dichos campos
+                StringBuilder cSQL = new StringBuilder();
+                StringBuilder cSQLWhere = new StringBuilder();
+                if (NombreCampos == null)
+                    cSQL.Append("SELECT * FROM " + Tabla + " WHERE ");
+                else
+                    cSQL.Append("SELECT " + string.Join(", ", NombreCampos) + " FROM " + Tabla + " WHERE ");
+
+                // Añadimos las condiciones
+                if (_acCamposBuscarTodo == null)
+                {
+                    for (int i = 0; i < _aoTextBox.Length; i++)
+                    {
+                        if (!string.IsNullOrWhiteSpace(_aoTextBox[i].Text))
+                        { // Si el textbox recorrido no está vacío
+                            if (!string.IsNullOrWhiteSpace(cSQLWhere.ToString()))
+                                cSQLWhere.Append(" AND ");
+                            if (_aoTextBox[i].AccessibleDescription == "4")
+                            {
+                                //if (string.IsNullOrWhiteSpace(_aoTextBox[i].AccessibleName))
+                                cSQLWhere.Append("UPPER(CAST(" + _aoTextBox[i].Name.Substring(3) + " AS TEXT)) LIKE :param" + i);
+                                //else
+                                //    cSQLWhere.Append("UPPER(CAST(" + _aoTextBox[i].AccessibleName + " AS TEXT)) LIKE :param" + i);
+
+                                // BUG Descomentar función para volver a activar el unaccent
+                                //cSQLWhere.Append("UNACCENT(UPPER(CAST(" + _aoTextBox[i].Name.Substring(3) + " AS TEXT))) LIKE UNACCENT(:param" + i + ")");
+                            }
+                            else
+                            {
+                                if (_lCampoTipoArray)
+                                    cSQLWhere.Append(":param" + i + " ANY(" + _aoTextBox[i].Name.Substring(3) + ")");
+                                else
+                                    cSQLWhere.Append(_aoTextBox[i].Name.Substring(3) + " = :param" + i);
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    cSQLWhere.Append("(" + string.Join(" OR ", _acCamposBuscarTodo.Select(s => "UPPER(" + s + ") LIKE :param0")) + ")");
+                }
+
+                // Añadimos la condición especial a la SQL si la tuviese
+                if (!string.IsNullOrWhiteSpace(_cCondicion))
+                    cSQLWhere.Append(" AND " + _cCondicion);
+
+                cSQL.Append(cSQLWhere);
+                BRSLib.cUltimosEncontrados = cSQLWhere.ToString();
+
+                if (!string.IsNullOrWhiteSpace(_cOrderBy))
+                { // Si tiene un orden especificado lo indicamos
+                    cSQL.Append(" ORDER BY " + _cOrderBy);
+                }
+                else
+                { // Si no tiene un orden, ordenamos por el orden de los textbox especificados
+                    cSQL.Append(" ORDER BY ");
+                    for (int i = 0; i < _aoTextBox.Length; i++)
+                    {
+                        if (i != 0)
+                            cSQL.Append(", ");
+                        cSQL.Append(_aoTextBox[i].Name.Substring(3));
+                    }
+                }
+
+                _oComando.CommandText = cSQL.ToString();
+
+                // Añadimos los parámetros a la consulta
+                for (int i = 0; i < _aoTextBox.Length; i++)
+                {
+                    if (!string.IsNullOrWhiteSpace(_aoTextBox[i].Text))
+                    {
+                        if (_aoTextBox[i].AccessibleDescription == "4")
+                        {
+                            string cadenaReemplazada = _aoTextBox[i].Text.ToUpper().Replace("*", "%");
+                            if (_lCampoTipoCuenta)
+                            {
+                                if (BRSLib.moduloContabilidad)
+                                {
+                                    cadenaReemplazada = BRSLibConta.ReemplazaPuntoCeroCuentaString(cadenaReemplazada, true, "0", ExtCuentas.cConexion);
+                                }
+                            }
+                            _oComando.Parameters.Add(new NpgsqlParameter("param" + i, cadenaReemplazada + "%"));
+                            BRSLib.cUltimosEncontrados = BRSLib.cUltimosEncontrados.Replace(":param" + i, "'" + cadenaReemplazada + "%'");
+                        }
+                        else
+                        {
+                            _oComando.Parameters.Add(new NpgsqlParameter("param" + i, _aoTextBox[i].Text));
+                            BRSLib.cUltimosEncontrados = BRSLib.cUltimosEncontrados.Replace(":param" + i, _aoTextBox[i].Text.Quoted());
+                        }
+                    }
+                }
+
+                BRSLib.WriteLogDebug(BRSLib.AnalizarNpgsqlCommand(_oComando), nameof(BRSLibBD), System.Reflection.MethodBase.GetCurrentMethod().Name, BRSLog.PALABRA_CLAVE.CONSULTA, "", BRSLog.LINEAVACIA.NO, null, _oComando);
+
+                using (NpgsqlDataReader oDataReader = _oComando.ExecuteReader())
+                {
+                    MasterTemplate.LoadFrom(oDataReader);
+                }
+
+                BRSLibRejilla.CargarConfig(this, Tabla, NombreCampos, new string[] { }, BRSLib.nUsuario, NombreXML, true, _lSeleccionMulti, _oComando.Connection.ConnectionString);
+
+                if (RowCount > 0)
+                {
+                    CurrentRow = Rows[0];
+                    CurrentColumn = Columns[0];
+                }
+
+                ActualizarContadorRegistros();
+            }
+            catch (Exception)
+            {
+                BRSLib.cUltimosEncontrados = "";
+                throw;
+            }
+        }
+
+        #endregion
+
+        #region Refrescar la rejilla
+
+        public void RefrescarRejilla(string _cUltimosEncontrados = null, bool _lSeleccionMulti = false, string _orderBy = null, bool _lMostrarNoEncontrados = true, bool _lMantenerPosicion = false)
+        {
+            using (NpgsqlConnection oConexion = new NpgsqlConnection(CadenaConexion))
+            {
+                using (NpgsqlCommand oComando = oConexion.CreateCommand())
+                {
+                    try
+                    {
+                        oConexion.Open();
+                        RefrescarRejilla(oComando, _cUltimosEncontrados, _lSeleccionMulti, _orderBy, _lMostrarNoEncontrados, _lMantenerPosicion);
+                    }
+                    catch (Exception)
+                    {
+                        throw;
+                    }
+                }
+            }
+        }
+
+        public void RefrescarRejilla(NpgsqlCommand _oComando, string _cUltimosEncontrados = null, bool _lSeleccionMulti = false, string _orderBy = null, bool _lMostrarNoEncontrados = true, bool _lMantenerPosicion = false)
+        {
+            try
+            {
+                RadScrollBarElement vScrollBar = null;
+                int vScrollBarValue = -1;
+                RadScrollBarElement hScrollBar = null;
+                int hScrollBarValue = -1;
+
+                if (_lMantenerPosicion)
+                {
+                    vScrollBar = TableElement.VScrollBar;
+                    vScrollBarValue = vScrollBar.Value;
+                    hScrollBar = TableElement.HScrollBar;
+                    hScrollBarValue = hScrollBar.Value;
+                }
+
+                if (RowCount > 0)
+                {
+                    Rows.Clear();
+                    Columns.Clear();
+                }
+
+                // Generamos la SQL. Si trae un array de campos a buscar construimos el select con dichos campos
+                StringBuilder cSQL = new StringBuilder();
+                cSQL.Append("SELECT " + string.Join(", ", NombreCampos) + " FROM " + Tabla);
+
+                // Añadimos las condiciones
+                if (!string.IsNullOrWhiteSpace(_cUltimosEncontrados))
+                {
+                    cSQL.Append(" WHERE " + _cUltimosEncontrados);
+                }
+
+                if (string.IsNullOrWhiteSpace(_orderBy))
+                {
+                    cSQL.Append(" ORDER BY " + string.Join(", ", ClavePrimaria));
+                }
+                else
+                {
+                    cSQL.Append(" ORDER BY " + _orderBy);
+                }
+
+                _oComando.CommandText = cSQL.ToString();
+
+                BRSLib.WriteLogDebug(BRSLib.AnalizarNpgsqlCommand(_oComando), nameof(BRSLibBD), System.Reflection.MethodBase.GetCurrentMethod().Name, BRSLog.PALABRA_CLAVE.CONSULTA, "", BRSLog.LINEAVACIA.NO, null, _oComando);
+
+                using (NpgsqlDataReader oDataReader = _oComando.ExecuteReader())
+                {
+                    if (oDataReader.HasRows)
+                    {
+                        MasterTemplate.LoadFrom(oDataReader);
+                        BRSLibRejilla.CargarConfig(this, Tabla, NombreCampos, new string[] { }, BRSLib.nUsuario, NombreXML, true, _lSeleccionMulti, _oComando.Connection.ConnectionString);
+
+                        if (_lMantenerPosicion)
+                        {
+                            //_rgvTabla.TableElement.HScrollBar.Value = ClampValue(hScrollBarValue, hScrollBar.Minimum, hScrollBar.Maximum);
+                            //_rgvTabla.TableElement.VScrollBar.Value = ClampValue(vScrollBarValue, vScrollBar.Minimum, vScrollBar.Maximum - vScrollBar.LargeChange + 1);
+                        }
+                    }
+                    else
+                    {
+                        if (_lMostrarNoEncontrados)
+                            BRSLib.MostrarMensaje(Cadenas.local_cMensajeNoRegistroEncontrado, " ", BRSLib.Boton.OK, BRSLib.Icono.Information);
+                    }
+                }
+
+            }
+            catch (Exception)
+            {
+                BRSLib.cUltimosEncontrados = "";
+                throw;
+            }
+        }
+
+        #endregion
+
+        #region Deseleccionar filas
+
+        public void DeseleccionarFilas()
+        {
+            List<int> indices = new List<int>();
+            foreach (GridViewRowInfo fila in FilasSeleccionadas)
+            {
+                indices.Add(fila.Index);
+            }
+            foreach (int indice in indices)
+            {
+                Rows[indice].Cells[BRSLibRejilla.cColumnaSeleccionMultiple].Value = false;
+            }
+        }
+
+        #endregion
+
+        #endregion
+
+        #region Otras funciones
+
+        public void ReiniciarListaSeleccionados()
+        {
+            if (ListaPorClavePrimaria)
+            {
+                listaClavesSeleccionadas = new Dictionary<string, Dictionary<string, object>>();
+            }
+            else
+            {
+                listaFilasSeleccionadas = new List<GridViewRowInfo>();
+            }
+        }
+
+        public void SaveLayout()
+        {
+            SaveLayout(BRSLib.cRutaXML + "/" + BRSLib.nUsuario + "_" + NombreXML + ".xml");
+        }
+
+        public void DeseleccionarRegistro(int index)
+        {
+            if (Columns.Contains(BRSLibRejilla.cColumnaSeleccionMultiple))
+            {
+                Rows[index].Cells[BRSLibRejilla.cColumnaSeleccionMultiple].Value = false;
+            }
+        }
+
+        public void LimpiarRejilla()
+        {
+            Rows.Clear();
+            Columns.Clear();
+            ActualizarContadorRegistros();
+        }
+
+        public void LimpiarCodigoSeleccionado(string valor = null)
+        {
+            BRSLib.cCodigoSeleccionado = valor;
+            BRSLib.cCodigoSeleccionado2 = valor;
+            BRSLib.cCodigoSeleccionado3 = valor;
+            BRSLib.cCodigoSeleccionado4 = valor;
+        }
+
+        public void ActualizarCodigoSeleccionado()
+        {
+            if (RowCount != 0)
+            {
+                for (int i = 0; i < ClavePrimaria.Length; i++)
+                {
+                    switch (i)
+                    {
+                        case 0: BRSLib.cCodigoSeleccionado = Convert.ToString(CurrentRow.Cells[ClavePrimaria[0]].Value); break;
+                        case 1: BRSLib.cCodigoSeleccionado2 = Convert.ToString(CurrentRow.Cells[ClavePrimaria[1]].Value); break;
+                        case 2: BRSLib.cCodigoSeleccionado3 = Convert.ToString(CurrentRow.Cells[ClavePrimaria[2]].Value); break;
+                        case 3: BRSLib.cCodigoSeleccionado4 = Convert.ToString(CurrentRow.Cells[ClavePrimaria[3]].Value); break;
+                        default: BRSLib.MostrarMensaje("No existe la variable cCodigoSeleccionado" + i); break;
+                    }
+                }
+            }
+            else
+            {
+                for (int i = 0; i < ClavePrimaria.Length; i++)
+                {
+                    switch (i)
+                    {
+                        case 0: BRSLib.cCodigoSeleccionado = "-1"; break;
+                        case 1: BRSLib.cCodigoSeleccionado2 = "-1"; break;
+                        case 2: BRSLib.cCodigoSeleccionado3 = "-1"; break;
+                        case 3: BRSLib.cCodigoSeleccionado4 = "-1"; break;
+                        default: BRSLib.MostrarMensaje("No existe la variable cCodigoSeleccionado" + i); break;
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Actualiza la etiqueta de nº de registros
+        /// </summary>
+        public void ActualizarContadorRegistros()
+        {
+            if (Label != null)
+            {
+                string cResult = "";
+                try
+                {
+                    if (RowCount > 0 && SelectedRows.Count > 0)
+                        cResult = Cadenas.local_cRegistro + " " + (CurrentRow.Index + 1).ToString() + " / " + RowCount.ToString();
+                    else
+                        cResult = Cadenas.local_cRegistro + " 0 / 0";
+
+                    if (FilasSeleccionadas != null)
+                    {
+                        if (FilasSeleccionadas.Count == 1)
+                            cResult += " (1 registro marcado)";
+                        else if (FilasSeleccionadas.Count > 1)
+                            cResult += " (" + FilasSeleccionadas.Count + " registros marcados)";
+                    }
+
+                    //Label.Text = cResult;
+                    EventoCambiarLabel?.Invoke(cResult);
+                }
+                catch (Exception ex) { BRSLib.MostrarMensaje(ex.Message + "\n\rBRSLib : ActualizarContadorRegistros()", " ", BRSLib.Boton.OK, BRSLib.Icono.Error); }
+            }
+        }
+
+        public void ActivarSelectionChanged(bool _lActivar)
+        {
+            SelectionChangedActivo = _lActivar;
+        }
+
+        public string AnadirUltimosEncontrados(string cUltimosEncontrados)
+        {
+            if (!cUltimosEncontrados.Vacio())
+            {
+                cUltimosEncontrados += " OR ";
+            }
+
+            cUltimosEncontrados += "(";
+            for (int i = 0; i < ClavePrimaria.Length; i++)
+            {
+                if (i != 0) cUltimosEncontrados += " AND ";
+                switch (i)
+                {
+                    case 0: cUltimosEncontrados += $"{ClavePrimaria[i]} = {BRSLib.cCodigoSeleccionado}"; break;
+                    case 1: cUltimosEncontrados += $"{ClavePrimaria[i]} = {BRSLib.cCodigoSeleccionado2}"; break;
+                    case 2: cUltimosEncontrados += $"{ClavePrimaria[i]} = {BRSLib.cCodigoSeleccionado3}"; break;
+                    case 3: cUltimosEncontrados += $"{ClavePrimaria[i]} = {BRSLib.cCodigoSeleccionado4}"; break;
+                }
+            }
+            cUltimosEncontrados += ")";
+            return cUltimosEncontrados;
+        }
+
+        #endregion
+
+
+    }
+}

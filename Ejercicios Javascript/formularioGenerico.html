@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+
+    <script>
+        let Validar = () => {
+            let enviar = true;
+            let salida = "";
+            let campo1 = document.getElementById("campo1").value;
+            let radios = document.getElementsByName("radio");
+            let select = document.getElementById("select").value;
+
+            if (!/\S/.test(campo1)) {
+                enviar = false;
+                salida = "El campo 1 no es correcto";
+            }
+
+            try {
+
+                document.querySelector('input[name="radio"]:checked').value;
+
+            } catch (e) {
+                salida += "<br>Debe de marca un radio";
+                enviar = false;
+            }
+
+            if (select == 0) {
+                salida += "<br>Debe seleccionar un elemento del menu";
+                enviar = false;
+            }
+
+            document.getElementById("salida").innerHTML = salida;
+            return enviar;
+        }
+
+        let ComprobarCB = (e) => {
+            document.getElementById("submit").disabled = !e.checked;
+        }
+
+        //AL menos uno de los radios deben de estar marcado
+    </script>
+
+</head>
+
+<body>
+
+    <h1>Formulario</h1>
+
+    <form action="proceso.php" method="GET" onsubmit="return Validar()">
+        <p>Campo de texto <input type="text" name="campo1" id="campo1"></p>
+        <p>Checkbox <input type="checkbox" name="cb" id="cb" onclick="ComprobarCB(this)"></p>
+        <input type="submit" id="submit" value="Enviar" disabled>
+        <p>Botones de radio</p>
+        <input type="radio" name="radio" value="1" id="r1"> Radio 1
+        <input type="radio" name="radio" value="2" id="r2"> Radio 2
+        <input type="radio" name="radio" value="3" id="r3"> Radio 3
+
+        <p>Menu de seleccion simple</p>
+
+        <select name="select" id="select">
+            <option value="0">-- Elegir --</option>
+            <option value="valor1">Valor 1</option>
+            <option value="valor2">Valor 2</option>
+            <option value="valor3">Valor 3</option>
+        </select>
+        <br>
+        <br>
+        <select name="select2[]" id="select2" multiple>
+            <option value="valor1">Valor 1</option>
+            <option value="valor2">Valor 2</option>
+            <option value="valor3">Valor 3</option>
+        </select>
+
+        <p id="salida" style="color:red"></p>
+    </form>
+</body>
+
+</html>

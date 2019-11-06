@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <title>Document</title>
+
+    <script>
+      function Validar() {
+        var siONo = true;
+
+        if (document.getElementById("campo1").value.length == 0) {
+          alert("aa");
+          siONo = false;
+        }
+        return siONo;
+      }
+    </script>
+  </head>
+
+  <body>
+    <!-- Si si la funcion validar devuelve verdadero, prosigue 
+                                                con el submit-->
+    <form action="aaa" method="GET" onsubmit="return Validar()">
+      <input type="text" name="campo1" id="campo1" />
+      <input type="date" name="fecha" id="" />
+      <input type="submit" value="Enviar" />
+    </form>
+  </body>
+</html>

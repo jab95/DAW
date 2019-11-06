@@ -1,0 +1,26 @@
+<!doctype html>
+    <html lang="es">
+        <head> 
+            <meta charset="UTF-8">
+            <title></title>
+            <script>
+                
+                var preguntas = [ "pregunta1","pregunta2","pregunta3","pregunta4"];
+
+                preguntas.sort(function(){
+                    return 0.5 - Math.random();
+                })
+
+                var siguiente = function(boton){
+                        if(preguntas.length)
+                            document.getElementById("pregunta").innerHTML = preguntas.pop();
+                        else
+                            boton.disabled=true;
+                }
+            </script>
+        </head>
+        <body>
+                <button id="btnPregunta" onclick="siguiente(this)">Nueva pregunta</button>
+                <p id="pregunta"></p>
+            </body>
+    </html>

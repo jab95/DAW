@@ -1,0 +1,90 @@
+/* *{
+    box-sizing: border-box;
+} 
+A LA HORA DE CONTAR LA ANCHURA QUE TENGA EN CUENTA EL PADDING Y BORDER
+
+*/
+
+header{
+    text-align: center;
+    border-bottom-style: solid;
+
+}
+
+.prueba{
+    display: flex;
+    justify-content: space-around;
+    margin-top: 15px;
+}
+
+nav div{
+    padding: 10px;
+}
+
+.prueba article{
+    width: 45%;
+}
+
+.articles{
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-end;
+    border-bottom-style: solid;
+}
+
+.prueba img{
+    width: 100%;
+    border-radius: 10px;
+}
+.grande{
+    width: 80%;
+}
+.grande  img{
+    width: 75% ;
+    height: 220px;
+}
+
+main{
+    border-style: solid;
+    text-align: center;
+    padding: 10px;
+    border-radius: 10px;
+    margin-right: 15px;
+
+}
+
+article{
+    border-style: solid;
+    text-align: center;
+    padding: 10px;
+    border-radius: 10px;
+
+}
+
+.articles img{
+    width: 100%;
+    height: 200px;
+    border-radius: 10px;
+
+}
+
+.articles article{
+    text-align: center;
+    margin-top: 15px;
+    margin-left: 15px;
+    margin-bottom: 15px;
+    width: 27%;
+}
+
+nav{
+    width: 20%;
+}
+
+footer{
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+
+

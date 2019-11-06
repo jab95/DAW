@@ -1,0 +1,120 @@
+.contenedor {
+    display: grid;
+    gap: 5px;
+    grid-template-columns: repeat(12, 2%);
+    grid-template-rows: repeat(6, 20px);
+}
+
+.cell {
+    background: orange;
+    text-align: center;
+    color: white;
+}
+/* 
+.cell:nth-child(1){
+    grid-column: span 12;
+}
+
+.cell:nth-child(2),
+.cell:nth-child(3){
+    grid-column: span 6;
+} 
+
+ Y ASI CON TODOS LOS HIJOS DE
+
+TAMBIEN ES POSIBLE DARLE RANGOS, Y QUEDARIA MAS REDUCIDO EL CODIGO
+
+cell:nth-child(1){
+    grid-column: span 12;
+}
+
+.cell:nth-child(-n+3):nth-child(n+2){
+    grid-column: span 6;
+} 
+
+//DESDE EL HIJO 4 HASTA EL HIJO 6
+.cell:nth-child(-n+6):nth-child(n+4){
+    grid-column: span 4;
+} 
+
+
+
+*/
+
+.uno {
+    grid-column: 1/13;
+    /* Es lo mismo que esto */
+    /* grid-column-start: 1;
+    grid-column-end: 13; */
+
+}
+
+.dos {
+    grid-column: 1/7;
+
+}
+
+.tres {
+    grid-column: 7/13;
+
+}
+
+.cuatro {
+    grid-column: 1/5;
+}
+
+.cinco {
+    grid-column: 5/9;
+}
+
+.seis {
+    grid-column: 9/13;
+}
+
+.siete {
+    grid-column: 1/4;
+}
+
+.ocho {
+    grid-column: 4/7;
+}
+
+.nueve {
+    grid-column: 7/10;
+
+}
+
+.diez {
+    grid-column: 10/13;
+
+}
+
+.once {
+    grid-column: 1/3;
+
+}
+
+.doce {
+    grid-column: 3/5;
+
+}
+
+.trece {
+    grid-column: 5/7;
+
+}
+
+.catorce {
+    grid-column: 7/9;
+
+}
+
+.quince {
+    grid-column: 9/11;
+
+}
+
+.dieciseis {
+    grid-column: 11/13;
+
+}

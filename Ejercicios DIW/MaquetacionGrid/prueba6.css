@@ -1,0 +1,91 @@
+.contenedor{
+    display: grid;
+    gap: 5px;
+    grid-template-columns: repeat(6, 7%);
+    grid-template-rows: repeat(12, 20px);
+}
+
+.cell {
+    background: orange;
+    text-align: left;
+    color: black;
+    justify-content: center;
+    align-content: center;
+}
+.uno {
+    grid-row: 1/13;
+    /* Es lo mismo que esto */
+    /* grid-row-start: 1;
+    grid-row-end: 13; */
+
+}
+
+.dos {
+    grid-row: 1/7;
+
+}
+
+.tres {
+    grid-row: 7/13;
+
+}
+
+.cuatro {
+    grid-row: 1/5;
+}
+
+.cinco {
+    grid-row: 5/9;
+}
+
+.seis {
+    grid-row: 9/13;
+}
+
+.siete {
+    grid-row: 1/4;
+}
+
+.ocho {
+    grid-row: 4/7;
+}
+
+.nueve {
+    grid-row: 7/10;
+
+}
+
+.diez {
+    grid-row: 10/13;
+
+}
+
+.once {
+    grid-row: 1/3;
+
+}
+
+.doce {
+    grid-row: 3/5;
+
+}
+
+.trece {
+    grid-row: 5/7;
+
+}
+
+.catorce {
+    grid-row: 7/9;
+
+}
+
+.quince {
+    grid-row: 9/11;
+
+}
+
+.dieciseis {
+    grid-row: 11/13;
+
+}

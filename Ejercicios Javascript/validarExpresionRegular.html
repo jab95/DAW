@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+
+    <script>
+        var Validar = function () {
+            var salida = document.getElementById("salida");
+            
+            try {
+
+                var er = new RegExp(document.getElementById("er").value);
+                var texto = document.getElementById("texto").value;
+
+                salida.innerHTML = er.test(texto) ? "Si cumple" : "No cumple";
+
+            } catch (er) {
+                salida.innerHTML = "Error en la expresion regular, intente de nuevo";
+            }
+
+        }
+    </script>
+</head>
+
+<body>
+    <p>Expresion regular: </p> <input type="text" id="er">
+    <p>Texto a comprobar: </p> <input type="text" id="texto">
+    <br>
+    <button onclick="Validar()">Validar</button>
+    <br>
+    <p id="salida"></p>
+</body>
+
+</html>

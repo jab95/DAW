@@ -1,0 +1,74 @@
+#tabla{
+    background-color: #cd5c5c;
+    position: absolute;
+    left: 50px;
+    border: 3px solid darkred;
+}
+
+#tabla2{
+    background-color: #cd5c5c;
+    position: absolute;
+    left: 50px;
+    border: 3px solid darkred;
+    top: 533px;
+}
+
+.prueba{
+    background-color: indianred;
+}
+
+
+#tabla td{
+    height: 10px;
+    width: 35px;
+    border: 1px solid darkred;
+}
+
+#tabla2 td{
+
+    height: 35px;
+    width: 35px;
+    border: 1px solid darkred;
+
+}
+
+h2,p{
+    color: blue;
+}
+
+
+
+
+
+
+.rojo{
+    background-color: red;
+}
+
+.verde{
+background-color: green}
+.azul{
+
+    background-color: blue;
+}
+.amarillo{
+background-color: yellow;}
+.marron{
+background-color: brown;}
+.naranja{
+background-color: orangered;}
+.negro{
+background-color: black;
+}
+.blanco{
+background-color: white;}
+
+#bien{
+    background-color: black;
+
+}
+
+#soloPosicion{
+    background-color: white;
+}
+

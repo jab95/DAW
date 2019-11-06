@@ -1,0 +1,1506 @@
+using BRSERP.BD;
+using Npgsql;
+using System;
+using System.Collections.Generic;
+using System.Collections.Specialized;
+using System.Linq;
+using System.Windows.Forms;
+using Telerik.WinControls.UI;
+
+namespace BRSERP.Modelos.Gestion
+{
+    /// <summary>
+    /// Clase modelo para la tabla DatosAlmacen
+    /// Pide una clave desde:
+    /// Su clave es llamada desde:
+    /// </summary>
+    public class DatosAlmacen : IModelo, IModeloGestion
+    {
+
+        #region Variables
+
+        // VARIABLES SOBREESCRITAS
+        public static string cConexion = BRSLibBD.cConexionGestion;
+        public static string[] ClavePrimaria { get; } = { ALMACEN, FABRICANTE, ARTICULOALMACEN };
+        public static int CodAplicacion = BRSLib.COD_BRSGESTION_COMUNES;
+        public static int CodPrograma = -1;
+        public static int CodListados = -1;
+        public override bool Historial { get; set; } = true;
+
+        #endregion
+
+        #region Campos de la tabla ordenados alfabéticamente
+
+        public const string TABLA = "datosalmacen";
+        public static string[] NombreCampos = { ALMACEN, FABRICANTE, ARTICULOALMACEN, STOCKINI, STOCKACT, UBICACION, STOCKINI2, STOCKACT2, PTESERVIR, PTESERVIR2, PTERECIBIR, PTERECIBIR2, FECULTACT, FECULTSAL, STOCKMIN, STOCKMAX, REPOSICION, UNICOMPRA, IMPCOMPRA };
+        public static string[] CamposBuscarTodo = { ARTICULOALMACEN, UBICACION };
+
+        public const string VISTA = "v_datosalmacen";
+        //public static string[] NombreCamposVista = { ALMACEN, NOMALMACEN, FABRICANTE, NOMFABRICANTE, ARTICULOALMACEN, NOMARTICULO, STOCKINI, STOCKACT, UBICACION, STOCKINI2, STOCKACT2, PTESERVIR, PTESERVIR2, PTERECIBIR, PTERECIBIR2, FECULTACT, FECULTSAL, STOCKMIN, STOCKMAX, REPOSICION, UNICOMPRA, IMPCOMPRA };
+        public static string[] NombreCamposVista = { ALMACEN, NOMALMACEN, FABRICANTE, NOMFABRICANTE, ARTICULOALMACEN, NOMARTICULO, STOCKINI, STOCKACT, UBICACION, STOCKINI2, STOCKACT2, PTESERVIR, PTESERVIR2, PTERECIBIR, PTERECIBIR2, FECULTACT /*FECULTSAL, STOCKMIN, STOCKMAX, REPOSICION, UNICOMPRA, IMPCOMPRA*/ };
+        //public static string[] CamposBuscarTodoVista = { NOMALMACEN, NOMFABRICANTE, ARTICULOALMACEN, NOMARTICULO, UBICACION };
+        public static string[] CamposBuscarTodoVista = { NOMALMACEN, NOMFABRICANTE, ARTICULOALMACEN, NOMARTICULO, UBICACION };
+
+        public string nomalmacen { get; set; }
+        public const string NOMALMACEN = "nomalmacen";
+
+        public string nomfabricante { get; set; }
+        public const string NOMFABRICANTE = "nomfabricante";
+
+        public string nomarticulo { get; set; }
+        public const string NOMARTICULO = "nomarticulo";
+
+        public short? almacen { get; set; }
+        public const string ALMACEN = "almacen";
+        public const int ALMACEN_MAXLENGTH = Almacenes.ALMACEN_MAXLENGTH;
+
+        public string articuloalmacen { get; set; }
+        public const string ARTICULOALMACEN = "articuloalmacen";
+        public const int ARTICULOALMACEN_MAXLENGTH = 13;
+
+        public short? fabricante { get; set; }
+        public const string FABRICANTE = "fabricante";
+        public const int FABRICANTE_MAXLENGTH = Fabricantes.FABRICANTE_MAXLENGTH;
+
+        public DateTime? fecultact { get; set; }
+        public const string FECULTACT = "fecultact";
+        public const int FECULTACT_MAXLENGTH = BRSLib.MAXLENGTH_DATE;
+
+        public DateTime? fecultsal { get; set; }
+        public const string FECULTSAL = "fecultsal";
+        public const int FECULTSAL_MAXLENGTH = BRSLib.MAXLENGTH_DATE;
+
+        public decimal? pterecibir { get; set; }
+        public const string PTERECIBIR = "pterecibir";
+        public const int PTERECIBIR_MAXLENGTH = 11;
+        public static readonly decimal? PTERECIBIR_DEFAULT = 0;
+
+        public decimal? pterecibir2 { get; set; }
+        public const string PTERECIBIR2 = "pterecibir2";
+        public const int PTERECIBIR2_MAXLENGTH = 11;
+        public static readonly decimal? PTERECIBIR2_DEFAULT = 0;
+
+        public decimal? pteservir { get; set; }
+        public const string PTESERVIR = "pteservir";
+        public const int PTESERVIR_MAXLENGTH = 11;
+        public static readonly decimal? PTESERVIR_DEFAULT = 0;
+
+        public decimal? pteservir2 { get; set; }
+        public const string PTESERVIR2 = "pteservir2";
+        public const int PTESERVIR2_MAXLENGTH = 11;
+        public static readonly decimal? PTESERVIR2_DEFAULT = 0;
+
+        public decimal? stockact { get; set; }
+        public const string STOCKACT = "stockact";
+        public const int STOCKACT_MAXLENGTH = 11;
+        public static readonly decimal? STOCKACT_DEFAULT = 0;
+
+        public decimal? stockact2 { get; set; }
+        public const string STOCKACT2 = "stockact2";
+        public const int STOCKACT2_MAXLENGTH = 11;
+        public static readonly decimal? STOCKACT2_DEFAULT = 0;
+
+        public decimal? stockini { get; set; }
+        public const string STOCKINI = "stockini";
+        public const int STOCKINI_MAXLENGTH = 11;
+        public static readonly decimal? STOCKINI_DEFAULT = 0;
+
+        public decimal? stockini2 { get; set; }
+        public const string STOCKINI2 = "stockini2";
+        public const int STOCKINI2_MAXLENGTH = 11;
+        public static readonly decimal? STOCKINI2_DEFAULT = 0;
+
+        public string ubicacion { get; set; }
+        public const string UBICACION = "ubicacion";
+        public const int UBICACION_MAXLENGTH = 10;
+
+        public decimal? stockmin { get; set; }
+        public const string STOCKMIN = "stockmin";
+        public const int STOCKMIN_MAXLENGTH = 10;
+        public static readonly decimal? STOCKMIN_DEFAULT = 0;
+
+        public decimal? stockmax { get; set; }
+        public const string STOCKMAX = "stockmax";
+        public const int STOCKMAX_MAXLENGTH = 10;
+        public static readonly decimal? STOCKMAX_DEFAULT = 0;
+
+        public decimal? reposicion { get; set; }
+        public const string REPOSICION = "reposicion";
+        public const int REPOSICION_MAXLENGTH = 10;
+        public static readonly decimal? REPOSICION_DEFAULT = 1;
+
+        public decimal? unicompra { get; set; }
+        public const string UNICOMPRA = "unicompra";
+        public const int UNICOMPRA_MAXLENGTH = 11;
+        public static readonly decimal? UNICOMPRA_DEFAULT = 0;
+
+        public decimal? impcompra { get; set; }
+        public const string IMPCOMPRA = "impcompra";
+        public const int IMPCOMPRA_MAXLENGTH = 14;
+        public static readonly decimal? IMPCOMPRA_DEFAULT = 0;
+
+
+        /// <summary>
+        /// Devuelve si el objeto está vacío
+        /// </summary>
+        public bool Vacio
+        {
+            get { return almacen == null && fabricante == null && string.IsNullOrWhiteSpace(articuloalmacen) && stockini == null && stockact == null && string.IsNullOrWhiteSpace(ubicacion) && stockini2 == null && stockact2 == null && pteservir == null && pteservir2 == null && pterecibir == null && pterecibir2 == null && fecultact == null && fecultsal == null && stockmin == null && stockmax == null && reposicion == null && unicompra == null && impcompra == null; }
+        }
+
+        #endregion
+
+        #region Constructores
+
+        static DatosAlmacen() { EstablecerAtributoPrograma(); }
+
+        /// <summary>
+        /// Modifica los códigos del modelo en los constructores
+        /// </summary>
+        private static void EstablecerAtributoPrograma()
+        {
+            CodAplicacion = BRSLib.COD_APLICACIONACTIVA;
+            switch (CodAplicacion)
+            {
+                case BRSLib.COD_BRSGESTION_COMUNES:
+                    CodPrograma = -1;
+                    CodListados = -1;
+                    break;
+            }
+        }
+
+        /// <summary>
+        /// Constructor por defecto
+        /// </summary>
+        public DatosAlmacen()
+        {
+            EstablecerAtributoPrograma();
+        }
+
+        /// <summary>
+        /// Constructor rellenado con las variables necesarias
+        /// </summary>
+        public DatosAlmacen(short? _almacen = null, short? _fabricante = null, string _articuloalmacen = null, decimal? _stockini = null, decimal? _stockact = null, string _ubicacion = null, decimal? _stockini2 = null, decimal? _stockact2 = null, decimal? _pteservir = null, decimal? _pteservir2 = null, decimal? _pterecibir = null, decimal? _pterecibir2 = null, DateTime? _fecultact = null, DateTime? _fecultsal = null, decimal? _stockmin = null, decimal? _stockmax = null, decimal? _reposicion = null, decimal? _unicompra = null, decimal? _impcompra = null)
+        {
+            EstablecerAtributoPrograma();
+            almacen = _almacen;
+            fabricante = _fabricante;
+            articuloalmacen = _articuloalmacen;
+            stockini = _stockini;
+            stockact = _stockact;
+            ubicacion = _ubicacion;
+            stockini2 = _stockini2;
+            stockact2 = _stockact2;
+            pteservir = _pteservir;
+            pteservir2 = _pteservir2;
+            pterecibir = _pterecibir;
+            pterecibir2 = _pterecibir2;
+            fecultact = _fecultact;
+            fecultsal = _fecultsal;
+            stockmin = _stockmin;
+            stockmax = _stockmax;
+        }
+
+        /// <summary>
+        /// Constructor rellenado a partir de un formulario
+        /// </summary>
+        /// <param name="_oControles">Los controles de un formulario</param>
+        public DatosAlmacen(Control.ControlCollection _oControles)
+        {
+            EstablecerAtributoPrograma();
+            RellenarConRegistro(new BRSRegistro(_oControles));
+        }
+
+        /// <summary>
+        /// Constructor rellenado a partir de un objeto BRSRegistro
+        /// </summary>
+        /// <param name="_registro">Un objeto BRSRegistro</param>
+        public DatosAlmacen(BRSRegistro _registro)
+        {
+            EstablecerAtributoPrograma();
+            RellenarConRegistro(_registro);
+        }
+
+        /// <summary>
+        /// Función que actualiza el contenido del modelo con el contenido de un formulario
+        /// </summary>
+        /// <param name="_oControles">Los controles de un formulario</param>
+        public override void ActualizarContenido(Control.ControlCollection _oControles)
+        {
+            BRSRegistro registro = new BRSRegistro(_oControles);
+
+            if (registro.ExisteClave(ALMACEN))
+            {
+                if (registro.CampoVacio(ALMACEN))
+                    almacen = null;
+                else
+                    almacen = registro.GetShort(ALMACEN);
+            }
+
+            if (registro.ExisteClave(FABRICANTE))
+            {
+                if (registro.CampoVacio(FABRICANTE))
+                    fabricante = null;
+                else
+                    fabricante = registro.GetShort(FABRICANTE);
+            }
+
+            if (registro.ExisteClave(ARTICULOALMACEN))
+            {
+                if (registro.CampoVacio(ARTICULOALMACEN))
+                    articuloalmacen = null;
+                else
+                    articuloalmacen = registro.GetString(ARTICULOALMACEN);
+            }
+
+            if (registro.ExisteClave(STOCKINI))
+            {
+                if (registro.CampoVacio(STOCKINI))
+                    stockini = null;
+                else
+                    stockini = registro.GetDecimal(STOCKINI);
+            }
+
+            if (registro.ExisteClave(STOCKACT))
+            {
+                if (registro.CampoVacio(STOCKACT))
+                    stockact = null;
+                else
+                    stockact = registro.GetDecimal(STOCKACT);
+            }
+
+            if (registro.ExisteClave(UBICACION))
+            {
+                if (registro.CampoVacio(UBICACION))
+                    ubicacion = null;
+                else
+                    ubicacion = registro.GetString(UBICACION);
+            }
+
+            if (registro.ExisteClave(STOCKINI2))
+            {
+                if (registro.CampoVacio(STOCKINI2))
+                    stockini2 = null;
+                else
+                    stockini2 = registro.GetDecimal(STOCKINI2);
+            }
+
+            if (registro.ExisteClave(STOCKACT2))
+            {
+                if (registro.CampoVacio(STOCKACT2))
+                    stockact2 = null;
+                else
+                    stockact2 = registro.GetDecimal(STOCKACT2);
+            }
+
+            if (registro.ExisteClave(PTESERVIR))
+            {
+                if (registro.CampoVacio(PTESERVIR))
+                    pteservir = null;
+                else
+                    pteservir = registro.GetDecimal(PTESERVIR);
+            }
+
+            if (registro.ExisteClave(PTESERVIR2))
+            {
+                if (registro.CampoVacio(PTESERVIR2))
+                    pteservir2 = null;
+                else
+                    pteservir2 = registro.GetDecimal(PTESERVIR2);
+            }
+
+            if (registro.ExisteClave(PTERECIBIR))
+            {
+                if (registro.CampoVacio(PTERECIBIR))
+                    pterecibir = null;
+                else
+                    pterecibir = registro.GetDecimal(PTERECIBIR);
+            }
+
+            if (registro.ExisteClave(PTERECIBIR2))
+            {
+                if (registro.CampoVacio(PTERECIBIR2))
+                    pterecibir2 = null;
+                else
+                    pterecibir2 = registro.GetDecimal(PTERECIBIR2);
+            }
+
+            if (registro.ExisteClave(FECULTACT))
+            {
+                if (registro.CampoVacio(FECULTACT))
+                    fecultact = null;
+                else
+                    fecultact = registro.GetDateTime(FECULTACT);
+            }
+
+            if (registro.ExisteClave(FECULTSAL))
+            {
+                if (registro.CampoVacio(FECULTSAL))
+                    fecultsal = null;
+                else
+                    fecultsal = registro.GetDateTime(FECULTSAL);
+            }
+
+            if (registro.ExisteClave(STOCKMIN))
+            {
+                if (registro.CampoVacio(STOCKMIN))
+                    stockmin = null;
+                else
+                    stockmin = registro.GetDecimal(STOCKMIN);
+            }
+
+            if (registro.ExisteClave(STOCKMAX))
+            {
+                if (registro.CampoVacio(STOCKMAX))
+                    stockmax = null;
+                else
+                    stockmax = registro.GetDecimal(STOCKMAX);
+            }
+
+            if (registro.ExisteClave(REPOSICION))
+            {
+                if (registro.CampoVacio(REPOSICION))
+                    reposicion = null;
+                else
+                    reposicion = registro.GetDecimal(REPOSICION);
+            }
+
+            if (registro.ExisteClave(UNICOMPRA))
+            {
+                if (registro.CampoVacio(UNICOMPRA))
+                    unicompra = null;
+                else
+                    unicompra = registro.GetDecimal(UNICOMPRA);
+            }
+
+
+            if (registro.ExisteClave(IMPCOMPRA))
+            {
+                if (registro.CampoVacio(IMPCOMPRA))
+                    impcompra = null;
+                else
+                    impcompra = registro.GetDecimal(IMPCOMPRA);
+            }
+
+
+
+
+
+
+
+            registro = null;
+        }
+
+        /// <summary>
+        /// Función para rellenar el modelo con un objeto BRSRegistro
+        /// </summary>
+        /// <param name="_registro">Un objeto BRSRegistro</param>
+        protected override void RellenarConRegistro(BRSRegistro _registro)
+        {
+            if (_registro.ExisteClave(ALMACEN) && !_registro.CampoVacio(ALMACEN))
+                almacen = _registro.GetShort(ALMACEN);
+            else
+                almacen = null;
+
+            if (_registro.ExisteClave(FABRICANTE) && !_registro.CampoVacio(FABRICANTE))
+                fabricante = _registro.GetShort(FABRICANTE);
+            else
+                fabricante = null;
+
+            if (_registro.ExisteClave(ARTICULOALMACEN) && !_registro.CampoVacio(ARTICULOALMACEN))
+                articuloalmacen = _registro.GetString(ARTICULOALMACEN);
+            else
+                articuloalmacen = null;
+
+            if (_registro.ExisteClave(STOCKINI) && !_registro.CampoVacio(STOCKINI))
+                stockini = _registro.GetDecimal(STOCKINI);
+            else
+                stockini = null;
+
+            if (_registro.ExisteClave(STOCKACT) && !_registro.CampoVacio(STOCKACT))
+                stockact = _registro.GetDecimal(STOCKACT);
+            else
+                stockact = null;
+
+            if (_registro.ExisteClave(UBICACION) && !_registro.CampoVacio(UBICACION))
+                ubicacion = _registro.GetString(UBICACION);
+            else
+                ubicacion = null;
+
+            if (_registro.ExisteClave(STOCKINI2) && !_registro.CampoVacio(STOCKINI2))
+                stockini2 = _registro.GetDecimal(STOCKINI2);
+            else
+                stockini2 = null;
+
+            if (_registro.ExisteClave(STOCKACT2) && !_registro.CampoVacio(STOCKACT2))
+                stockact2 = _registro.GetDecimal(STOCKACT2);
+            else
+                stockact2 = null;
+
+            if (_registro.ExisteClave(PTESERVIR) && !_registro.CampoVacio(PTESERVIR))
+                pteservir = _registro.GetDecimal(PTESERVIR);
+            else
+                pteservir = null;
+
+            if (_registro.ExisteClave(PTESERVIR2) && !_registro.CampoVacio(PTESERVIR2))
+                pteservir2 = _registro.GetDecimal(PTESERVIR2);
+            else
+                pteservir2 = null;
+
+            if (_registro.ExisteClave(PTERECIBIR) && !_registro.CampoVacio(PTERECIBIR))
+                pterecibir = _registro.GetDecimal(PTERECIBIR);
+            else
+                pterecibir = null;
+
+            if (_registro.ExisteClave(PTERECIBIR2) && !_registro.CampoVacio(PTERECIBIR2))
+                pterecibir2 = _registro.GetDecimal(PTERECIBIR2);
+            else
+                pterecibir2 = null;
+
+            if (_registro.ExisteClave(FECULTACT) && !_registro.CampoVacio(FECULTACT))
+                fecultact = _registro.GetDateTime(FECULTACT);
+            else
+                fecultact = null;
+
+            if (_registro.ExisteClave(FECULTSAL) && !_registro.CampoVacio(FECULTSAL))
+                fecultsal = _registro.GetDateTime(FECULTSAL);
+            else
+                fecultsal = null;
+
+            if (_registro.ExisteClave(STOCKMIN) && !_registro.CampoVacio(STOCKMIN))
+                stockmin = _registro.GetDecimal(STOCKMIN);
+            else
+                stockmin = null;
+
+            if (_registro.ExisteClave(STOCKMAX) && !_registro.CampoVacio(STOCKMAX))
+                stockmax = _registro.GetDecimal(STOCKMAX);
+            else
+                stockmax = null;
+
+            if (_registro.ExisteClave(REPOSICION) && !_registro.CampoVacio(REPOSICION))
+                reposicion = _registro.GetDecimal(REPOSICION);
+            else
+                reposicion = null;
+
+            if (_registro.ExisteClave(UNICOMPRA) && !_registro.CampoVacio(UNICOMPRA))
+                unicompra = _registro.GetDecimal(UNICOMPRA);
+            else
+                unicompra = null;
+
+            if (_registro.ExisteClave(IMPCOMPRA) && !_registro.CampoVacio(IMPCOMPRA))
+                impcompra = _registro.GetDecimal(IMPCOMPRA);
+            else
+                impcompra = null;
+
+
+            _registro = null;
+        }
+
+        /// <summary>
+        /// Función que crea un nuevo objeto con los valores de los campos del modelo
+        /// </summary>
+        /// <returns>Un nuevo objeto con los mismos valores de campos que el actual</returns>
+        public DatosAlmacen Clone()
+        {
+            DatosAlmacen aux = new DatosAlmacen
+            {
+                almacen = almacen,
+                fabricante = fabricante,
+                articuloalmacen = articuloalmacen,
+                stockini = stockini,
+                stockact = stockact,
+                ubicacion = ubicacion,
+                stockini2 = stockini2,
+                stockact2 = stockact2,
+                pteservir = pteservir,
+                pteservir2 = pteservir2,
+                pterecibir = pterecibir,
+                pterecibir2 = pterecibir2,
+                fecultact = fecultact,
+                fecultsal = fecultsal,
+                stockmin = stockmin,
+                stockmax = stockmax,
+                reposicion = reposicion,
+                unicompra = unicompra,
+                impcompra = impcompra,
+            };
+
+            return aux;
+        }
+
+        #endregion
+
+        #region CRUD
+
+        /// <summary>
+        /// Inserta el modelo en la base de datos
+        /// </summary>
+        /// <returns>El número de filas insertadas</returns>
+        public override int Insert()
+        {
+            try
+            {
+                string cSQL = "INSERT INTO " + TABLA + " ({0}, {1}, {2}, {3}, {4}, {5}, {6}, {7}, {8}, {9}, {10}, {11}, {12}, {13}, {14}, {15}, {16}, {17}, {18})" +
+                             " VALUES (:param0, :param1, :param2, :param3, :param4, :param5, :param6, :param7, :param8, :param9, :param10, :param11, :param12, :param13, :param14, :param15, :param16, :param17, :param18);";
+
+                int filasAfectadas = LanzarNonQuery(cSQL);
+                GuardarHistorial("I");
+                return filasAfectadas;
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Inserta el modelo en la base de datos si no existía
+        /// </summary>
+        /// <returns>El número de filas insertadas</returns>
+        public override int InsertIfNotExists()
+        {
+            try
+            {
+                if (!Existe(Convert.ToInt16(almacen), Convert.ToInt16(fabricante), (articuloalmacen), Comando))
+                    return Insert();
+                else
+                    return 0;
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Actualiza el modelo en la base de datos
+        /// </summary>
+        /// <returns>El número de filas actualizadas</returns>
+        public override int Update()
+        {
+            try
+            {
+                string cSQL = "UPDATE " + TABLA +
+                             " SET {3} = :param3, {4} = :param4, {5} = :param5, {6} = :param6, {7} = :param7, {8} = :param8, {9} = :param9, {10} = :param10, {11} = :param11, {12} = :param12, {13} = :param13, {14} = :param14, {15} = :param15, {16} = :param16, {17} = :param17, {18} = :param18" +
+                             " WHERE {0} = :param0 AND {1} = :param1 AND {2} = :param2;";
+
+                int filasAfectadas = LanzarNonQuery(cSQL);
+                GuardarHistorial("U");
+                return filasAfectadas;
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Inserta el modelo en la base de datos, si ya existía lo actualiza
+        /// </summary>
+        /// <returns>El número de filas insertadas o actualizadas</returns>
+        public override int Upsert()
+        {
+            try
+            {
+                if (Existe(Convert.ToInt16(almacen), Convert.ToInt16(fabricante), (articuloalmacen), Comando))
+                    return Update();
+                else
+                    return Insert();
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Borra el modelo de la base de datos
+        /// </summary>
+        /// <returns>El número de filas borradas</returns>
+        public override int Delete()
+        {
+            try
+            {
+                string cSQL = "DELETE FROM " + TABLA +
+                             " WHERE {0} = :param0 AND {1} = :param1 AND {2} = :param2;";
+
+                int filasAfectadas = LanzarNonQuery(cSQL);
+                GuardarHistorial("D");
+                return filasAfectadas;
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Lanza la consulta especificada
+        /// </summary>
+        /// <param name="_cSQL">Una consulta</param>
+        /// <returns>El número de filas afectadas</returns>
+        protected override int LanzarNonQuery(string _cSQL)
+        {
+            try
+            {
+                _cSQL = string.Format(_cSQL, ALMACEN, FABRICANTE, ARTICULOALMACEN, STOCKINI, STOCKACT, UBICACION, STOCKINI2, STOCKACT2, PTESERVIR, PTESERVIR2, PTERECIBIR, PTERECIBIR2, FECULTACT, FECULTSAL, STOCKMIN, STOCKMAX, REPOSICION, UNICOMPRA, IMPCOMPRA);
+                object[] aoParametros = { almacen, fabricante, articuloalmacen, stockini, stockact, ubicacion, stockini2, stockact2, pteservir, pteservir2, pterecibir, pterecibir2, fecultact, fecultsal, stockmin, stockmax, reposicion, unicompra, impcompra };
+
+                if (Comando == null)
+                    return BRSLibBD.LanzarNonQuery(cConexion, _cSQL, aoParametros);
+                else
+                    return BRSLibBD.LanzarNonQuery(Comando, _cSQL, aoParametros);
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
+
+        #endregion
+
+        #region Funciones para seleccionar un registro
+
+        /// <summary>
+        /// Selecciona un modelo de la base de datos a partir de su clave primaria
+        /// </summary>
+        /// <param name="_almacen">Valores de la clave primaria</param>
+        /// <param name="_fabricante">Valores de la clave primaria</param>
+        /// <param name="_articuloalmacen">Valores de la clave primaria</param>
+        /// <param name="_lBloquear">Si queremos bloquear el acceso al registro</param>
+        /// <param name="_oComando">Objeto Comando para mantener transacciones</param>
+        /// <returns>Un modelo rellenado con los datos encontrados</returns>
+        public static DatosAlmacen SeleccionarPorClavePrimaria(short _almacen, short _fabricante, string _articuloalmacen, bool _lBloquear = false, NpgsqlCommand _oComando = null)
+        {
+            try
+            {
+                string cSQL = "SELECT *" +
+                             " FROM " + TABLA +
+                             " WHERE {0} = :param0 AND {1} = :param1 AND {2} = :param2";
+                if (_lBloquear)
+                    cSQL += " FOR UPDATE NOWAIT";
+                cSQL = string.Format(cSQL, ALMACEN, FABRICANTE, ARTICULOALMACEN);
+
+                if (_oComando == null)
+                    return new DatosAlmacen(BRSLibBD.SeleccionarRegistro(cConexion, cSQL, _almacen, _fabricante, _articuloalmacen));
+                else
+                    return new DatosAlmacen(BRSLibBD.SeleccionarRegistro(_oComando, cSQL, _almacen, _fabricante, _articuloalmacen));
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
+
+        #endregion
+
+        #region Funciones auxiliares
+
+        /// <summary>
+        /// Función que establece el MaxLength de los campos de texto
+        /// </summary>
+        /// <param name="_oControles">La lista de controles del formulario</param>
+        public static void EstablecerMaxLength(Control.ControlCollection _oControles)
+        {
+            foreach (Control oControl in _oControles.OfType<RadPageView>())
+                foreach (Control oControl2 in oControl.Controls.OfType<RadPageViewPage>())
+                    EstablecerMaxLength(oControl2.Controls);
+
+            foreach (Control oControl in _oControles.OfType<RadGroupBox>())
+                EstablecerMaxLength(oControl.Controls);
+
+            foreach (Control oControl in _oControles.OfType<RadPanel>())
+                EstablecerMaxLength(oControl.Controls);
+
+            foreach (Control oControl in _oControles.OfType<RadTextBox>())
+            {
+                switch ((oControl as RadTextBox).Name.Substring(3))
+                {
+                    case ALMACEN: (oControl as RadTextBox).MaxLength = ALMACEN_MAXLENGTH; break;
+                    case FABRICANTE: (oControl as RadTextBox).MaxLength = FABRICANTE_MAXLENGTH; break;
+                    case ARTICULOALMACEN: (oControl as RadTextBox).MaxLength = ARTICULOALMACEN_MAXLENGTH; break;
+                    case STOCKINI: (oControl as RadTextBox).MaxLength = STOCKINI_MAXLENGTH; break;
+                    case STOCKACT: (oControl as RadTextBox).MaxLength = STOCKACT_MAXLENGTH; break;
+                    case UBICACION: (oControl as RadTextBox).MaxLength = UBICACION_MAXLENGTH; break;
+                    case STOCKINI2: (oControl as RadTextBox).MaxLength = STOCKINI2_MAXLENGTH; break;
+                    case STOCKACT2: (oControl as RadTextBox).MaxLength = STOCKACT2_MAXLENGTH; break;
+                    case PTESERVIR: (oControl as RadTextBox).MaxLength = PTESERVIR_MAXLENGTH; break;
+                    case PTESERVIR2: (oControl as RadTextBox).MaxLength = PTESERVIR2_MAXLENGTH; break;
+                    case PTERECIBIR: (oControl as RadTextBox).MaxLength = PTERECIBIR_MAXLENGTH; break;
+                    case PTERECIBIR2: (oControl as RadTextBox).MaxLength = PTERECIBIR2_MAXLENGTH; break;
+                    case FECULTACT: (oControl as RadTextBox).MaxLength = FECULTACT_MAXLENGTH; break;
+                    case FECULTSAL: (oControl as RadTextBox).MaxLength = FECULTSAL_MAXLENGTH; break;
+                    case STOCKMIN: (oControl as RadTextBox).MaxLength = STOCKMIN_MAXLENGTH; break;
+                    case STOCKMAX: (oControl as RadTextBox).MaxLength = STOCKMAX_MAXLENGTH; break;
+                    case REPOSICION: (oControl as RadTextBox).MaxLength = REPOSICION_MAXLENGTH; break;
+                    case UNICOMPRA: (oControl as RadTextBox).MaxLength = UNICOMPRA_MAXLENGTH; break;
+                    case IMPCOMPRA: (oControl as RadTextBox).MaxLength = IMPCOMPRA_MAXLENGTH; break;
+                    default: (oControl as RadTextBox).MaxLength = 32767; break;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Función que establece los valores por defecto de los campos de texto
+        /// </summary>
+        /// <param name="_oControles">La lista de controles del formulario</param>
+        public static void AsignarValoresPorDefecto(Control.ControlCollection _oControles)
+        {
+            foreach (Control oControl in _oControles.OfType<RadPageView>())
+                foreach (Control oControl2 in oControl.Controls.OfType<RadPageViewPage>())
+                    AsignarValoresPorDefecto(oControl2.Controls);
+
+            foreach (Control oControl in _oControles.OfType<RadGroupBox>())
+                AsignarValoresPorDefecto(oControl.Controls);
+
+            foreach (Control oControl in _oControles.OfType<RadPanel>())
+                AsignarValoresPorDefecto(oControl.Controls);
+
+            foreach (Control oControl in _oControles.OfType<RadTextBox>())
+            {
+                switch ((oControl as RadTextBox).Name.Substring(3))
+                {
+                    case STOCKINI: (oControl as RadTextBox).Text = Convert.ToString(STOCKINI_DEFAULT); break;
+                    case STOCKACT: (oControl as RadTextBox).Text = Convert.ToString(STOCKACT_DEFAULT); break;
+                    case STOCKINI2: (oControl as RadTextBox).Text = Convert.ToString(STOCKINI2_DEFAULT); break;
+                    case STOCKACT2: (oControl as RadTextBox).Text = Convert.ToString(STOCKACT2_DEFAULT); break;
+                    case PTESERVIR: (oControl as RadTextBox).Text = Convert.ToString(PTESERVIR_DEFAULT); break;
+                    case PTESERVIR2: (oControl as RadTextBox).Text = Convert.ToString(PTESERVIR2_DEFAULT); break;
+                    case PTERECIBIR: (oControl as RadTextBox).Text = Convert.ToString(PTERECIBIR_DEFAULT); break;
+                    case PTERECIBIR2: (oControl as RadTextBox).Text = Convert.ToString(PTERECIBIR2_DEFAULT); break;
+                    case STOCKMIN: (oControl as RadTextBox).Text = Convert.ToString(STOCKMIN_DEFAULT); break;
+                    case STOCKMAX: (oControl as RadTextBox).Text = Convert.ToString(STOCKMAX_DEFAULT); break;
+                    case REPOSICION: (oControl as RadTextBox).Text = Convert.ToString(REPOSICION_DEFAULT); break;
+                    case UNICOMPRA: (oControl as RadTextBox).Text = Convert.ToString(UNICOMPRA_DEFAULT); break;
+                    case IMPCOMPRA: (oControl as RadTextBox).Text = Convert.ToString(IMPCOMPRA_DEFAULT); break;
+                }
+            }
+
+            foreach (Control oControl in _oControles.OfType<RadCheckBox>())
+            {
+                //switch ((oControl as RadCheckBox).Name.Substring(3))
+                //{
+                //}
+            }
+
+            RadListDataItem item = null;
+            foreach (Control oControl in _oControles.OfType<RadDropDownList>())
+            {
+                try
+                {
+                    //switch ((oControl as RadDropDownList).Name.Substring(3))
+                    //{
+                    //}
+                    if (item != null) (oControl as RadDropDownList).SelectedIndex = item.RowIndex;
+                }
+                catch (Exception ex)
+                {
+                    BRSLib.Logger?.LogExcepcion(ex);
+                    BRSLib.MostrarMensaje(ex.Message + "\n\rEl valor por defecto de la propiedad \"" + (oControl as RadDropDownList).Name.Substring(3).ToUpper() + "\" no existe entre los valores del control " + (oControl as RadDropDownList).Name, "", BRSLib.Boton.OK, BRSLib.Icono.Error);
+                }
+            }
+        }
+
+
+        /// <summary>
+        /// Función que comprueba si existe un modelo con esa clave primaria en la base de datos
+        /// </summary>
+        /// <param name="_almacen">Valores de la clave primaria</param>
+        /// <param name="_fabricante">Valores de la clave primaria</param>
+        /// <param name="_articuloalmacen">Valores de la clave primaria</param>
+        /// <param name="_oComando">Un objeto comando para mantener transacciones</param>
+        /// <returns>Verdadero o falso si existe o no</returns>
+        public static bool Existe(short? _almacen, short? _fabricante, string _articuloalmacen, NpgsqlCommand _oComando = null)
+        {
+            try
+            {
+                string cSQL = "SELECT COUNT(*)" +
+                             " FROM " + TABLA +
+                             " WHERE {0} = :param0 AND {1} = :param1 AND {2} = :param2;";
+                cSQL = string.Format(cSQL, ALMACEN, FABRICANTE, ARTICULOALMACEN);
+
+                if (_oComando == null)
+                    return BRSLibBD.SelectScalarEntero(cConexion, cSQL, _almacen, _fabricante, _articuloalmacen) > 0;
+                else
+                    return BRSLibBD.SelectScalarEntero(_oComando, cSQL, _almacen, _fabricante, _articuloalmacen) > 0;
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Función que comprueba si el registro puede borrarse o no dependiendo de si es usado desde otras tablas
+        /// </summary>
+        public override bool PuedeBorrarse()
+        {
+            try
+            {
+                return true;
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Limpia el contenido de los datos del modelo
+        /// </summary>
+        public override void Limpiar()
+        {
+            almacen = null;
+            fabricante = null;
+            articuloalmacen = null;
+            stockini = null;
+            stockact = null;
+            ubicacion = null;
+            stockini2 = null;
+            stockact2 = null;
+            pteservir = null;
+            pteservir2 = null;
+            pterecibir = null;
+            pterecibir2 = null;
+            fecultact = null;
+            fecultsal = null;
+            stockmin = null;
+            stockmax = null;
+            reposicion = null;
+            unicompra = null;
+            impcompra = null;
+        }
+
+        /// <summary>
+        /// Guarda el mensaje del historial en la base de datos
+        /// </summary>
+        /// <param name="_accion">Acción realizada [I]nsert, [U]pdate, [D]elete</param>
+        public override void GuardarHistorial(string _accion)
+        {
+            if (Historial)
+            {
+                string cMensaje;
+                switch (_accion)
+                {
+                    case "I": cMensaje = "Añade el registro {0}-{1}-{2} a la tabla " + TABLA; break;
+                    case "U": cMensaje = "Modifica el registro {0}-{1}-{2} de la tabla " + TABLA; break;
+                    case "D": cMensaje = "Borra el registro {0}-{1}-{2} de la tabla " + TABLA; break;
+                    default: throw new ArgumentException();
+                }
+                cMensaje = string.Format(cMensaje, almacen, fabricante, articuloalmacen);
+                BRSLib.GrabarRegistroAuditoria(BRSLib.nUsuario, BRSLib.nTerminal, cMensaje, CodAplicacion, CodPrograma, cConexion);
+            }
+        }
+
+        /// <summary>
+        /// Devuelve los valores del contenido del modelo
+        /// </summary>
+        /// <returns>Una cadena con los valores del modelo</returns>
+        public override string ToString()
+        {
+            string cadena = "DatosAlmacen {";
+            cadena += "\n\tTabla: " + TABLA + "; ";
+            cadena += "\n\tClave Primaria: " + string.Join(", ", ClavePrimaria) + "; ";
+            if (Vacio)
+            {
+                cadena += "\n\tDatos: Sin datos; ";
+            }
+            else
+            {
+                cadena += "\n\t\tDatos:";
+                cadena += "\n\t\t" + ALMACEN + ": " + almacen + "; ";
+                cadena += "\n\t\t" + FABRICANTE + ": " + fabricante + "; ";
+                cadena += "\n\t\t" + ARTICULOALMACEN + ": " + articuloalmacen + "; ";
+                cadena += "\n\t\t" + STOCKINI + ": " + stockini + "; ";
+                cadena += "\n\t\t" + STOCKACT + ": " + stockact + "; ";
+                cadena += "\n\t\t" + UBICACION + ": " + ubicacion + "; ";
+                cadena += "\n\t\t" + STOCKINI2 + ": " + stockini2 + "; ";
+                cadena += "\n\t\t" + STOCKACT2 + ": " + stockact2 + "; ";
+                cadena += "\n\t\t" + PTESERVIR + ": " + pteservir + "; ";
+                cadena += "\n\t\t" + PTESERVIR2 + ": " + pteservir2 + "; ";
+                cadena += "\n\t\t" + PTERECIBIR + ": " + pterecibir + "; ";
+                cadena += "\n\t\t" + PTERECIBIR2 + ": " + pterecibir2 + "; ";
+                cadena += "\n\t\t" + FECULTACT + ": " + fecultact + "; ";
+                cadena += "\n\t\t" + FECULTSAL + ": " + fecultsal + "; ";
+                cadena += "\n\t\t" + STOCKMIN + ": " + stockmin + "; ";
+                cadena += "\n\t\t" + STOCKMAX + ": " + stockmax + "; ";
+                cadena += "\n\t\t" + REPOSICION + ": " + reposicion + "; ";
+                cadena += "\n\t\t" + UNICOMPRA + ": " + unicompra + "; ";
+                cadena += "\n\t\t" + IMPCOMPRA + ": " + impcompra + "; ";
+            }
+            cadena += "\n}";
+
+            return cadena;
+        }
+
+        /// <summary>
+        /// Función que recupera el próximo id para el objeto
+        /// </summary>
+        public override void ObtenerNuevoId()
+        {
+            throw new NotImplementedException();
+
+            // string cId = null
+            // try
+            // {
+            // string cSQL = "SELECT MAX(" + clave + ") + 1" +
+            //              " FROM " + cNombreTabla
+            //              " WHERE " + Where
+
+            // if (oComando == null)
+            // {
+            // if (cConexion == null)
+            // cConexion = BRSLib.cConexionGR
+            // cId = BRSLibBD.SelectScalarCadena(cSQL, null, cConexion, null, true);
+            // }
+            // else
+            // cId = BRSLibBD.SelectScalarCadena(cSQL, null, null, oComando, true);
+            // if (string.IsNullOrWhiteSpace(cId))
+            // cId = "1";
+
+            // if (cId.Length > clave_MAXLENGTH
+            // throw new CodigoFueraRangoException();
+
+            // Datos.Set(clave, cId);
+            // }
+            // catch (Exception ex)
+            // {
+            // throw ex;
+            // }
+        }
+
+        /// <summary>
+        /// Función que rellena los controles de un formulario con el contenido del modelo
+        /// </summary>
+        /// <param name="_oControlesPadre">La lista de controles del formulario</param>
+        public override void CargarFormulario(Control.ControlCollection _oControlesPadre)
+        {
+            BRSRegistro registro = new BRSRegistro();
+            registro.Set(ALMACEN, almacen);
+            registro.Set(FABRICANTE, fabricante);
+            registro.Set(ARTICULOALMACEN, articuloalmacen);
+            registro.Set(STOCKINI, stockini);
+            registro.Set(STOCKACT, stockact);
+            registro.Set(UBICACION, ubicacion);
+            registro.Set(STOCKINI2, stockini2);
+            registro.Set(STOCKACT2, stockact2);
+            registro.Set(PTESERVIR, pteservir);
+            registro.Set(PTESERVIR2, pteservir2);
+            registro.Set(PTERECIBIR, pterecibir);
+            registro.Set(PTERECIBIR2, pterecibir2);
+            registro.Set(FECULTACT, fecultact);
+            registro.Set(FECULTSAL, fecultsal);
+            registro.Set(STOCKMIN, stockmin);
+            registro.Set(STOCKMAX, stockmax);
+            registro.Set(REPOSICION, reposicion);
+            registro.Set(UNICOMPRA, unicompra);
+            registro.Set(IMPCOMPRA, impcompra);
+            registro.CargarFormulario(_oControlesPadre);
+            registro = null;
+        }
+
+        /// <summary>
+        /// Función que comprara el contenido del objeto con otro objeto del mismo tipo
+        /// </summary>
+        /// <param name="c"></param>
+        /// <param name="camposComparar">Nulo o nombre de los campos que queremos comparar</param>
+        /// <returns>Una lista con los nombres de los campos modificados</returns>
+        public List<string> Comparar(DatosAlmacen c, params string[] camposComparar)
+        {
+            List<string> camposModificados = new List<string>();
+
+            if (camposComparar == null || camposComparar.Contains(ALMACEN))
+                if (almacen != c.almacen) camposModificados.Add(ALMACEN);
+            if (camposComparar == null || camposComparar.Contains(FABRICANTE))
+                if (fabricante != c.fabricante) camposModificados.Add(FABRICANTE);
+            if (camposComparar == null || camposComparar.Contains(ARTICULOALMACEN))
+                if (articuloalmacen != c.articuloalmacen) camposModificados.Add(ARTICULOALMACEN);
+            if (camposComparar == null || camposComparar.Contains(STOCKINI))
+                if (stockini != c.stockini) camposModificados.Add(STOCKINI);
+            if (camposComparar == null || camposComparar.Contains(STOCKACT))
+                if (stockact != c.stockact) camposModificados.Add(STOCKACT);
+            if (camposComparar == null || camposComparar.Contains(UBICACION))
+                if (ubicacion != c.ubicacion) camposModificados.Add(UBICACION);
+            if (camposComparar == null || camposComparar.Contains(STOCKINI2))
+                if (stockini2 != c.stockini2) camposModificados.Add(STOCKINI2);
+            if (camposComparar == null || camposComparar.Contains(STOCKACT2))
+                if (stockact2 != c.stockact2) camposModificados.Add(STOCKACT2);
+            if (camposComparar == null || camposComparar.Contains(PTESERVIR))
+                if (pteservir != c.pteservir) camposModificados.Add(PTESERVIR);
+            if (camposComparar == null || camposComparar.Contains(PTESERVIR2))
+                if (pteservir2 != c.pteservir2) camposModificados.Add(PTESERVIR2);
+            if (camposComparar == null || camposComparar.Contains(PTERECIBIR))
+                if (pterecibir != c.pterecibir) camposModificados.Add(PTERECIBIR);
+            if (camposComparar == null || camposComparar.Contains(PTERECIBIR2))
+                if (pterecibir2 != c.pterecibir2) camposModificados.Add(PTERECIBIR2);
+            if (camposComparar == null || camposComparar.Contains(FECULTACT))
+                if (fecultact != c.fecultact) camposModificados.Add(FECULTACT);
+            if (camposComparar == null || camposComparar.Contains(FECULTSAL))
+                if (fecultsal != c.fecultsal) camposModificados.Add(FECULTSAL);
+            if (camposComparar == null || camposComparar.Contains(STOCKMAX))
+                if (stockmax != c.stockmax) camposModificados.Add(STOCKMAX);
+            if (camposComparar == null || camposComparar.Contains(STOCKMIN))
+                if (stockmin != c.stockmin) camposModificados.Add(STOCKMIN);
+            if (camposComparar == null || camposComparar.Contains(REPOSICION))
+                if (reposicion != c.reposicion) camposModificados.Add(REPOSICION);
+            if (camposComparar == null || camposComparar.Contains(UNICOMPRA))
+                if (unicompra != c.unicompra) camposModificados.Add(UNICOMPRA);
+            if (camposComparar == null || camposComparar.Contains(IMPCOMPRA))
+                if (impcompra != c.impcompra) camposModificados.Add(IMPCOMPRA);
+
+            return camposModificados;
+        }
+
+        #endregion
+
+        #region Funciones de validación
+
+        /// <summary>
+        /// Función que valida todos los campos del modelo
+        /// </summary>
+        /// <param name="_insertando">Indica si estamos insertando o no</param>
+        /// <returns>Verdadero o falso si es válido o no</returns>
+        public bool Validar(bool _insertando = false)
+        {
+            ErroresValidacion = new OrderedDictionary();
+
+
+            Validar_ALMACEN();
+            Validar_FABRICANTE();
+            Validar_ARTICULOALMACEN();
+            Validar_STOCKINI();
+            Validar_STOCKACT();
+            Validar_UBICACION();
+            Validar_STOCKINI2();
+            Validar_STOCKACT2();
+            Validar_PTESERVIR();
+            Validar_PTESERVIR2();
+            Validar_PTERECIBIR();
+            Validar_PTERECIBIR2();
+            Validar_FECULTACT();
+            Validar_FECULTSAL();
+            Validar_STOCKMIN();
+            Validar_STOCKMAX();
+            Validar_REPOSICION();
+            Validar_UNICOMPRA();
+            Validar_IMPCOMPRA();
+
+            return ErroresValidacion.Count == 0;
+        }
+
+        /// <summary>
+        /// Valida el campo almacen
+        /// </summary>
+        /// <returns>Verdadero o falso si es válido o no</returns>
+        private bool Validar_ALMACEN()
+        {
+            short nMax = Convert.ToInt16(new string('9', ALMACEN_MAXLENGTH));
+            string cMensaje = null;
+
+            if (almacen == null)
+            {
+                cMensaje = "ALMACEN no puede estar vacío";
+            }
+            else if (!BRSLib.valorShortEntreRangos(1, Convert.ToInt16(almacen), nMax))
+            {
+                cMensaje = "ALMACEN debe estar comprendido entre {0} y {1}";
+                cMensaje = string.Format(cMensaje, 1, nMax);
+            }
+
+            if (cMensaje != null)
+                ErroresValidacion.Add(ALMACEN, cMensaje);
+
+            return cMensaje == null;
+        }
+
+        /// <summary>
+        /// Valida el campo fabricante
+        /// </summary>
+        /// <returns>Verdadero o falso si es válido o no</returns>
+        private bool Validar_FABRICANTE()
+        {
+            short nMax = Convert.ToInt16(new string('9', FABRICANTE_MAXLENGTH));
+            string cMensaje = null;
+
+            if (fabricante == null)
+            {
+                cMensaje = "FABRICANTE no puede estar vacío";
+            }
+            else if (!BRSLib.valorShortEntreRangos(0, Convert.ToInt16(fabricante), nMax))
+            {
+                cMensaje = "FABRICANTE debe estar comprendido entre {0} y {1}";
+                cMensaje = string.Format(cMensaje, 0, nMax);
+            }
+
+            if (cMensaje != null)
+                ErroresValidacion.Add(FABRICANTE, cMensaje);
+
+            return cMensaje == null;
+        }
+
+        /// <summary>
+        /// Valida el campo articuloalmacen
+        /// </summary>
+        /// <returns>Verdadero o falso si es válido o no</returns>
+        private bool Validar_ARTICULOALMACEN()
+        {
+            string cMensaje = null;
+
+            if (articuloalmacen == null)
+            {
+                cMensaje = "ARTICULOALMACEN no puede estar vacío";
+            }
+            else if (articuloalmacen.Length > ARTICULOALMACEN_MAXLENGTH)
+            {
+                cMensaje = "ARTICULOALMACEN debe ser inferior a {0} caracteres";
+                cMensaje = string.Format(cMensaje, ARTICULOALMACEN_MAXLENGTH + 1);
+            }
+
+            if (cMensaje != null)
+                ErroresValidacion.Add(ARTICULOALMACEN, cMensaje);
+
+            return cMensaje == null;
+        }
+
+        /// <summary>
+        /// Valida el campo stockini
+        /// </summary>
+        /// <returns>Verdadero o falso si es válido o no</returns>
+        private bool Validar_STOCKINI()
+        {
+            string cMensaje = null;
+
+            if (stockini == null)
+                stockini = STOCKINI_DEFAULT;
+
+            if (stockini == null)
+            {
+                cMensaje = "STOCKINI no puede estar vacío";
+            }
+
+            if (cMensaje != null)
+                ErroresValidacion.Add(STOCKINI, cMensaje);
+
+            return cMensaje == null;
+        }
+
+        /// <summary>
+        /// Valida el campo stockact
+        /// </summary>
+        /// <returns>Verdadero o falso si es válido o no</returns>
+        private bool Validar_STOCKACT()
+        {
+            string cMensaje = null;
+
+            if (stockact == null)
+                stockact = STOCKACT_DEFAULT;
+
+            if (stockact == null)
+            {
+                cMensaje = "STOCKACT no puede estar vacío";
+            }
+
+            if (cMensaje != null)
+                ErroresValidacion.Add(STOCKACT, cMensaje);
+
+            return cMensaje == null;
+        }
+
+        /// <summary>
+        /// Valida el campo ubicacion
+        /// </summary>
+        /// <returns>Verdadero o falso si es válido o no</returns>
+        private bool Validar_UBICACION()
+        {
+            string cMensaje = null;
+            if (ubicacion != null)
+            {
+                if (ubicacion.Length > UBICACION_MAXLENGTH)
+                {
+                    cMensaje = "UBICACION debe ser inferior a {0} caracteres";
+                    cMensaje = string.Format(cMensaje, UBICACION_MAXLENGTH + 1);
+                }
+            }
+
+            if (cMensaje != null)
+                ErroresValidacion.Add(UBICACION, cMensaje);
+
+            return cMensaje == null;
+        }
+
+        /// <summary>
+        /// Valida el campo stockini2
+        /// </summary>
+        /// <returns>Verdadero o falso si es válido o no</returns>
+        private bool Validar_STOCKINI2()
+        {
+            string cMensaje = null;
+
+            if (stockini2 == null)
+                stockini2 = STOCKINI2_DEFAULT;
+
+            if (stockini2 == null)
+            {
+                cMensaje = "STOCKINI2 no puede estar vacío";
+            }
+
+            if (cMensaje != null)
+                ErroresValidacion.Add(STOCKINI2, cMensaje);
+
+            return cMensaje == null;
+        }
+
+        /// <summary>
+        /// Valida el campo stockact2
+        /// </summary>
+        /// <returns>Verdadero o falso si es válido o no</returns>
+        private bool Validar_STOCKACT2()
+        {
+            string cMensaje = null;
+
+            if (stockact2 == null)
+                stockact2 = STOCKACT2_DEFAULT;
+
+            if (stockact2 == null)
+            {
+                cMensaje = "STOCKACT2 no puede estar vacío";
+            }
+
+            if (cMensaje != null)
+                ErroresValidacion.Add(STOCKACT2, cMensaje);
+
+            return cMensaje == null;
+        }
+
+        /// <summary>
+        /// Valida el campo pteservir
+        /// </summary>
+        /// <returns>Verdadero o falso si es válido o no</returns>
+        private bool Validar_PTESERVIR()
+        {
+            string cMensaje = null;
+
+            if (pteservir == null)
+                pteservir = PTESERVIR_DEFAULT;
+
+            if (pteservir == null)
+            {
+                cMensaje = "PTESERVIR no puede estar vacío";
+            }
+
+            if (cMensaje != null)
+                ErroresValidacion.Add(PTESERVIR, cMensaje);
+
+            return cMensaje == null;
+        }
+
+        /// <summary>
+        /// Valida el campo pteservir2
+        /// </summary>
+        /// <returns>Verdadero o falso si es válido o no</returns>
+        private bool Validar_PTESERVIR2()
+        {
+            string cMensaje = null;
+
+            if (pteservir2 == null)
+                pteservir2 = PTESERVIR2_DEFAULT;
+
+            if (pteservir2 == null)
+            {
+                cMensaje = "PTESERVIR2 no puede estar vacío";
+            }
+
+            if (cMensaje != null)
+                ErroresValidacion.Add(PTESERVIR2, cMensaje);
+
+            return cMensaje == null;
+        }
+
+        /// <summary>
+        /// Valida el campo pterecibir
+        /// </summary>
+        /// <returns>Verdadero o falso si es válido o no</returns>
+        private bool Validar_PTERECIBIR()
+        {
+            string cMensaje = null;
+
+            if (pterecibir == null)
+                pterecibir = PTERECIBIR_DEFAULT;
+
+            if (pterecibir == null)
+            {
+                cMensaje = "PTERECIBIR no puede estar vacío";
+            }
+
+            if (cMensaje != null)
+                ErroresValidacion.Add(PTERECIBIR, cMensaje);
+
+            return cMensaje == null;
+        }
+
+        /// <summary>
+        /// Valida el campo pterecibir2
+        /// </summary>
+        /// <returns>Verdadero o falso si es válido o no</returns>
+        private bool Validar_PTERECIBIR2()
+        {
+            string cMensaje = null;
+
+            if (pterecibir2 == null)
+                pterecibir2 = PTERECIBIR2_DEFAULT;
+
+            if (pterecibir2 == null)
+            {
+                cMensaje = "PTERECIBIR2 no puede estar vacío";
+            }
+
+            if (cMensaje != null)
+                ErroresValidacion.Add(PTERECIBIR2, cMensaje);
+
+            return cMensaje == null;
+        }
+
+        /// <summary>
+        /// Valida el campo fecultact
+        /// </summary>
+        /// <returns>Verdadero o falso si es válido o no</returns>
+        private bool Validar_FECULTACT()
+        {
+            string cMensaje = null;
+
+            if (cMensaje != null)
+                ErroresValidacion.Add(FECULTACT, cMensaje);
+
+            return cMensaje == null;
+        }
+
+        /// <summary>
+        /// Valida el campo fecultsal
+        /// </summary>
+        /// <returns>Verdadero o falso si es válido o no</returns>
+        private bool Validar_FECULTSAL()
+        {
+            string cMensaje = null;
+
+            if (cMensaje != null)
+                ErroresValidacion.Add(FECULTSAL, cMensaje);
+
+            return cMensaje == null;
+        }
+
+        /// <summary>
+        /// Valida el campo stockmin
+        /// </summary>
+        /// <returns>Verdadero o falso si es válido o no</returns>
+        private bool Validar_STOCKMIN()
+        {
+            string cMensaje = null;
+
+            if (stockmin == null)
+                stockmin = STOCKMIN_DEFAULT;
+
+            if (stockmin == null)
+            {
+                cMensaje = "STOCKMIN no puede estar vacío";
+            }
+
+            if (cMensaje != null)
+                ErroresValidacion.Add(STOCKMIN, cMensaje);
+
+            return cMensaje == null;
+        }
+
+        /// <summary>
+        /// Valida el campo stockmax
+        /// </summary>
+        /// <returns>Verdadero o falso si es válido o no</returns>
+        private bool Validar_STOCKMAX()
+        {
+            string cMensaje = null;
+
+            if (stockmax == null)
+                stockmax = STOCKMAX_DEFAULT;
+
+            if (stockmax == null)
+            {
+                cMensaje = "STOCKMAX no puede estar vacío";
+            }
+
+            if (cMensaje != null)
+                ErroresValidacion.Add(STOCKMAX, cMensaje);
+
+            return cMensaje == null;
+        }
+
+        /// <summary>
+        /// Valida el campo reposicion
+        /// </summary>
+        /// <returns>Verdadero o falso si es válido o no</returns>
+        private bool Validar_REPOSICION()
+        {
+            string cMensaje = null;
+
+            if (reposicion == null)
+                reposicion = REPOSICION_DEFAULT;
+
+            if (reposicion == null)
+            {
+                cMensaje = "REPOSICION no puede estar vacío";
+            }
+
+            if (cMensaje != null)
+                ErroresValidacion.Add(REPOSICION, cMensaje);
+
+            return cMensaje == null;
+        }
+
+        /// <summary>
+        /// Valida el campo unicompra
+        /// </summary>
+        /// <returns>Verdadero o falso si es válido o no</returns>
+        private bool Validar_UNICOMPRA()
+        {
+            string cMensaje = null;
+
+            if (unicompra == null)
+                unicompra = UNICOMPRA_DEFAULT;
+
+            if (unicompra == null)
+            {
+                cMensaje = "UNICOMPRA no puede estar vacío";
+            }
+
+            if (cMensaje != null)
+                ErroresValidacion.Add(UNICOMPRA, cMensaje);
+
+            return cMensaje == null;
+        }
+
+        /// <summary>
+        /// Valida el campo impcompra
+        /// </summary>
+        /// <returns>Verdadero o falso si es válido o no</returns>
+        private bool Validar_IMPCOMPRA()
+        {
+            string cMensaje = null;
+
+            if (impcompra == null)
+                impcompra = IMPCOMPRA_DEFAULT;
+
+            if (impcompra == null)
+            {
+                cMensaje = "IMPCOMRA no puede estar vacío";
+            }
+
+            if (cMensaje != null)
+                ErroresValidacion.Add(IMPCOMPRA, cMensaje);
+
+            return cMensaje == null;
+        }
+
+
+
+        #endregion
+
+    }
+}

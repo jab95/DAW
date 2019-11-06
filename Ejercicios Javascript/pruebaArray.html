@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <title></title>
+    <script>
+       
+            var Muestra = function () {
+                var deportes = document.getElementById("deportes").options;
+                   var array2 = [...deportes];
+                   array2.forEach(function(v){
+                        alert(v.value);
+                   })
+                }
+        
+    </script>
+</head>
+
+<body>
+
+    Deportes preferidos <br>
+    <select name=""  id="deportes" multiple >
+        <option value="Baloncesto">Baloncesto</option>
+        <option value="Balonmano">Balonmano</option>
+        <option value="Futbol">Futbol</option>
+        <option value="Tenis">Tenis</option>
+    </select>
+    <br>
+    <button onclick="Muestra()">Muestra deportes seleccionados</button>
+    <br>
+    <p id="resultado"></p>
+
+</body>
+
+</html>

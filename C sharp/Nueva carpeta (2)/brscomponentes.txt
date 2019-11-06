@@ -1,0 +1,3172 @@
+using BRSLibReyes.Mensajes;
+using BRSLibReyes.Temas;
+using Npgsql;
+using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.ComponentModel;
+using System.Data;
+using System.Diagnostics;
+using System.Drawing;
+using System.Globalization;
+using System.IO;
+using System.Linq;
+using System.Media;
+using System.Reflection;
+using System.Windows.Forms;
+using Telerik.WinControls;
+using Telerik.WinControls.Enumerations;
+using Telerik.WinControls.Primitives;
+using Telerik.WinControls.UI;
+
+namespace BRSLibReyes
+{
+    /// <summary>
+    /// Clase con funciones para trabajar con los componentes
+    /// </summary>
+    /// <version>1.0.0</version>
+    public class BRSComponentes
+    {
+
+        #region Variables
+        private static string Name = nameof(BRSComponentes);
+
+        public static string cFechaFormateada; // Variable para guardar la fecha formateada por el validador de fecha
+        public static string cHoraFormateada; // Variable para guardar la hora formateada por el validador de hora
+        public static int nIndiceEncontrar; // Indice para la función de encontrar
+
+        public enum TipoNumero { Entero, Short, Decimal, NoControlado };
+
+        /* VARIABLES AUXILIARES PARA GUARDAR LOS COLORES DE LOS COMPONENTES */
+        private static Color oColorFondo;
+        private static Color oColorFondo2;
+        private static Color oColorTexto;
+
+
+        /* CONSTANTES PARA LAS VENTANAS DE INFORMES */
+        public const int LISTADO_FECHA_MAXLENGTH = 10;
+        public const int LISTADO_HORA_MAXLENGTH = 6;
+        public const int LISTADO_TEXTOADIC_MAXLENGTH = 150;
+        public const int LISTADO_COPIAS_MAXLENGTH = 2;
+
+        #endregion
+
+        public static RadTextBox BuscarTxtDescripcion(RadTextBox txtId, string sufijo = "_nombre")
+        {
+            RadTextBox txtDescripcion = null;
+            Control[] aux = txtId.FindForm().Controls.Find(txtId.Name + sufijo, true);
+            if (aux != null && aux.Length > 0)
+                txtDescripcion = aux[0] as RadTextBox;
+            return txtDescripcion;
+        }
+
+        public static RadTextBox BuscarTxt(Form formulario, string nombreCampo)
+        {
+            RadTextBox txt = null;
+            if (!string.IsNullOrWhiteSpace(nombreCampo))
+            {
+                Control[] aux = formulario.Controls.Find("txt" + nombreCampo, true);
+                if (aux != null && aux.Length > 0)
+                    txt = aux[0] as RadTextBox;
+            }
+            return txt;
+        }
+
+        public static RadDropDownList BuscarRadDrop(Form formulario, string nombre)
+        {
+
+            RadDropDownList rad = null;
+            if (!string.IsNullOrWhiteSpace(nombre))
+            {
+                Control[] aux = formulario.Controls.Find("cbo" + nombre, true);
+                if (aux != null && aux.Length > 0)
+                    rad = aux[0] as RadDropDownList;
+            }
+            return rad;
+        }
+
+        public static void AnalizarKeyPress(object _sender, KeyPressEventArgs _e, short _modo, RadForm _form)
+        {
+            if (_sender is RadCheckBox) CampoCheckBox_KeyPress(_sender, _e, _modo, _form);
+            else if (_sender is RadDropDownList) CampoRadDropDownList_KeyPress(_sender, _e, _modo, _form);
+            else if (_sender is RadBrowseEditor) CampoRadBrowseEditor_KeyPress(_sender, _e, _modo, _form);
+            else if (_sender is RadRadioButton) CampoRadioButton_KeyPress(_sender, _e, _modo, _form);
+        }
+
+        public static string GetSenderName(object sender)
+        {
+            if (sender is RadTextBox) return (sender as RadTextBox).Name;
+            else if (sender is RadCheckBox) return (sender as RadCheckBox).Name;
+            else if (sender is RadRadioButton) return (sender as RadRadioButton).Name;
+            else if (sender is RadDropDownList) return (sender as RadDropDownList).Name;
+            else if (sender is RadBrowseEditor) return (sender as RadBrowseEditor).Name;
+            else return "";
+        }
+
+        #region Campos de Texto de Tipo Cadena
+
+        /// <summary>
+        /// Función para controlar los caracteres permitidos en un campo de tipo cadena
+        /// </summary>
+        /// <param name="sender">La caja de texto con la cadena</param>
+        /// <param name="e">El evento de la tecla pulsada</param>
+        /// <param name="modoPantalla">El modo en el que se encuentra la pantalla (1 Añadir, 2 Modificar, 3 Ver, 4 Encontrar)</param>
+        /// <param name="formulario">El formulario contenedor de la caja de texto</param>
+        /// <param name="caracteresPermitidos">Cadena de caracteres que se permite introducir en la caja de texto</param>
+        public static void CampoCadena_KeyPress(object sender, KeyPressEventArgs e, int modoPantalla,
+            RadForm formulario, string caracteresPermitidos = null, bool tabular = true)
+        {
+            if (sender is RadTextBox)
+                CampoCadena_KeyPress(sender as RadTextBox, e, modoPantalla, formulario, caracteresPermitidos, tabular);
+            else
+                throw new InvalidCastException("No se puede convertir " + sender.GetType().Name + " a RadTextBox");
+        }
+
+        /// <summary>
+        /// Función para controlar los caracteres permitidos en un campo de tipo cadena
+        /// </summary>
+        /// <param name="textBox">La caja de texto con la cadena</param>
+        /// <param name="e">El evento de la tecla pulsada</param>
+        /// <param name="modoPantalla">El modo en el que se encuentra la pantalla (1 Añadir, 2 Modificar, 3 Ver, 4 Encontrar)</param>
+        /// <param name="formulario">El formulario contenedor de la caja de texto</param>
+        /// <param name="caracteresPermitidos"></param>
+        public static void CampoCadena_KeyPress(RadTextBox textBox, KeyPressEventArgs e, int modoPantalla, RadForm formulario, string caracteresPermitidos = null, bool tabular = true)
+        {
+            bool continuar = false;
+
+            if (modoPantalla == ModoPantalla.VER || modoPantalla == ModoPantalla.ENCONTRAR)
+            {
+                continuar = true;
+            }
+            else if (string.IsNullOrWhiteSpace(caracteresPermitidos) || caracteresPermitidos.Contains(e.KeyChar.ToString()) || e.KeyChar == (char)Keys.Back)
+            {
+                continuar = true;
+                //if (textBox.MaxLength == 1) textBox.Text = ""; // Reemplazamos el contenido por la tecla pulsada
+            }
+
+            if (continuar)
+            { // Si no restringimos caracteres o la tecla pulsada es uno de los caracteres permitidos
+                if (e.KeyChar == (char)Keys.Return)
+                {
+                    if (tabular)
+                    {
+                        TabularControl(formulario);
+                        e.Handled = true;
+                    }
+                }
+                else if (modoPantalla == ModoPantalla.ENCONTRAR)
+                {
+                    if (e.KeyChar.ToString() == "*" && textBox.SelectionLength != textBox.Text.Length)
+                    {
+                        int comienzoTextoSeleccionado = textBox.SelectionStart;
+                        int finTextoSeleccionado = textBox.SelectionStart + textBox.SelectionLength;
+
+                        if (comienzoTextoSeleccionado == 0)
+                        {// Si estamos al principio
+                            if (textBox.Text.Substring(finTextoSeleccionado, 1) == "*")
+                            {// Si el primer caracter es un asterisco
+                                e.Handled = true;
+                                SystemSounds.Beep.Play();
+                            }
+                        }
+                        else if (comienzoTextoSeleccionado == textBox.Text.Length)
+                        {// Si estamos al final
+                            if (textBox.Text.Substring(textBox.Text.Length - 1) == "*")
+                            {// Si el último caracter es un asterisco
+                                e.Handled = true;
+                                SystemSounds.Beep.Play();
+                            }
+                        }
+                        else
+                        {// Si estamos en el medio
+                            if (textBox.Text.Substring(comienzoTextoSeleccionado - 1, 1) == "*")
+                            {// Si el caracter anterior es un asterisco
+                                e.Handled = true;
+                                SystemSounds.Beep.Play();
+                            }
+                            else if (finTextoSeleccionado + 1 <= textBox.Text.Length && textBox.Text.Substring(finTextoSeleccionado, 1) == "*")
+                            {// Si el caracter siguiente es un asterisco
+                                e.Handled = true;
+                                SystemSounds.Beep.Play();
+                            }
+                        }
+                    }
+                }
+            }
+            else
+            {
+                e.Handled = true;
+                SystemSounds.Beep.Play();
+            }
+        }
+
+        #endregion
+
+        #region Campos de Texto de Tipo Fecha
+
+        /// <summary>
+        /// Función que escribirá una fecha al salir, si el campo está vacío
+        /// </summary>
+        /// <param name="textBox">La caja de texto de la fecha</param>
+        /// <param name="modoPantalla">El modo en el que se encuentra la pantalla (1 Añadir, 2 Modificar, 3 Ver, 4 Encontrar)</param>
+        /// <param name="obligatoria">Si la fecha es obligatoria o no</param>
+        /// <param name="fechaDefecto">La fecha que se escribirá si es obligatoria</param>
+        /// <param name="formatoAno"></param>
+        public static void CampoFecha_Leave(object textBox, int modoPantalla, bool obligatoria = true, string fechaDefecto = null, string formatoAno = "yy")
+        {
+            CampoFecha_Leave(textBox as RadTextBox, modoPantalla, obligatoria, fechaDefecto, formatoAno);
+        }
+
+        /// <summary>
+        /// Función que escribirá una fecha al salir, si el campo está vacío
+        /// </summary>
+        /// <param name="textBox">La caja de texto de la fecha</param>
+        /// <param name="modoPantalla">El modo en el que se encuentra la pantalla (1 Añadir, 2 Modificar, 3 Ver, 4 Encontrar)</param>
+        /// <param name="obligatoria">Si la fecha es obligatoria o no</param>
+        /// <param name="fechaDefecto">La fecha que se escribirá si es obligatoria</param>
+        /// <param name="formatoAno"></param>
+        public static void CampoFecha_Leave(RadTextBox textBox, int modoPantalla, bool obligatoria = true, string fechaDefecto = null, string formatoAno = "yy")
+        {
+            bool lCorrecto = false;
+
+            if (modoPantalla != ModoPantalla.ENCONTRAR)
+            {
+                if (string.IsNullOrWhiteSpace(textBox.Text) && obligatoria)
+                {
+                    if (fechaDefecto != null)
+                        textBox.Text = fechaDefecto;
+                    else
+                        textBox.Text = DateTime.Now.ToString("dd/MM/" + formatoAno);
+                }
+
+                if (!string.IsNullOrWhiteSpace(textBox.Text))
+                {
+                    // Si hay algo escrito
+                    string cFecha = textBox.Text;
+                    cFechaFormateada = "";
+
+                    // Vamos a comprobar si la fecha viene con el símbolo de separación
+                    if ((!cFecha.Contains("/")) && (cFecha.Trim().Length >= 6))
+                    {
+                        if (cFecha.Trim().Length == 6) // Ej: 010101
+                        {
+                            cFecha = cFecha.Substring(0, 2) + "/" + cFecha.Substring(2, 2) + "/" + cFecha.Substring(4, 2);
+                        }
+                        else if (cFecha.Trim().Length == 8) // Ej: 01011001. Si la parte del año la tomamos con longitud 2, al hacer el TryParse nos interpreta 01 cómo 2001. Tenemos que coger el año completo
+                        {
+                            cFecha = cFecha.Substring(0, 2) + "/" + cFecha.Substring(2, 2) + "/" + cFecha.Substring(4, 4);
+                        }
+                    }
+
+                    textBox.Text = cFecha;
+
+                    DateTime parsedDate;
+                    if (DateTime.TryParseExact(cFecha, "dd/MM/yy", null, DateTimeStyles.None, out parsedDate))
+                    {
+                        lCorrecto = true;
+                    }
+                    else if (DateTime.TryParseExact(cFecha, "dd/MM/yyyy", null, DateTimeStyles.None, out parsedDate))
+                    {
+                        lCorrecto = true;
+                    }
+                    else
+                    {
+                        lCorrecto = false;
+                    }
+
+                    if (lCorrecto)
+                        textBox.Text = parsedDate.ToString("dd/MM/" + formatoAno);
+                    else
+                        textBox.Text = "";
+                }
+            }
+        }
+
+        public static bool CampoFecha_LeaveValidar(RadTextBox textBox, int modoPantalla, bool obligatoria = true, string fechaDefecto = null, bool bloquearSalida = true, string formatoAno = "yy")
+        {
+            bool lCorrecto = false;
+            if (modoPantalla != ModoPantalla.ENCONTRAR)
+            {
+                if (string.IsNullOrWhiteSpace(textBox.Text) && obligatoria)
+                {
+                    if (fechaDefecto != null)
+                        textBox.Text = fechaDefecto;
+                    else
+                        textBox.Text = DateTime.Now.ToString("dd/MM/" + formatoAno);
+                }
+
+                if (!string.IsNullOrWhiteSpace(textBox.Text))
+                {
+                    // Si hay algo escrito
+                    string cFecha = textBox.Text;
+                    cFechaFormateada = "";
+
+                    //Vamos a comprobar si la fecha viene con el simbolo de separacion
+                    if ((!cFecha.Contains("/")) && (cFecha.Trim().Length >= 6))
+                    {
+                        if (cFecha.Trim().Length == 6) //Ej: 010101
+                        {
+                            cFecha = cFecha.Substring(0, 2) + "/" + cFecha.Substring(2, 2) + "/" + cFecha.Substring(4, 2);
+                        }
+                        else if (cFecha.Trim().Length == 8) // Ej: 01011001. Si la parte del año la tomamos con longitud 2, al hacer el TryParse nos interpreta 01 cómo 2001. Tenemos que coger el año completo
+                        {
+                            cFecha = cFecha.Substring(0, 2) + "/" + cFecha.Substring(2, 2) + "/" + cFecha.Substring(4, 4);
+                        }
+                    }
+
+                    textBox.Text = cFecha;
+
+                    DateTime parsedDate;
+
+                    if (DateTime.TryParseExact(cFecha, "dd/MM/yy", null, DateTimeStyles.None, out parsedDate))
+                    {
+                        lCorrecto = true;
+                    }
+                    else if (DateTime.TryParseExact(cFecha, "dd/MM/yyyy", null, DateTimeStyles.None, out parsedDate))
+                    {
+                        lCorrecto = true;
+                    }
+                    else
+                    {
+                        lCorrecto = false;
+                    }
+
+                    if (!lCorrecto)
+                    {
+                        // Si la fecha no es correcta
+                        BRSLib.MostrarMensaje(Cadenas.cMensajeFormatoFecha);
+                        if (bloquearSalida)
+                        {
+                            textBox.Focus();
+                        }
+                        else
+                        {
+                            // Si no bloqueamos la salida borramos la fecha
+                            textBox.Text = cFechaFormateada = "";
+                            lCorrecto = true;
+                        }
+                    }
+                    else
+                    {
+                        textBox.Text = cFechaFormateada = parsedDate.ToString("dd/MM/" + formatoAno);
+                    }
+                }
+                else
+                {
+                    lCorrecto = true;
+                }
+            }
+            else
+            {
+                lCorrecto = true;
+            }
+            return !lCorrecto;
+        }
+
+        /// <summary>
+        /// Función para controlar los caracteres permitidos en un campo de tipo fecha
+        /// </summary>
+        /// <param name="sender">El objeto sender perteneciente a la caja de texto con la cadena</param>
+        /// <param name="e">El evento de la tecla pulsada</param>
+        /// <param name="modoPantalla">El modo en el que se encuentra la pantalla (1 Añadir, 2 Modificar, 3 Ver, 4 Encontrar)</param>
+        /// <param name="formulario">El formulario contenedor de la caja de texto</param>
+        public static void CampoFecha_KeyPress(object sender, KeyPressEventArgs e, int modoPantalla, RadForm formulario)
+        {
+            if (sender is RadTextBox)
+                CampoFecha_KeyPress(sender as RadTextBox, e, modoPantalla, formulario);
+            else
+                throw new InvalidCastException("No se puede convertir " + sender.GetType().Name + " a RadTextBox");
+        }
+
+        /// <summary>
+        /// Función para controlar los caracteres permitidos en un campo de tipo fecha
+        /// </summary>
+        /// <param name="textBox">La caja de texto con la fecha</param>
+        /// <param name="e">El evento de la tecla pulsada</param>
+        /// <param name="modoPantalla">El modo en el que se encuentra la pantalla (1 Añadir, 2 Modificar, 3 Ver, 4 Encontrar)</param>
+        /// <param name="formulario">El formulario contenedor de la caja de texto</param>
+        public static void CampoFecha_KeyPress(RadTextBox textBox, KeyPressEventArgs e, int modoPantalla, RadForm formulario)
+        {
+            if (e.KeyChar == (char)Keys.Return)
+            {
+                TabularControl(formulario);
+                e.Handled = true;
+            }
+            else if (modoPantalla != ModoPantalla.ENCONTRAR)
+            {
+                // Si no estamos en modo encontrar
+                if (Char.IsDigit(e.KeyChar))
+                {
+                    // Si es un número lo permitimos
+                }
+                else if (e.KeyChar.ToString() == "\b")
+                {
+                    // Si estamos borrando lo permitimos
+                }
+                else if (e.KeyChar.ToString() == "/")
+                {
+                    // Si es una barra lo permitimos
+                }
+                else
+                {
+                    // Si no es número, ni borrado, ni barra lo bloqueamos
+                    e.Handled = true;
+                    SystemSounds.Beep.Play();
+                }
+            }
+            else
+            {
+                // Si estamos en modo encontrar
+                if (e.KeyChar.ToString() != "/")
+                    e.Handled = PermitirCaracteresEncontrar(textBox, e);
+            }
+        }
+
+        public static bool CampoFecha_Validating(CancelEventArgs e, int modoPantalla, object sender, bool bloquearSalida = true, string formatoAno = "yy", bool mostrarError = true)
+        {
+            if (sender is RadTextBox)
+                return CampoFecha_Validating(e, modoPantalla, sender as RadTextBox, bloquearSalida, formatoAno, mostrarError);
+            else
+                throw new InvalidCastException("No se puede convertir " + sender.GetType().Name + " a RadTextBox");
+        }
+
+        /// <summary>
+        /// Función para validar campos de tipo fecha
+        /// </summary>
+        /// <param name="e"></param>
+        /// <param name="modoPantalla">El modo en el que se encuentra la pantalla (1 Añadir, 2 Modificar, 3 Ver, 4 Encontrar</param>
+        /// <param name="textBox">La caja de texto con la fecha</param>
+        /// <param name="bloquearSalida">Verdadero o falso si queremos impedir que salga del campo si no está validado</param>
+        /// <param name="formatoAno"></param>
+        /// <param name="mostrarError"></param>
+        public static bool CampoFecha_Validating(CancelEventArgs e, int modoPantalla, RadTextBox textBox, bool bloquearSalida = true, string formatoAno = "yy", bool mostrarError = true)
+        {
+            bool lValido = false;
+
+            if (modoPantalla != ModoPantalla.ENCONTRAR)
+            {
+                // Si no estamos en modo encontrar
+                if (!string.IsNullOrWhiteSpace(textBox.Text))
+                {
+                    // Si hay algo escrito
+                    bool lCorrecto = false;
+                    string cFecha = textBox.Text;
+                    cFechaFormateada = "";
+
+                    //Vamos a comprobar si la fecha viene con el simbolo de separacion
+                    if ((!cFecha.Contains("/")) && (cFecha.Trim().Length >= 6))
+                    {
+                        if (cFecha.Trim().Length == 6) //Ej: 010101
+                        {
+                            cFecha = cFecha.Substring(0, 2) + "/" + cFecha.Substring(2, 2) + "/" + cFecha.Substring(4, 2);
+                        }
+                        else if (cFecha.Trim().Length == 8) // Ej: 01011001. Si la parte del año la tomamos con longitud 2, al hacer el TryParse nos interpreta 01 cómo 2001. Tenemos que coger el año completo
+                        {
+                            cFecha = cFecha.Substring(0, 2) + "/" + cFecha.Substring(2, 2) + "/" + cFecha.Substring(4, 4);
+                        }
+                    }
+
+                    textBox.Text = cFecha;
+
+                    DateTime parsedDate;
+
+                    if (DateTime.TryParseExact(cFecha, "dd/MM/yy", null, DateTimeStyles.None, out parsedDate))
+                    {
+                        lCorrecto = true;
+                    }
+                    else if (DateTime.TryParseExact(cFecha, "dd/MM/yyyy", null, DateTimeStyles.None, out parsedDate))
+                    {
+                        lCorrecto = true;
+                    }
+                    else
+                    {
+                        lCorrecto = false;
+                    }
+
+                    cFechaFormateada = cFecha;
+
+                    if (!lCorrecto)
+                    { // Si la fecha no es correcta
+                        if (mostrarError)
+                        { // Si bloqueamos la salida mostramos el mensaje
+                            BRSLib.MostrarMensaje(Cadenas.cMensajeFormatoFecha);
+                        }
+
+                        if (bloquearSalida)
+                        {
+                            e.Cancel = true;
+                        }
+                        else
+                        {// Si no bloqueamos la salida borramos la fecha
+                            textBox.Text = cFechaFormateada = "";
+                        }
+                        lValido = false;
+                    }
+                    else
+                    {
+                        textBox.Text = cFechaFormateada = parsedDate.ToString("dd/MM/" + formatoAno);
+                        lValido = true;
+                    }
+                }
+                else
+                {
+                    cFechaFormateada = "";
+                    lValido = true;
+                }
+            }
+
+            return lValido;
+        }
+
+        /// <summary>
+        /// Funcíón que se ejecutará tras validar un campo de tipo fecha
+        /// </summary>
+        /// <param name="modoPantalla">El modo en el que se encuentra la pantalla (1 Añadir, 2 Modificar, 3 Ver, 4 Encontrar</param>
+        /// <param name="textBox">La caja de texto con la fecha</param>
+        public static void CampoFecha_Validated(int modoPantalla, RadTextBox textBox)
+        {
+            if (modoPantalla != ModoPantalla.ENCONTRAR)
+            {
+                textBox.Text = cFechaFormateada;
+            }
+        }
+
+        #endregion
+
+        #region Campos de Texto de Tipo Hora
+
+        /// <summary>
+        /// Función que escribirá una hora al salir, si el campo está vacío
+        /// </summary>
+        /// <param name="sender">La caja de texto de la hora</param>
+        /// <param name="modoPantalla">El modo en el que se encuentra la pantalla (1 Añadir, 2 Modificar, 3 Ver, 4 Encontrar)</param>
+        /// <param name="obligatoria">Si la hora es obligatoria o no</param>
+        /// <param name="horaDefecto">La hora que se escribirá si es obligatoria</param>
+        public static void CampoHora_Leave(object sender, int modoPantalla, bool obligatoria = true, string horaDefecto = null)
+        {
+            if (sender is RadTextBox)
+                CampoHora_Leave(sender as RadTextBox, modoPantalla, obligatoria, horaDefecto);
+            else
+                throw new InvalidCastException("No se puede convertir " + sender.GetType().Name + " a RadTextBox");
+        }
+
+        /// <summary>
+        /// Función que escribirá una hora al salir, si el campo está vacío
+        /// </summary>
+        /// <param name="textBox">La caja de texto de la hora</param>
+        /// <param name="modoPantalla">El modo en el que se encuentra la pantalla (1 Añadir, 2 Modificar, 3 Ver, 4 Encontrar)</param>
+        /// <param name="obligatoria">Si la hora es obligatoria o no</param>
+        /// <param name="horaDefecto">La hora que se escribirá si es obligatoria</param>
+        public static void CampoHora_Leave(RadTextBox textBox, int modoPantalla, bool obligatoria = true, string horaDefecto = null)
+        {
+            if (modoPantalla != ModoPantalla.ENCONTRAR)
+            {
+                if (string.IsNullOrWhiteSpace(textBox.Text) && obligatoria)
+                {
+                    if (horaDefecto != null)
+                        textBox.Text = horaDefecto;
+                    else
+                        textBox.Text = DateTime.Now.ToShortTimeString();
+                }
+            }
+        }
+
+        public static void CampoHora_KeyPress(Object sender, KeyPressEventArgs e, int modoPantalla, RadForm formulario)
+        {
+            if (sender is RadTextBox)
+                CampoHora_KeyPress(sender as RadTextBox, e, modoPantalla, formulario);
+            else
+                throw new InvalidCastException("No se puede convertir " + sender.GetType().Name + " a RadTextBox");
+        }
+
+        /// <summary>
+        /// Función para controlar los caracteres permitidos en un campo de tipo hora
+        /// </summary>
+        /// <param name="textBox">La caja de texto con la hora</param>
+        /// <param name="e">El evento de la tecla pulsada</param>
+        /// <param name="modoPantalla">El modo en el que se encuentra la pantalla (1 Añadir, 2 Modificar, 3 Ver, 4 Encontrar)</param>
+        /// <param name="formulario">El formulario contenedor de la caja de texto</param>
+        public static void CampoHora_KeyPress(RadTextBox textBox, KeyPressEventArgs e, int modoPantalla, RadForm formulario)
+        {
+            if (e.KeyChar == (char)Keys.Return)
+            {
+                TabularControl(formulario);
+                e.Handled = true;
+            }
+            else if (modoPantalla != ModoPantalla.ENCONTRAR)
+            {
+                // Si no estamos en modo encontrar
+                if (Char.IsDigit(e.KeyChar))
+                {
+                    // Si es un número lo permitimos
+                }
+                else if (e.KeyChar.ToString() == "\b")
+                {
+                    // Si estamos borrando lo permitimos
+                }
+                else if (e.KeyChar.ToString() == ":")
+                {
+                    // Si es dos puntos lo permitimos
+                }
+                else
+                {
+                    // Si no es número, ni borrado, ni barra lo bloqueamos
+                    e.Handled = true;
+                    SystemSounds.Beep.Play();
+                }
+            }
+            else
+            {
+                // Si estamos en modo encontrar
+                if (e.KeyChar.ToString() != ":")
+                    e.Handled = PermitirCaracteresEncontrar(textBox, e);
+            }
+        }
+
+        /// <summary>
+        /// Función para validar campos de tipo holra
+        /// </summary>
+        /// <param name="e"></param>
+        /// <param name="modoPantalla">El modo en el que se encuentra la pantalla (1 Añadir, 2 Modificar, 3 Ver, 4 Encontrar</param>
+        /// <param name="textBox">La caja de texto con la hora</param>
+        /// <param name="bloquearSalida">Verdadero o falso si queremos impedir que salga del campo si no está validado</param>
+        public static void CampoHora_Validating(CancelEventArgs e, int modoPantalla, RadTextBox textBox, bool bloquearSalida = true)
+        {
+            if (modoPantalla != ModoPantalla.ENCONTRAR)
+            {
+                // Si no estamos en modo encontrar
+                if (!string.IsNullOrWhiteSpace(textBox.Text))
+                {
+                    // Si hay algo escrito
+                    bool lCorrecto = false;
+                    string cHora = textBox.Text.Trim();
+                    cHoraFormateada = "";
+
+                    // Vamos a comprobar si la hora viene con el simbolo de separación
+                    if (!cHora.Contains(":") && (cHora.Length <= 4))
+                    {
+                        cHora = Int32.Parse(cHora).ToString("0000");
+                        cHora = cHora.Substring(0, 2) + ":" + cHora.Substring(2, 2);
+                    }
+                    else if (cHora.Contains(":") && (cHora.Length <= 4))
+                    {
+                        cHora = "0" + cHora;
+                    }
+
+                    textBox.Text = cHora;
+
+                    DateTime parsedTime;
+
+                    lCorrecto = (DateTime.TryParseExact(cHora, "HH:mm", null, DateTimeStyles.None, out parsedTime)) ? true : false;
+
+                    cHoraFormateada = cHora;
+
+                    if (!lCorrecto)
+                    {
+                        // Si la hora no es correcta
+                        BRSLib.MostrarMensaje(Cadenas.cMensajeFormatoHora);
+                        e.Cancel = bloquearSalida;
+                        if (!bloquearSalida)
+                        {
+                            // Si no bloqueamos la salida borramos la hora
+                            textBox.Text = cHoraFormateada = "";
+                        }
+                    }
+                }
+                else
+                {
+                    cHoraFormateada = "";
+                }
+            }
+        }
+
+        /// <summary>
+        /// Funcíón que se ejecutará tras validar un campo de tipo hora
+        /// </summary>
+        /// <param name="modoPantalla">El modo en el que se encuentra la pantalla (1 Añadir, 2 Modificar, 3 Ver, 4 Encontrar</param>
+        /// <param name="textBox">La caja de texto con la hora</param>
+        public static void CampoHora_Validated(int modoPantalla, RadTextBox textBox)
+        {
+            if (modoPantalla != ModoPantalla.ENCONTRAR)
+            {
+                textBox.Text = cHoraFormateada;
+            }
+        }
+
+        #endregion
+
+        #region Campos de Texto de Tipo Numérico
+
+        /// <summary>
+        /// Función para controlar los caracteres permitidos en un campo de tipo numérico
+        /// </summary>
+        /// <param name="sender">El objeto sender perteneciente a la caja de texto con el número</param>
+        /// <param name="e">El evento de la tecla pulsada</param>
+        /// <param name="modoPantalla">El modo en el que se encuentra la pantalla (1 Añadir, 2 Modificar, 3 Ver, 4 Encontrar)</param>
+        /// <param name="formulario">El formulario contenedor de la caja de texto</param>
+        /// <param name="negativos">Admite valores negativos</param>
+        /// <param name="decimales">Admite valores decimales</param>
+        public static void CampoNumerico_KeyPress(object sender, KeyPressEventArgs e, int modoPantalla, RadForm formulario, bool negativos = false, bool decimales = false, bool tabular = true)
+        {
+            if (sender is RadTextBox)
+            {
+                CampoNumerico_KeyPress(sender as RadTextBox, e, modoPantalla, formulario, negativos, decimales, tabular);
+            }
+            else
+            {
+                throw new InvalidCastException("No se puede convertir " + sender.GetType().Name + " en RadTextBox");
+            }
+        }
+
+        /// <summary>
+        /// Función para controlar los caracteres permitidos en un campo de tipo numérico
+        /// </summary>
+        /// <param name="textBox">La caja de texto con el número</param>
+        /// <param name="e">El evento de la tecla pulsada</param>
+        /// <param name="modoPantalla">El modo en el que se encuentra la pantalla (1 Añadir, 2 Modificar, 3 Ver, 4 Encontrar)</param>
+        /// <param name="formulario">El formulario contenedor de la caja de texto</param>
+        /// <param name="negativos">Permite valores negativos</param>
+        /// <param name="decimales">Permite importes decimales</param>
+        public static void CampoNumerico_KeyPress(RadTextBox textBox, KeyPressEventArgs e, int modoPantalla, RadForm formulario, bool negativos = false, bool decimales = false, bool tabular = true)
+        {
+            if (e.KeyChar == (char)Keys.Return)
+            {
+                if (tabular)
+                {
+                    TabularControl(formulario);
+                    e.Handled = true;
+                }
+            }
+            else if (modoPantalla != ModoPantalla.ENCONTRAR)
+            {
+                // Si no estamos en modo encontrar
+                if (Char.IsDigit(e.KeyChar))
+                {
+                    // Si es un número lo permitimos
+                }
+                else if (e.KeyChar.ToString() == "\b")
+                {
+                    // Si estamos borrando lo permitimos
+                }
+                else if (decimales && (e.KeyChar.ToString() == "." || e.KeyChar.ToString() == ","))
+                {
+                    // Si introdujimos un punto y permitimos decimales
+                    if (textBox.Text.Contains(".") || textBox.Text.Contains(","))
+                    {
+                        // Si el texto contiene un punto
+                        if (!textBox.SelectedText.Contains(".") || !textBox.SelectedText.Contains(","))
+                        {
+                            // Si el texto seleccionado no contiene un punto lo bloqueamos
+                            e.Handled = true;
+                            SystemSounds.Beep.Play();
+                        }
+                    }
+                }
+                else if (negativos && e.KeyChar.ToString() == "-")
+                {
+                    // Si introdujimos un negativo y permitimos negativos
+                    if (textBox.Text.Contains("-"))
+                    {
+                        // Si el texto contiene un negativo
+                        if (!textBox.SelectedText.Contains("-"))
+                        {
+                            // Si el texto seleccionado no contiene un negativo lo bloqueamos
+                            e.Handled = true;
+                            SystemSounds.Beep.Play();
+                        }
+                    }
+                    if (textBox.SelectionStart != 0)
+                    {
+                        // Si no contiene negativo y no estamos en la primera posición del texto lo bloqueamos
+                        e.Handled = true;
+                        SystemSounds.Beep.Play();
+                    }
+                }
+                else
+                {
+                    // Si no es número, ni borrado, ni punto, ni negativo lo bloqueamos
+                    e.Handled = true;
+                    SystemSounds.Beep.Play();
+                }
+            }
+            else
+            {
+                // Si estamos en modo encontrar
+                if (decimales && e.KeyChar.ToString() == ".")
+                {
+                    // Si introdujimos un punto y permitimos decimales
+                }
+                else if (negativos && e.KeyChar.ToString() == "-")
+                {
+                    // Si introdujimos un negativo y permitimos negativos
+                }
+                else
+                {
+                    e.Handled = PermitirCaracteresEncontrar(textBox, e);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Función para formatear un número al salir de un campo de tipo numérico
+        /// </summary>
+        /// <param name="modoPantalla">El modo en el que se encuentra la pantalla (1 Añadir, 2 Modificar, 3 Ver, 4 Encontrar)</param>
+        /// <param name="textBox">La caja de texto con el número</param>
+        /// <param name="formatearNumero">Si queremos formatear el número al salir o no</param>
+        /// <param name="negativos">Si admitimos números negativos o no</param>
+        /// <param name="decimales">La cantidad de números decimales que permitimos</param>
+        /// <param name="tipo">El tipo de número para comparar el tamaño</param>
+        public static bool CampoNumerico_Leave(int modoPantalla, RadTextBox textBox, bool formatearNumero = false, bool negativos = false, int decimales = 0, TipoNumero tipo = TipoNumero.NoControlado)
+        {
+            bool lCorrecto = false;
+
+            if (modoPantalla != ModoPantalla.ENCONTRAR)
+            {
+                // Si no estamos en modo encontrar
+                if (formatearNumero)
+                    textBox.Text = textBox.Text.FormatearNumero(decimales, !negativos);
+
+                if (tipo != TipoNumero.NoControlado)
+                {
+                    switch (tipo)
+                    {
+                        case TipoNumero.Entero:
+                            int numero;
+                            if (Int32.TryParse(textBox.Text, out numero))
+                                lCorrecto = true;
+                            break;
+                        case TipoNumero.Short:
+                            short entero;
+                            if (Int16.TryParse(textBox.Text, out entero))
+                                lCorrecto = true;
+                            break;
+                    }
+                    if (!lCorrecto)
+                    {
+                        BRSLib.MostrarMensaje("Número fuera de rango", " ", BRSLib.Boton.OK, BRSLib.Icono.Warning);
+                        textBox.Focus();
+                    }
+                }
+                else
+                {
+                    lCorrecto = true;
+                }
+            }
+
+            return !lCorrecto;
+        }
+
+        public static void CampoNumerico_Validating(CancelEventArgs e, int modoPantalla, object sender, bool formatearNumero = false, bool negativos = false, int decimales = 0, TipoNumero tipo = TipoNumero.NoControlado, string formatoDecimal = "0,0", bool bloquearSalida = true, bool mostrarError = true)
+        {
+            CampoNumerico_Validating(e, modoPantalla, sender as RadTextBox, formatearNumero, negativos, decimales, tipo, formatoDecimal, bloquearSalida, mostrarError);
+        }
+
+        public static void CampoNumerico_Validating(CancelEventArgs e, int modoPantalla, RadTextBox textBox, bool formatearNumero = false, bool negativos = false, int decimales = 0, TipoNumero tipo = TipoNumero.NoControlado, string formatoDecimal = "0,0", bool bloquearSalida = true, bool mostrarError = true)
+        {
+            bool lCorrecto = false;
+
+            if (modoPantalla <= ModoPantalla.MODIFICAR && !string.IsNullOrWhiteSpace(textBox.Text))
+            { // Si estamos añadiendo o modificando y la caja contiene texto
+                if (formatearNumero)
+                    textBox.Text = textBox.Text.FormatearNumero(decimales, !negativos);
+
+                if (tipo != TipoNumero.NoControlado)
+                {
+                    switch (tipo)
+                    {
+                        case TipoNumero.Entero:
+                            int intParsed;
+                            if (Int32.TryParse(textBox.Text, out intParsed))
+                                lCorrecto = true;
+                            else if (mostrarError)
+                                BRSLib.MostrarMensaje("Número fuera del rango " + int.MinValue + " ... " + int.MaxValue);
+                            break;
+
+                        case TipoNumero.Short:
+                            short shortParsed;
+                            if (Int16.TryParse(textBox.Text, out shortParsed))
+                                lCorrecto = true;
+                            else if (mostrarError)
+                                BRSLib.MostrarMensaje("Número fuera del rango " + short.MinValue + " ... " + short.MaxValue);
+                            break;
+
+                        case TipoNumero.Decimal:
+                            int parteEntera = Convert.ToInt32(formatoDecimal.Split(',')[0]);
+                            int parteDecimal = Convert.ToInt32(formatoDecimal.Split(',')[1]);
+                            string textSinComa = textBox.Text.Replace(",", "");
+                            string textDecimales = textBox.Text.Split(',')[1];
+                            if (textSinComa.Length <= parteEntera && textDecimales.Length <= parteDecimal)
+                                lCorrecto = true;
+                            else if (mostrarError)
+                                BRSLib.MostrarMensaje("Número fuera del rango. Debe contener " + parteEntera + " dígitos como máximo en total, de los cuales como máximo " + parteDecimal + " dígitos serán de la parte decimal");
+                            break;
+                    }
+                }
+                else
+                {
+                    lCorrecto = true;
+                }
+            }
+            else
+            {
+                lCorrecto = true;
+            }
+
+            if (!lCorrecto)
+            {
+                if (bloquearSalida)
+                    e.Cancel = true;
+                else
+                    textBox.Text = "";
+            }
+        }
+
+        #endregion
+
+        #region Campos de BRSCheckBox
+
+        public static void CampoBRSCheckbox_KeyPress(object checkBox, KeyPressEventArgs e, int modoPantalla, RadForm formulario)
+        {
+            if (e.KeyChar == (char)Keys.Return)
+            {
+                e.Handled = true;
+                TabularControl(formulario);
+            }
+        }
+
+        /// <summary>
+        /// Función para controlar el enter en un campo de tipo BRSCheckbox
+        /// </summary>
+        /// <param name="checkBox">La caja de texto con la cuenta</param>
+        /// <param name="e">El evento de la tecla pulsada</param>
+        /// <param name="modoPantalla">El modo en el que se encuentra la pantalla (1 Añadir, 2 Modificar, 3 Ver, 4 Encontrar)</param>
+        /// <param name="formulario">El formulario contenedor de la caja de texto</param>
+        public static void CampoBRSCheckbox_KeyPress(BRSCheckBox checkBox, KeyPressEventArgs e, int modoPantalla, RadForm formulario)
+        {
+            if (e.KeyChar == (char)Keys.Return)
+            {
+                e.Handled = true;
+                TabularControl(formulario);
+            }
+        }
+
+        #endregion
+
+        #region Campos de RadCheckBox
+
+        /// <summary>
+        /// Función para controlar el enter en un campo de tipo RadCheckbox
+        /// </summary>
+        /// <param name="sender">El objeto sender</param>
+        /// <param name="e">El evento de la tecla pulsada</param>
+        /// <param name="modoPantalla">El modo en el que se encuentra la pantalla (1 Añadir, 2 Modificar, 3 Ver, 4 Encontrar)</param>
+        /// <param name="formulario">El formulario contenedor de la caja de texto</param>
+        public static void CampoCheckBox_KeyPress(object sender, KeyPressEventArgs e, int modoPantalla, RadForm formulario)
+        {
+            if (sender is RadCheckBox)
+            {
+                CampoCheckBox_KeyPress(sender as RadCheckBox, e, modoPantalla, formulario);
+            }
+            else
+            {
+                throw new InvalidCastException("No se puede convertir " + sender.GetType().Name + " en RadCheckBox");
+            }
+        }
+
+        /// <summary>
+        /// Función para controlar el enter en un campo de tipo RadCheckbox
+        /// </summary>
+        /// <param name="checkBox">El campo checkbox</param>
+        /// <param name="e">El evento de la tecla pulsada</param>
+        /// <param name="modoPantalla">El modo en el que se encuentra la pantalla (1 Añadir, 2 Modificar, 3 Ver, 4 Encontrar)</param>
+        /// <param name="formulario">El formulario contenedor de la caja de texto</param>
+        public static void CampoCheckBox_KeyPress(RadCheckBox checkBox, KeyPressEventArgs e, int modoPantalla, RadForm formulario)
+        {
+            if (e.KeyChar == (char)Keys.Return)
+            {
+                e.Handled = true;
+                //checkBox.Checked = !checkBox.Checked;
+                TabularControl(formulario);
+                return;
+            }
+            else if (e.KeyChar == (char)Keys.Space)
+            {
+                e.Handled = true;
+                if (checkBox is BRSCheckBoxNuevo)
+                {
+                    if (checkBox.IsThreeState)
+                    {
+                        switch (checkBox.ToggleState)
+                        {
+                            case ToggleState.On: checkBox.ToggleState = ToggleState.Off; break;
+                            case ToggleState.Off: checkBox.ToggleState = ToggleState.Indeterminate; break;
+                            case ToggleState.Indeterminate: checkBox.ToggleState = ToggleState.On; break;
+                        }
+                    }
+                    else
+                    {
+                        switch (checkBox.ToggleState)
+                        {
+                            case ToggleState.On: checkBox.ToggleState = ToggleState.Off; break;
+                            case ToggleState.Off: checkBox.ToggleState = ToggleState.On; break;
+                        }
+                    }
+                }
+                return;
+            }
+        }
+
+        #endregion
+
+        #region Campos de RadDropDownList
+
+        /// <summary>
+        /// Función para controlar el enter en un campo de tipo RadDropDownList
+        /// </summary>
+        /// <param name="sender">El objeto sender perteneciente al combo</param>
+        /// <param name="e">El evento de la tecla pulsada</param>
+        /// <param name="modoPantalla">El modo en el que se encuentra la pantalla (1 Añadir, 2 Modificar, 3 Ver, 4 Encontrar)</param>
+        /// <param name="formulario">El formulario contenedor de la caja de texto</param>
+        public static void CampoRadDropDownList_KeyPress(object sender, KeyPressEventArgs e, int modoPantalla, RadForm formulario)
+        {
+            if (sender is RadDropDownList)
+                CampoRadDropDownList_KeyPress(sender as RadDropDownList, e, modoPantalla, formulario);
+            else
+                throw new InvalidCastException("No se puede convertir " + sender.GetType().Name + " a RadDropDownList");
+        }
+
+        /// <summary>
+        /// Función para controlar el enter en un campo de tipo RadDropDownList
+        /// </summary>
+        /// <param name="comboBox">El componente combobox</param>
+        /// <param name="e">El evento de la tecla pulsada</param>
+        /// <param name="modoPantalla">El modo en el que se encuentra la pantalla (1 Añadir, 2 Modificar, 3 Ver, 4 Encontrar)</param>
+        /// <param name="formulario">El formulario contenedor de la caja de texto</param>
+        public static void CampoRadDropDownList_KeyPress(RadDropDownList comboBox, KeyPressEventArgs e, int modoPantalla, RadForm formulario)
+        {
+            if (e.KeyChar == (char)Keys.Return)
+            {
+                e.Handled = true;
+                TabularControl(formulario);
+            }
+        }
+
+        /// <summary>
+        /// Función que rellena on campo RadDropDownList con los valores de la base de datos
+        /// </summary>
+        /// <param name="comboBox">El objeto que queremos rellenar</param>
+        /// <param name="valor">El nombre del campo usado como valor</param>
+        /// <param name="texto">El nombre del campo usado como texto</param>
+        /// <param name="from">El nombre de la tabla de donde queremos extraer los datos</param>
+        /// <param name="where">Condición especial que se aplicará a la consulta</param>
+        /// <param name="order">Orden en el que queremos que se presenten los campos</param>
+        /// <param name="cConexion">La cadena de conexión a la base de datos donde se encuentran los datos</param>
+        /// <param name="lLimpiar">Si queremos limpiar previamente o no valores anteriores del combo</param>
+        /// <param name="lOrdenInverso">Si queremos invertir el orden de la consulta</param>
+        public static void RellenarCombo(RadDropDownList comboBox, string valor, string texto, string from, string where = null, string order = null, string cConexion = null, bool lLimpiar = false, bool lOrdenInverso = false, bool lAutoSeleccionar = true)
+        {
+            NpgsqlConnection oConexionPostgres = null;
+            NpgsqlCommand oComandoPostgres = null;
+            NpgsqlDataReader oDataReader = null;
+
+            string cSQL = "SELECT " + valor + ", " + texto + " FROM " + from;
+            if (where != null)
+                cSQL += " WHERE " + where;
+            if (order != null)
+                cSQL += " ORDER BY " + order;
+            if (lOrdenInverso)
+                cSQL += " DESC";
+
+            oConexionPostgres = new NpgsqlConnection(cConexion);
+            oComandoPostgres = new NpgsqlCommand(cSQL, oConexionPostgres);
+
+            try
+            {
+                if (oConexionPostgres != null)
+                {
+                    oConexionPostgres.Open();
+                    oDataReader = oComandoPostgres.ExecuteReader();
+
+                    if (lLimpiar)
+                    {
+                        comboBox.Items.Clear();
+                        Application.DoEvents();
+                    }
+
+                    if (oDataReader.HasRows)
+                    {
+                        while (oDataReader.Read())
+                        {
+                            RadListDataItem elemento = new RadListDataItem();
+
+                            if (valor.Contains("."))
+                                valor = valor.Split('.')[1];
+                            if (texto.Contains("."))
+                                texto = texto.Split('.')[1];
+
+                            elemento.Value = Convert.ToString(oDataReader[valor]);
+                            elemento.Text = Convert.ToString(oDataReader[texto]);
+                            comboBox.Items.Add(elemento);
+                        }
+                    }
+                    else
+                    {
+                        RadListDataItem elemento = new RadListDataItem
+                        {
+                            Value = -1,
+                            Text = "-- SIN RESULTADO --"
+                        };
+                        comboBox.Items.Add(elemento);
+                    }
+
+                }
+                else
+                {
+                    RadListDataItem elemento = new RadListDataItem
+                    {
+                        Value = -1,
+                        Text = "-- ERROR AL CARGAR --"
+                    };
+                    comboBox.Items.Add(elemento);
+
+                    BRSLib.MostrarMensaje("No se estableció una cadena de conexión" + "\n\rBRSLib : RellenarCombo()", " ", BRSLib.Boton.OK, BRSLib.Icono.Error);
+                }
+            }
+            catch (Exception ex)
+            {
+                comboBox.Items.Clear();
+
+                RadListDataItem elemento = new RadListDataItem
+                {
+                    Value = -1,
+                    Text = "-- ERROR AL CARGAR --"
+                };
+                comboBox.Items.Add(elemento);
+
+                BRSLib.Logger?.LogExcepcion(ex);
+                BRSLib.MostrarMensaje(ex.Message + "\n\rBRSLib : RellenarCombo()", " ", BRSLib.Boton.OK, BRSLib.Icono.Error);
+            }
+            finally
+            {
+                if (oConexionPostgres != null && oConexionPostgres.State == ConnectionState.Open)
+                    oConexionPostgres.Close();
+                if (oDataReader != null)
+                    oDataReader.Close();
+            }
+
+            if (lAutoSeleccionar)
+            {
+                comboBox.SelectedIndex = 0;
+                comboBox.Update();
+            }
+        }
+
+        public static void RellenarComboManual(RadDropDownList combo, string[] textos, object[] valores)
+        {
+            RadListDataItem elemento;
+            combo.Items.Clear();
+            for (int i = 0; i < textos.Length; i++)
+            {
+                elemento = new RadListDataItem
+                {
+                    Text = textos[i],
+                    Value = valores[i]
+                };
+                combo.Items.Add(elemento);
+            }
+        }
+
+        #endregion
+
+        #region Campos de RadBrowseEditor
+
+        public static void CampoRadBrowseEditor_KeyPress(object sender, KeyPressEventArgs e, int modoPantalla, RadForm formulario)
+        {
+            if (sender is RadBrowseEditor)
+                CampoRadBrowseEditor_KeyPress(sender as RadBrowseEditor, e, modoPantalla, formulario);
+            else
+                throw new InvalidCastException("No se puede convertir " + sender.GetType().Name + " a RadBrowseEditor");
+        }
+
+        /// <summary>
+        /// Función para controlar el enter en un campo de tipo RadBrowseEditor
+        /// </summary>
+        /// <param name="browseEditor">El componente browseEditor</param>
+        /// <param name="e">El evento de la tecla pulsada</param>
+        /// <param name="modoPantalla">El modo en el que se encuentra la pantalla (1 Añadir, 2 Modificar, 3 Ver, 4 Encontrar)</param>
+        /// <param name="formulario">El formulario contenedor de la caja de texto</param>
+        public static void CampoRadBrowseEditor_KeyPress(RadBrowseEditor browseEditor, KeyPressEventArgs e, int modoPantalla, RadForm formulario)
+        {
+            if (e.KeyChar == (char)Keys.Return)
+            {
+                e.Handled = true;
+                TabularControl(formulario);
+            }
+        }
+
+        #endregion
+
+        #region Campos de RadioButton
+
+        /// <summary>
+        /// Función para controlar el enter en un campo de tipo RadioButton
+        /// </summary>
+        /// <param name="radioButton">El componente RadioButton</param>
+        /// <param name="e">El evento de la tecla pulsada</param>
+        /// <param name="modoPantalla">El modo en el que se encuentra la pantalla (1 Añadir, 2 Modificar, 3 Ver, 4 Encontrar)</param>
+        /// <param name="formulario">El formulario contenedor de la caja de texto</param>
+        public static void CampoRadioButton_KeyPress(RadRadioButton radioButton, KeyPressEventArgs e, int modoPantalla, RadForm formulario)
+        {
+            if (e.KeyChar == (char)Keys.Return)
+            {
+                e.Handled = true;
+                if (radioButton.Parent is RadGroupBox groupBox)
+                {
+                    if (formulario.ActiveControl != null)
+                    {
+                        if (Control.ModifierKeys == Keys.Shift)
+                            formulario.SelectNextControl(formulario.ActiveControl, false, true, true, true);
+                        else
+                            formulario.SelectNextControl(formulario.ActiveControl, true, true, true, true);
+                    }
+                }
+                else
+                {
+                    TabularControl(formulario);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Función para controlar el enter en un campo de tipo RadioButton
+        /// </summary>
+        /// <param name="radioButton">El componente RadioButton</param>
+        /// <param name="e">El evento de la tecla pulsada</param>
+        /// <param name="modoPantalla">El modo en el que se encuentra la pantalla (1 Añadir, 2 Modificar, 3 Ver, 4 Encontrar)</param>
+        /// <param name="formulario">El formulario contenedor de la caja de texto</param>
+        public static void CampoRadioButton_KeyPress(object radioButton, KeyPressEventArgs e, int modoPantalla, RadForm formulario)
+        {
+            CampoRadioButton_KeyPress(radioButton as RadRadioButton, e, modoPantalla, formulario);
+        }
+
+        #endregion
+
+        /// <summary>
+        /// Función para permitir o no escribir caracteres en el modo encontrar
+        /// </summary>
+        /// <param name="textBox">La caja de texto con el texto a comprobar</param>
+        /// <param name="e">El evento de la tecla pulsada</param>
+        /// <returns>Verdadero o falso si denegamos la escritura</returns>
+        private static bool PermitirCaracteresEncontrar(RadTextBox textBox, KeyPressEventArgs e)
+        {
+            bool caracterDenegado = false;
+
+            if (!Char.IsDigit(e.KeyChar) && e.KeyChar.ToString() != "\b")
+            {
+                switch (e.KeyChar)
+                {
+                    case ':':
+                        if (textBox.Text.Contains(":")) caracterDenegado = true;
+                        break;
+                    case '>':
+                        if (textBox.Text.Contains(">")) caracterDenegado = true;
+                        break;
+                    case '<':
+                        if (textBox.Text.Contains("<")) caracterDenegado = true;
+                        break;
+                    case '*':
+                        break;
+                    case '=':
+                        break;
+                    case '|':
+                        break;
+                    case 'N':
+                    case 'n':
+                        break;
+                    case 'U':
+                    case 'u':
+                        break;
+                    case 'L':
+                    case 'l':
+                        break;
+                    case 'O':
+                    case 'o':
+                        break;
+                    case 'T':
+                    case 't':
+                        break;
+                    case 'I':
+                    case 'i':
+                        break;
+                    case ' ':
+                        break;
+                    case ',':
+                        break;
+                    default:
+                        caracterDenegado = true;
+                        break;
+                }
+            }
+
+            if (caracterDenegado)
+                SystemSounds.Beep.Play();
+
+            return caracterDenegado;
+
+        }
+
+        #region Establecer propiedades de los componentes
+
+        public static void RecorrerControles(Control.ControlCollection oControlesPadre, bool lReadOnly, int nModo, List<string> acColumnasExcluirEncontrar = null, EventHandler EventoEnter = null, KeyEventHandler EventoKeyDown = null, KeyPressEventHandler EventoKeyPress = null, EventHandler EventoLeave = null, CancelEventHandler EventoValidating = null, EventHandler EventoValidated = null)
+        {
+            foreach (Control oControl in oControlesPadre.OfType<RadSplitContainer>())
+                foreach (Control oControl2 in oControl.Controls.OfType<SplitPanel>())
+                    RecorrerControles(oControl2.Controls, lReadOnly, nModo, acColumnasExcluirEncontrar, EventoEnter, EventoKeyDown, EventoKeyPress, EventoLeave, EventoValidating, EventoValidated);
+
+            foreach (Control oControl in oControlesPadre.OfType<RadPageView>())
+            {
+                RadPageView rpv = oControl as RadPageView;
+                if (rpv.Pages.Count > 0) rpv.SelectedPage = rpv.Pages[0];
+                foreach (Control oControl2 in oControl.Controls.OfType<RadPageViewPage>())
+                    RecorrerControles(oControl2.Controls, lReadOnly, nModo, acColumnasExcluirEncontrar, EventoEnter, EventoKeyDown, EventoKeyPress, EventoLeave, EventoValidating, EventoValidated);
+            }
+
+            foreach (Control oControl in oControlesPadre.OfType<RadGroupBox>())
+                RecorrerControles(oControl.Controls, lReadOnly, nModo, acColumnasExcluirEncontrar, EventoEnter, EventoKeyDown, EventoKeyPress, EventoLeave, EventoValidating, EventoValidated);
+
+            foreach (Control oControl in oControlesPadre.OfType<RadPanel>())
+                RecorrerControles(oControl.Controls, lReadOnly, nModo, acColumnasExcluirEncontrar, EventoEnter, EventoKeyDown, EventoKeyPress, EventoLeave, EventoValidating, EventoValidated);
+
+            foreach (Control oControl in oControlesPadre.OfType<UserControl>())
+                RecorrerControles(oControl.Controls, lReadOnly, nModo, acColumnasExcluirEncontrar, EventoEnter, EventoKeyDown, EventoKeyPress, EventoLeave, EventoValidating, EventoValidated);
+
+            foreach (Control oControl in oControlesPadre.OfType<RadTextBox>())
+            {
+                if (nModo == ModoPantalla.ENCONTRAR && acColumnasExcluirEncontrar != null)
+                {
+                    string cNombre = (oControl as RadTextBox).Name.Substring(3);
+                    lReadOnly = acColumnasExcluirEncontrar.Contains(cNombre) ? false : true;
+                }
+
+                oControl.TabStop = (nModo == ModoPantalla.VER) ? false : true;
+
+                ControlBRSTextBox(oControl, lReadOnly, EventoEnter, EventoKeyDown, EventoKeyPress, EventoLeave, EventoValidating, EventoValidated);
+            }
+
+            //foreach (Control oControl in oControlesPadre.OfType<BRSCheckBox>())
+            //    //ControlBRSCheckBox(oControl, lReadOnly, nModo);
+            //    ControlRadCheckBox(oControl, lReadOnly, nModo, EventoEnter, EventoKeyDown, EventoKeyPress, EventoLeave, EventoValidating, EventoValidated);
+
+            foreach (Control oControl in oControlesPadre.OfType<RadCheckBox>())
+                ControlRadCheckBox(oControl, lReadOnly, nModo, EventoEnter, EventoKeyDown, EventoKeyPress, EventoLeave, EventoValidating, EventoValidated);
+
+            foreach (Control oControl in oControlesPadre.OfType<RadDropDownList>())
+                ControlRadDropDownList(oControl, lReadOnly, EventoEnter, EventoKeyDown, EventoKeyPress, EventoLeave, EventoValidating, EventoValidated);
+
+            foreach (Control oControl in oControlesPadre.OfType<RadRadioButton>())
+                ControlRadRadioButton(oControl, lReadOnly, EventoEnter, EventoKeyDown, EventoKeyPress, EventoLeave, EventoValidating, EventoValidated);
+
+        }
+
+        /// <summary>
+        /// Función que establece las propiedades de los componentes textbox según sean de sólo lectura o no
+        /// </summary>
+        /// <param name="oControles"></param>
+        /// <param name="lReadOnly"></param>
+        public static void ControlBRSTextBox(Control oControles, bool lReadOnly, EventHandler EventoEnter = null, KeyEventHandler EventoKeyDown = null, KeyPressEventHandler EventoKeyPress = null, EventHandler EventoLeave = null, CancelEventHandler EventoValidating = null, EventHandler EventoValidated = null)
+        {
+            RadTextBox textBox = oControles as RadTextBox;
+            textBox.MaxLength = 32767;
+
+            //// Si estamos en modo VER (3) establecemos el color definido
+            //textBox.ReadOnly = lReadOnly;
+            //if (lReadOnly) textBox.TextBoxElement.TextBoxItem.BackColor = BRSLibTemas.colorSoloLectura;
+            //else textBox.TextBoxElement.TextBoxItem.BackColor = Color.White;
+            //// Establecemos el TabStop al contrario que ReadOnly (Si ReadOnly -> !TabStop)
+            //textBox.TabStop = !textBox.ReadOnly;
+
+            ReadOnly_Control_TextBox(textBox, lReadOnly, false);
+
+            // Si estamos modo añadir o modificar y la caja de texto la vamos a utilizar como FK la inhabilitamos
+            if (!lReadOnly)
+            {
+                if (string.IsNullOrWhiteSpace(textBox.AccessibleDescription) || (!string.IsNullOrWhiteSpace(textBox.AccessibleDescription) && textBox.AccessibleName == "DESACTIVADO"))
+                {
+                    //textBox.ReadOnly = !lReadOnly;
+                    //textBox.TextBoxElement.TextBoxItem.BackColor = BRSLibTemas.colorSoloLectura;
+                    ReadOnly_Control_TextBox(textBox, !lReadOnly, false);
+                }
+            }
+
+
+            string accessibleDescription = textBox.AccessibleDescription != null ? textBox.AccessibleDescription.ToUpper() : "NULL";
+            // Establecemos el alineamiento horizontal en función del tipo de campo (AccesibleDescription)
+            switch (accessibleDescription)
+            {
+                // NÚMEROS
+                case "1":
+                case "5":
+                    textBox.TextAlign = HorizontalAlignment.Right;
+                    break;
+                // DECIMALES
+                case "2":
+                case "6":
+                    textBox.TextAlign = HorizontalAlignment.Right;
+                    break;
+                // FECHAS
+                case "3":
+                case "7":
+                    textBox.TextAlign = HorizontalAlignment.Left;
+                    break;
+                // CADENAS
+                case "4":
+                case "8":
+                    textBox.TextAlign = HorizontalAlignment.Left;
+                    string aux = Convert.ToString(textBox.AccessibleName);
+                    if (string.IsNullOrWhiteSpace(aux) || aux != "NOMAYUSCULAS")
+                        textBox.CharacterCasing = CharacterCasing.Upper;
+                    else
+                        textBox.CharacterCasing = CharacterCasing.Normal;
+                    break;
+                // HORAS
+                case "HORA":
+                case "HORAH":
+                    textBox.TextAlign = HorizontalAlignment.Left;
+                    break;
+                // POR DEFECTO
+                case "NULL":
+                default:
+                    textBox.TextAlign = HorizontalAlignment.Left;
+                    textBox.CharacterCasing = CharacterCasing.Upper;
+                    break;
+            }
+
+            if (string.IsNullOrWhiteSpace(textBox.Text)) textBox.Text = "";
+
+            if (EventoEnter != null) textBox.Enter += EventoEnter;
+            if (EventoKeyDown != null) textBox.KeyDown += EventoKeyDown;
+            if (EventoKeyPress != null) textBox.KeyPress += EventoKeyPress;
+            if (EventoLeave != null) textBox.Leave += EventoLeave;
+            if (EventoValidating != null) textBox.Validating += EventoValidating;
+            if (EventoValidated != null) textBox.Validated += EventoValidated;
+        }
+
+        /// <summary>
+        /// Función que establece las propiedades de los componentes combobox según sean de sólo lectura o no
+        /// </summary>
+        /// <param name="oControles"></param>
+        /// <param name="lReadOnly"></param>
+        public static void ControlRadDropDownList(Control oControles, bool lReadOnly, EventHandler EventoEnter = null, KeyEventHandler EventoKeyDown = null, KeyPressEventHandler EventoKeyPress = null, EventHandler EventoLeave = null, CancelEventHandler EventoValidating = null, EventHandler EventoValidated = null)
+        {
+            var lista = (RadDropDownList)oControles;
+            lista.AllowShowFocusCues = true;
+
+            ReadOnly_Control_DropDownList(lista, lReadOnly);
+
+            foreach (RadDropDownListElement root in lista.RootElement.Children)
+            {
+                foreach (RadDropDownListEditableAreaElement rhijos in root.Children[2].GetChildren(ChildrenListOptions.IncludeCollapsed).Where(c => c.RadObjectType.Name == nameof(RadDropDownListEditableAreaElement)))
+                {
+                    foreach (RadTextBoxItem cajatexto in rhijos.Children[0].GetChildren(ChildrenListOptions.IncludeCollapsed).Where(c => c.RadObjectType.Name == nameof(RadTextBoxItem)))
+                    {
+                        // Establecemos el alineamiento horizontal en función del tipo de campo (AccesibleDescription) o su contenido
+                        if (int.TryParse(cajatexto.Text, out int resultadoInt) || decimal.TryParse(cajatexto.Text, out decimal resultadoDecimal))
+                        {
+                            string accessibleDescription = lista.AccessibleDescription != null ? lista.AccessibleDescription.ToUpper() : "NULL";
+                            switch (accessibleDescription)
+                            {
+                                // NÚMEROS
+                                case "1":
+                                case "5":
+                                    cajatexto.TextAlign = HorizontalAlignment.Right;
+                                    break;
+                                // DECIMALES
+                                case "2":
+                                case "6":
+                                    cajatexto.TextAlign = HorizontalAlignment.Right;
+                                    break;
+                                // FECHAS
+                                case "3":
+                                case "7":
+                                    cajatexto.TextAlign = HorizontalAlignment.Left;
+                                    break;
+                                // CADENAS
+                                case "4":
+                                case "8":
+                                    cajatexto.TextAlign = HorizontalAlignment.Left;
+                                    break;
+                                // HORAS
+                                case "HORA":
+                                case "HORAH":
+                                    cajatexto.TextAlign = HorizontalAlignment.Left;
+                                    break;
+                                // POR DEFECTO
+                                case "NULL":
+                                default:
+                                    cajatexto.TextAlign = HorizontalAlignment.Left;
+                                    break;
+                            }
+                        }
+                        else
+                        {
+                            cajatexto.TextAlign = HorizontalAlignment.Left;
+                        }
+                    }
+                }
+            }
+
+            if (EventoEnter != null) lista.Enter += EventoEnter;
+            if (EventoKeyDown != null) lista.KeyDown += EventoKeyDown;
+            if (EventoKeyPress != null) lista.KeyPress += EventoKeyPress;
+            if (EventoLeave != null) lista.Leave += EventoLeave;
+            if (EventoValidating != null) lista.Validating += EventoValidating;
+            if (EventoValidated != null) lista.Validated += EventoValidated;
+        }
+
+        /// <summary>
+        /// Función que establece las propiedades de los componentes checkbox según sean de sólo lectura o no
+        /// </summary>
+        /// <param name="oControles"></param>
+        /// <param name="lReadOnly"></param>
+        /// <param name="nModo"></param>
+        public static void ControlBRSCheckBox(Control oControles, bool lReadOnly, int nModo, EventHandler EventoEnter = null, KeyEventHandler EventoKeyDown = null, KeyPressEventHandler EventoKeyPress = null, EventHandler EventoLeave = null, CancelEventHandler EventoValidating = null, EventHandler EventoValidated = null)
+        {
+            var checkbox = (BRSCheckBox)oControles;
+            checkbox.IsThreeState = (nModo != ModoPantalla.ENCONTRAR) ? false : true;
+            checkbox.ToggleState = (nModo != ModoPantalla.ENCONTRAR) ? ToggleState.On : ToggleState.Indeterminate;
+            //checkbox.ReadOnly = lReadOnly;
+            BRSComponentes.ReadOnly_Control(checkbox, lReadOnly);
+
+            // Establecemos el TabStop al contrario que ReadOnly (Si ReadOnly -> !TabStop)
+            checkbox.TabStop = !checkbox.ReadOnly;
+
+            if (EventoEnter != null) checkbox.Enter += EventoEnter;
+            if (EventoKeyDown != null) checkbox.KeyDown += EventoKeyDown;
+            if (EventoKeyPress != null) checkbox.KeyPress += EventoKeyPress;
+            if (EventoLeave != null) checkbox.Leave += EventoLeave;
+            if (EventoValidating != null) checkbox.Validating += EventoValidating;
+            if (EventoValidated != null) checkbox.Validated += EventoValidated;
+        }
+
+        /// <summary>
+        /// Función que establece las propiedades de los componentes checkbox según sean de sólo lectura o no
+        /// </summary>
+        /// <param name="oControles"></param>
+        /// <param name="lReadOnly"></param>
+        /// <param name="nModo"></param>
+        public static void ControlRadCheckBox(Control oControles, bool lReadOnly, int nModo, EventHandler EventoEnter = null, KeyEventHandler EventoKeyDown = null, KeyPressEventHandler EventoKeyPress = null, EventHandler EventoLeave = null, CancelEventHandler EventoValidating = null, EventHandler EventoValidated = null)
+        {
+            var checkbox = (RadCheckBox)oControles;
+            checkbox.IsThreeState = (nModo != ModoPantalla.ENCONTRAR) ? false : true;
+            checkbox.ToggleState = (nModo != ModoPantalla.ENCONTRAR) ? ToggleState.On : ToggleState.Indeterminate;
+
+            ReadOnly_Control_CheckBox(checkbox, lReadOnly);
+
+            if (EventoEnter != null) checkbox.Enter += EventoEnter;
+            if (EventoKeyDown != null) checkbox.KeyDown += EventoKeyDown;
+            if (EventoKeyPress != null) checkbox.KeyPress += EventoKeyPress;
+            if (EventoLeave != null) checkbox.Leave += EventoLeave;
+            if (EventoValidating != null) checkbox.Validating += EventoValidating;
+            if (EventoValidated != null) checkbox.Validated += EventoValidated;
+        }
+
+        /// <summary>
+        /// Función que establece las propiedades de los componentes radiobutton según sean de sólo lectura o no
+        /// </summary>
+        /// <param name="oControles"></param>
+        /// <param name="lReadOnly"></param>
+        public static void ControlRadRadioButton(Control oControles, bool lReadOnly, EventHandler EventoEnter = null, KeyEventHandler EventoKeyDown = null, KeyPressEventHandler EventoKeyPress = null, EventHandler EventoLeave = null, CancelEventHandler EventoValidating = null, EventHandler EventoValidated = null)
+        {
+            var radiobutton = (RadRadioButton)oControles;
+
+            ReadOnly_Control_RadioBution(radiobutton, lReadOnly);
+
+            if (EventoEnter != null) radiobutton.Enter += EventoEnter;
+            if (EventoKeyDown != null) radiobutton.KeyDown += EventoKeyDown;
+            if (EventoKeyPress != null) radiobutton.KeyPress += EventoKeyPress;
+            if (EventoLeave != null) radiobutton.Leave += EventoLeave;
+            if (EventoValidating != null) radiobutton.Validating += EventoValidating;
+            if (EventoValidated != null) radiobutton.Validated += EventoValidated;
+        }
+
+        #endregion
+
+        #region Limpiar componentes
+
+        /// <summary>
+        /// Función que recorre todos los componentes y limpia su contenido
+        /// </summary>
+        /// <param name="oControlesPadre"></param>
+        /// <param name="aoControlesExcluidos"></param>
+        public static void LimpiarControles(Control.ControlCollection oControlesPadre, Control[] aoControlesExcluidos = null)
+        {
+            foreach (Control oControl in oControlesPadre.OfType<RadPageView>())
+            {
+                foreach (Control oControl2 in oControl.Controls.OfType<RadPageViewPage>())
+                {
+                    if (aoControlesExcluidos != null)
+                        if (aoControlesExcluidos.Contains(oControl2))
+                            continue;
+
+                    LimpiarControles(oControl2.Controls);
+                }
+            }
+
+            foreach (Control oControl in oControlesPadre.OfType<RadGroupBox>())
+            {
+                if (aoControlesExcluidos != null)
+                    if (aoControlesExcluidos.Contains(oControl))
+                        continue;
+
+                LimpiarControles(oControl.Controls);
+            }
+
+            foreach (Control oControl in oControlesPadre.OfType<RadPanel>())
+            {
+                if (aoControlesExcluidos != null)
+                    if (aoControlesExcluidos.Contains(oControl))
+                        continue;
+
+                LimpiarControles(oControl.Controls);
+            }
+
+            foreach (Control oControl in oControlesPadre.OfType<UserControl>())
+            {
+                if (aoControlesExcluidos != null)
+                    if (aoControlesExcluidos.Contains(oControl))
+                        continue;
+
+                LimpiarControles(oControl.Controls);
+            }
+
+            foreach (Control oControl in oControlesPadre.OfType<RadTextBox>())
+            {
+                if (aoControlesExcluidos != null)
+                    if (aoControlesExcluidos.Contains(oControl))
+                        continue;
+
+                LimpiarRadTextBox(oControl);
+            }
+
+            foreach (Control oControl in oControlesPadre.OfType<BRSCheckBox>())
+            {
+                if (aoControlesExcluidos != null)
+                    if (aoControlesExcluidos.Contains(oControl))
+                        continue;
+
+                LimpiarBRSCheckBox(oControl);
+            }
+
+            foreach (Control oControl in oControlesPadre.OfType<RadCheckBox>())
+            {
+                if (aoControlesExcluidos != null)
+                    if (aoControlesExcluidos.Contains(oControl))
+                        continue;
+
+                LimpiarRadCheckBox(oControl);
+            }
+
+            foreach (Control oControl in oControlesPadre.OfType<RadDropDownList>())
+            {
+                if (aoControlesExcluidos != null)
+                    if (aoControlesExcluidos.Contains(oControl))
+                        continue;
+
+                LimpiarRadDropDownList(oControl);
+            }
+
+            foreach (Control oControl in oControlesPadre.OfType<RadRadioButton>())
+            {
+                if (aoControlesExcluidos != null)
+                    if (aoControlesExcluidos.Contains(oControl))
+                        continue;
+
+                LimpiarRadRadioButton(oControl);
+            }
+        }
+
+        /// <summary>
+        /// Función que limpia el contenido de un textbox
+        /// </summary>
+        /// <param name="oControl"></param>
+        public static void LimpiarRadTextBox(Control oControl)
+        {
+            var textBox = (RadTextBox)oControl;
+            textBox.Text = "";
+        }
+
+        /// <summary>
+        /// Función que limpia el contenido de un combobox
+        /// </summary>
+        /// <param name="oControl"></param>
+        public static void LimpiarRadDropDownList(Control oControl)
+        {
+            var lista = (RadDropDownList)oControl;
+            lista.Text = "";
+        }
+
+        /// <summary>
+        /// Función que resetea el estado de un checkbox
+        /// </summary>
+        /// <param name="oControl"></param>
+        public static void LimpiarBRSCheckBox(Control oControl)
+        {
+            var checkbox = (BRSCheckBox)oControl;
+            checkbox.Checked = false;
+        }
+
+        /// <summary>
+        /// Función que resetea el estado de un checkbox
+        /// </summary>
+        /// <param name="oControl"></param>
+        public static void LimpiarRadCheckBox(Control oControl)
+        {
+            var checkbox = (RadCheckBox)oControl;
+            checkbox.Checked = false;
+        }
+
+        /// <summary>
+        /// Función que resetea el estado de un radiobutton
+        /// </summary>
+        /// <param name="oControl"></param>
+        public static void LimpiarRadRadioButton(Control oControl)
+        {
+            var radiobutton = (RadRadioButton)oControl;
+            radiobutton.CheckState = CheckState.Unchecked;
+        }
+
+        #endregion
+
+        /// <summary>
+        /// Función para mandar al siguiente o anterior componente
+        /// </summary>
+        /// <param name="formulario"></param>
+        public static void TabularControl(RadForm formulario)
+        {
+            SendKeys.Send("{TAB}");
+
+            //if (formulario.ActiveControl != null)
+            //{
+            //    if (Control.ModifierKeys == Keys.Shift)
+            //        formulario.SelectNextControl(formulario.ActiveControl, false, true, true, true);
+            //    else
+            //        formulario.SelectNextControl(formulario.ActiveControl, true, true, true, true);
+            //}
+        }
+
+        #region Funciones de preparar componente al entrar
+
+        /// <summary>
+        /// Función que preparará el texto de ayuda o tabulará si es de sólo lectura
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        /// <param name="modoPantalla"></param>
+        /// <param name="lblAyuda"></param>
+        /// <param name="formulario"></param>
+        public static void PrepararComponentes(object sender, EventArgs e, int modoPantalla, RadLabel lblAyuda, RadForm formulario)
+        {
+            switch (sender.GetType().Name)
+            {
+                case "BRSTextBoxNuevo": Preparar_TextBox(sender, e, modoPantalla, lblAyuda, formulario); break;
+                case "BRSTextBox": Preparar_TextBox(sender, e, modoPantalla, lblAyuda, formulario); break;
+                case "RadTextBox": Preparar_TextBox(sender, e, modoPantalla, lblAyuda, formulario); break;
+                case "BRSCheckBox": Preparar_BRSCheckBox(sender, e, modoPantalla, lblAyuda, formulario); break;
+                case "RadCheckBox": Preparar_CheckBox(sender, e, modoPantalla, lblAyuda, formulario); break;
+                case "BRSCheckBoxNuevo": Preparar_CheckBox(sender, e, modoPantalla, lblAyuda, formulario); break;
+                case "RadDropDownList": Preparar_ComboBox(sender, e, modoPantalla, lblAyuda, formulario); break;
+                case "BRSComboBoxNuevo": Preparar_ComboBox(sender, e, modoPantalla, lblAyuda, formulario); break;
+                case "RadRadioButton": Preparar_RadioButton(sender, e, modoPantalla, lblAyuda, formulario); break;
+                case "RadListControl": Preparar_ListControl(sender, e, modoPantalla, lblAyuda, formulario); break;
+                case "RadBrowseEditor": Preparar_RadBrowseEditor(sender, e, modoPantalla, lblAyuda, formulario); break;
+                case "RadDateTimePicker": Preparar_DatePicker(sender, e, modoPantalla, lblAyuda, formulario); break;
+            }
+        }
+
+        private static void Preparar_DatePicker(object sender, EventArgs e, int modoPantalla, RadLabel lblAyuda, RadForm formulario)
+        {
+
+            if (modoPantalla != ModoPantalla.VER)
+            {
+                var datePicker = (RadDateTimePicker)sender;
+                if (!datePicker.ReadOnly)
+                {
+                    // Actualiza la statusbar
+                    if (lblAyuda != null)
+                        if (datePicker.Tag != null) lblAyuda.Text = datePicker.Tag.ToString(); else lblAyuda.Text = "";
+                    // Selecciona todo el texto
+                    // datePicker.SelectAll();
+                    datePicker.Focus();
+                }
+                else
+                {
+                    TabularControl(formulario);
+                }
+            }
+
+
+            /* if (Modo != ModoPantalla.VER)
+             {
+                 var datePicker = (RadDateTimePicker)sender;
+                 if (!datePicker.ReadOnly)
+                 {
+                     //actualiza la statusbar
+                     if (datePicker.Tag != null) lblAyuda.Text = datePicker.Tag.ToString(); else lblAyuda.Text = "";
+                     //selecciona todo el texto
+                     cValorEntrada = datePicker.Text;
+                 }
+                 else SendKeys.Send("{TAB}");
+             }*/
+        }
+
+        /// <summary>
+        /// Evento al entrar en un componente de tipo TextBox, establece el texto de ayuda o tabula si está en modo de sólo lectura
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        /// <param name="modoPantalla"></param>
+        /// <param name="lblAyuda"></param>
+        /// <param name="formulario"></param>
+        private static void Preparar_TextBox(object sender, EventArgs e, int modoPantalla, RadLabel lblAyuda, RadForm formulario)
+        {
+            if (modoPantalla != ModoPantalla.VER)
+            {
+                var textBox = (RadTextBox)sender;
+                if (!textBox.ReadOnly)
+                {
+                    // Actualiza la statusbar
+                    if (lblAyuda != null)
+                        if (textBox.Tag != null) lblAyuda.Text = textBox.Tag.ToString(); else lblAyuda.Text = "";
+                    // Selecciona todo el texto
+                    //if (modoPantalla <= ModoPantalla.MODIFICAR && textBox.AccessibleDescription == "2")
+                    //    textBox.Text = BRSLib.RestaurarNumero(textBox.Text);
+                    textBox.SelectAll();
+                    //textBox.Focus();
+                }
+                else
+                {
+                    TabularControl(formulario);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Evento al entrar en un componente de tipo BRSCheckBox, establece el texto de ayuda o tabula si está en modo de sólo lectura
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        /// <param name="modoPantalla"></param>
+        /// <param name="lblAyuda"></param>
+        /// <param name="formulario"></param>
+        private static void Preparar_BRSCheckBox(object sender, EventArgs e, int modoPantalla, RadLabel lblAyuda, RadForm formulario)
+        {
+            if (modoPantalla != ModoPantalla.VER)
+            {
+                var checkBox = (BRSCheckBox)sender;
+                if (!checkBox.ReadOnly)
+                {
+                    checkBox.Leave += Salir_BRSCheckBox;
+
+                    // Actualiza la statusbar
+                    if (lblAyuda != null)
+                        if (checkBox.Tag != null) lblAyuda.Text = checkBox.Tag.ToString(); else lblAyuda.Text = "";
+
+                    oColorFondo = ((Telerik.WinControls.Primitives.FillPrimitive)(checkBox.GetChildAt(0).GetChildAt(1).GetChildAt(1).GetChildAt(0))).BackColor;
+                    oColorFondo2 = ((Telerik.WinControls.Primitives.FillPrimitive)(checkBox.GetChildAt(0).GetChildAt(1).GetChildAt(1).GetChildAt(0))).BackColor2;
+                    oColorTexto = ((Telerik.WinControls.Primitives.CheckPrimitive)(checkBox.GetChildAt(0).GetChildAt(1).GetChildAt(1).GetChildAt(2))).ForeColor;
+
+                    ((Telerik.WinControls.Primitives.FillPrimitive)(checkBox.GetChildAt(0).GetChildAt(1).GetChildAt(1).GetChildAt(0))).BackColor = System.Drawing.SystemColors.Highlight;
+                    ((Telerik.WinControls.Primitives.FillPrimitive)(checkBox.GetChildAt(0).GetChildAt(1).GetChildAt(1).GetChildAt(0))).BackColor2 = System.Drawing.SystemColors.Highlight;
+                    ((Telerik.WinControls.Primitives.CheckPrimitive)(checkBox.GetChildAt(0).GetChildAt(1).GetChildAt(1).GetChildAt(2))).ForeColor = System.Drawing.SystemColors.ButtonHighlight;
+
+                    //checkBox.Focus();
+                    checkBox.AllowShowFocusCues = true;
+                }
+                else TabularControl(formulario);
+            }
+        }
+
+        /// <summary>
+        /// Evento al entrar en un componente de tipo RadCheckBox, establece el texto de ayuda o tabula si está en modo de sólo lectura
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        /// <param name="modoPantalla"></param>
+        /// <param name="lblAyuda"></param>
+        /// <param name="formulario"></param>
+        private static void Preparar_CheckBox(object sender, EventArgs e, int modoPantalla, RadLabel lblAyuda, RadForm formulario)
+        {
+            if (modoPantalla != ModoPantalla.VER)
+            {
+                var checkBox = (RadCheckBox)sender;
+                if (!checkBox.ReadOnly)
+                {
+                    checkBox.Leave += new EventHandler(Salir_CheckBox);
+
+                    // Actualiza la status bar
+                    if (lblAyuda != null)
+                        if (checkBox.Tag != null) lblAyuda.Text = checkBox.Tag.ToString(); else lblAyuda.Text = "";
+
+                    oColorFondo = ((Telerik.WinControls.Primitives.FillPrimitive)(checkBox.GetChildAt(0).GetChildAt(1).GetChildAt(1).GetChildAt(0))).BackColor;
+                    oColorFondo2 = ((Telerik.WinControls.Primitives.FillPrimitive)(checkBox.GetChildAt(0).GetChildAt(1).GetChildAt(1).GetChildAt(0))).BackColor2;
+                    oColorTexto = ((Telerik.WinControls.Primitives.CheckPrimitive)(checkBox.GetChildAt(0).GetChildAt(1).GetChildAt(1).GetChildAt(2))).ForeColor;
+
+                    ((Telerik.WinControls.Primitives.FillPrimitive)(checkBox.GetChildAt(0).GetChildAt(1).GetChildAt(1).GetChildAt(0))).BackColor = System.Drawing.SystemColors.Highlight;
+                    ((Telerik.WinControls.Primitives.FillPrimitive)(checkBox.GetChildAt(0).GetChildAt(1).GetChildAt(1).GetChildAt(0))).BackColor2 = System.Drawing.SystemColors.Highlight;
+                    ((Telerik.WinControls.Primitives.CheckPrimitive)(checkBox.GetChildAt(0).GetChildAt(1).GetChildAt(1).GetChildAt(2))).ForeColor = System.Drawing.SystemColors.HighlightText;
+
+
+                    //checkBox.Focus();
+                    checkBox.AllowShowFocusCues = true;
+                }
+                else TabularControl(formulario);
+            }
+        }
+
+        /// <summary>
+        /// Evento al entrar en un componente de tipo RadDropdownList, establece el texto de ayuda o tabula si está en modo de sólo lectura
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        /// <param name="modoPantalla"></param>
+        /// <param name="lblAyuda"></param>
+        /// <param name="formulario"></param>
+        private static void Preparar_ComboBox(object sender, EventArgs e, int modoPantalla, RadLabel lblAyuda, RadForm formulario)
+        {
+            if (modoPantalla != ModoPantalla.VER)
+            {
+                var combo = (RadDropDownList)sender;
+                if (!combo.ReadOnly)
+                {
+                    combo.Leave += new EventHandler(Salir_ComboBox);
+
+                    // Actualiza la statusbar
+                    if (lblAyuda != null)
+                        if (combo.Tag != null) lblAyuda.Text = combo.Tag.ToString(); else lblAyuda.Text = "";
+
+                    oColorFondo = ((Telerik.WinControls.UI.RadDropDownListEditableAreaElement)(combo.GetChildAt(0).GetChildAt(2).GetChildAt(0))).BackColor;
+                    oColorTexto = ((Telerik.WinControls.UI.RadDropDownListEditableAreaElement)(combo.GetChildAt(0).GetChildAt(2).GetChildAt(0))).ForeColor;
+
+                    ((Telerik.WinControls.UI.RadDropDownListEditableAreaElement)(combo.GetChildAt(0).GetChildAt(2).GetChildAt(0))).BackColor = System.Drawing.SystemColors.Highlight;
+                    ((Telerik.WinControls.UI.RadDropDownListEditableAreaElement)(combo.GetChildAt(0).GetChildAt(2).GetChildAt(0))).ForeColor = System.Drawing.SystemColors.HighlightText;
+
+                    combo.DefaultItemsCountInDropDown = 10;
+                }
+                else TabularControl(formulario);
+            }
+        }
+
+        /// <summary>
+        /// Evento al entrar en un componente de tipo RadBrowseEditor, establece el texto de ayuda o tabula si está en modo de sólo lectura
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        /// <param name="modoPantalla"></param>
+        /// <param name="lblAyuda"></param>
+        /// <param name="formulario"></param>
+        private static void Preparar_RadBrowseEditor(object sender, EventArgs e, int modoPantalla, RadLabel lblAyuda, RadForm formulario)
+        {
+            if (modoPantalla != ModoPantalla.VER)
+            {
+                var browseEditor = (RadBrowseEditor)sender;
+                if (browseEditor.Enabled)
+                {
+                    // Actualiza la statusbar
+                    if (lblAyuda != null)
+                        if (browseEditor.Tag != null) lblAyuda.Text = browseEditor.Tag.ToString(); else lblAyuda.Text = "";
+                    // Selecciona todo el texto
+                    //browseEditor.Focus();
+                }
+                else
+                {
+                    TabularControl(formulario);
+                }
+            }
+        }
+
+        private static void Salir_ComboBox(object sender, EventArgs e)
+        {
+            var combo = (RadDropDownList)sender;
+            ((Telerik.WinControls.UI.RadDropDownListEditableAreaElement)(combo.GetChildAt(0).GetChildAt(2).GetChildAt(0))).BackColor = oColorFondo;
+            ((Telerik.WinControls.UI.RadDropDownListEditableAreaElement)(combo.GetChildAt(0).GetChildAt(2).GetChildAt(0))).ForeColor = oColorTexto;
+
+            combo.Leave -= new EventHandler(Salir_ComboBox);
+        }
+
+        private static void Salir_BRSCheckBox(object sender, EventArgs e)
+        {
+            var checkBox = (BRSCheckBox)sender;
+
+            ((Telerik.WinControls.Primitives.FillPrimitive)(checkBox.GetChildAt(0).GetChildAt(1).GetChildAt(1).GetChildAt(0))).BackColor = oColorFondo;
+            ((Telerik.WinControls.Primitives.FillPrimitive)(checkBox.GetChildAt(0).GetChildAt(1).GetChildAt(1).GetChildAt(0))).BackColor2 = oColorFondo;
+            ((Telerik.WinControls.Primitives.CheckPrimitive)(checkBox.GetChildAt(0).GetChildAt(1).GetChildAt(1).GetChildAt(2))).ForeColor = oColorTexto;
+
+            checkBox.Leave -= Salir_BRSCheckBox;
+        }
+
+        private static void Salir_CheckBox(object sender, EventArgs e)
+        {
+            var checkBox = (RadCheckBox)sender;
+
+            ((Telerik.WinControls.Primitives.FillPrimitive)(checkBox.GetChildAt(0).GetChildAt(1).GetChildAt(1).GetChildAt(0))).BackColor = oColorFondo;
+            ((Telerik.WinControls.Primitives.FillPrimitive)(checkBox.GetChildAt(0).GetChildAt(1).GetChildAt(1).GetChildAt(0))).BackColor2 = oColorFondo;
+            ((Telerik.WinControls.Primitives.CheckPrimitive)(checkBox.GetChildAt(0).GetChildAt(1).GetChildAt(1).GetChildAt(2))).ForeColor = oColorTexto;
+
+            checkBox.Leave -= new EventHandler(Salir_CheckBox);
+        }
+
+        /// <summary>
+        /// Evento al entrar en un componente de tipo RadioButton, establece el texto de ayuda o tabula si está en modo de sólo lectura
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        /// <param name="modoPantalla"></param>
+        /// <param name="lblAyuda"></param>
+        /// <param name="formulario"></param>
+        private static void Preparar_RadioButton(object sender, EventArgs e, int modoPantalla, RadLabel lblAyuda, RadForm formulario)
+        {
+            if (modoPantalla != ModoPantalla.VER)
+            {
+                var radioButton = (RadRadioButton)sender;
+                if (!radioButton.ReadOnly)
+                {
+                    // Actualiza la statusbar
+                    if (lblAyuda != null)
+                        if (radioButton.Tag != null) lblAyuda.Text = radioButton.Tag.ToString(); else lblAyuda.Text = "";
+                }
+                else TabularControl(formulario);
+            }
+        }
+
+        /// <summary>
+        /// Evento al entrar en un componente de tipo ListControl, establece el texto de ayuda o tabula si está en modo de sólo lectura
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        /// <param name="modoPantalla"></param>
+        /// <param name="lblAyuda"></param>
+        /// <param name="formulario"></param>
+        private static void Preparar_ListControl(object sender, EventArgs e, int modoPantalla, RadLabel lblAyuda, RadForm formulario)
+        {
+            if (modoPantalla != ModoPantalla.VER)
+            {
+                var lista = (RadListControl)sender;
+                RadListElement listElement = ((Telerik.WinControls.UI.RadListElement)(lista.GetChildAt(0)));
+                if (!listElement.ReadOnly)
+                {
+                    // Actualiza la statusbar
+                    if (lblAyuda != null)
+                        if (lista.Tag != null) lblAyuda.Text = lista.Tag.ToString(); else lblAyuda.Text = "";
+                }
+                else TabularControl(formulario);
+            }
+        }
+
+        #endregion
+
+        public static void HabilitarRangosInformes(RadPageViewPage page, bool lHabilitar)
+        {
+            ActivarDesactivarCampos(page.Controls, lHabilitar);
+            //foreach (Control oControles in page.Controls)
+            //{
+            //    if (oControles is RadTextBox)
+            //        if ((oControles as RadTextBox).AccessibleDescription != null)
+            //            BRSComponentes.ReadOnly_Control((oControles as RadTextBox), !lHabilitar);
+            //    if (oControles is RadDropDownList)
+            //        BRSComponentes.ReadOnly_Control((oControles as RadDropDownList), !lHabilitar);
+            //}
+        }
+
+        public static void ActivarDesactivarCampos(Control.ControlCollection oControlesPadre, bool lActivar)
+        {
+            foreach (Control oControl in oControlesPadre.OfType<RadPageView>())
+                foreach (Control oControl2 in oControl.Controls.OfType<RadPageViewPage>())
+                    ActivarDesactivarCampos(oControl2.Controls, lActivar);
+
+            foreach (Control oControl in oControlesPadre.OfType<RadGroupBox>())
+                ActivarDesactivarCampos(oControl.Controls, lActivar);
+
+            foreach (Control oControl in oControlesPadre.OfType<RadTextBox>())
+            {
+                if (lActivar)
+                {
+                    if (string.IsNullOrWhiteSpace(oControl.AccessibleDescription) || (!string.IsNullOrWhiteSpace(oControl.AccessibleDescription) && oControl.AccessibleName == "DESACTIVADO"))
+                    {
+                        BRSComponentes.ReadOnly_Control(oControl, true);
+                    }
+                    else
+                    {
+                        BRSComponentes.ReadOnly_Control(oControl, false);
+                    }
+                }
+                else
+                {
+                    BRSComponentes.ReadOnly_Control(oControl, true);
+                }
+            }
+
+            foreach (Control oControl in oControlesPadre.OfType<RadDropDownList>())
+                BRSComponentes.ReadOnly_Control(oControl, !lActivar);
+
+            foreach (Control oControl in oControlesPadre.OfType<RadCheckBox>())
+                BRSComponentes.ReadOnly_Control(oControl, !lActivar);
+
+            foreach (Control oControl in oControlesPadre.OfType<RadRadioButton>())
+                BRSComponentes.ReadOnly_Control(oControl, !lActivar);
+        }
+
+        #region Funciones para generar los campos a encontrar
+
+        public static void LimpiarCamposEncontrar()
+        {
+            nIndiceEncontrar = 0;
+            for (nIndiceEncontrar = 0; nIndiceEncontrar < BRSLib.nMaxNumCamposTabla; nIndiceEncontrar++)
+            {
+                BRSLib.acCampos_ENCONTRAR[nIndiceEncontrar] = null;
+                BRSLib.acValores_ENCONTRAR[nIndiceEncontrar] = null;
+                BRSLib.acTipoCampos_ENCONTRAR[nIndiceEncontrar] = null;
+            }
+            nIndiceEncontrar = 0;
+        }
+
+        public static void AnadirAEncontrar(string campo, string valor, string tipoCampo)
+        {
+            BRSLib.acCampos_ENCONTRAR[nIndiceEncontrar] = campo;
+            BRSLib.acValores_ENCONTRAR[nIndiceEncontrar] = valor;
+            BRSLib.acTipoCampos_ENCONTRAR[nIndiceEncontrar] = tipoCampo;
+            nIndiceEncontrar++;
+        }
+
+        /// <summary>
+        /// Método GenerarEncontrar
+        /// </summary>
+        /// <param name="oControles"></param>
+        /// <param name="tipoBoolean"></param>
+        /// <param name="nombreTabla">El nombre que queremos añadir al campo</param>
+        public static void GenerarEncontrar(Control.ControlCollection oControles, TipoBoolean tipoBoolean = TipoBoolean.TrueFalse, string nombreTabla = null, bool limpiar = true)
+        {
+            if (limpiar)
+                LimpiarCamposEncontrar();
+            RecorrerCamposEncontrar(oControles, tipoBoolean, nombreTabla);
+            nIndiceEncontrar = Array.IndexOf(BRSLib.acCampos_ENCONTRAR, null);
+        }
+
+        public static void RecorrerCamposEncontrar(Control.ControlCollection oControlesPadre, TipoBoolean tipoBoolean, string nombreTabla = null)
+        {
+            foreach (Control oControl in oControlesPadre.OfType<RadPageView>())
+                foreach (Control oControl2 in oControl.Controls.OfType<RadPageViewPage>())
+                    RecorrerCamposEncontrar(oControl2.Controls, tipoBoolean, nombreTabla);
+
+            foreach (Control oControl in oControlesPadre.OfType<RadGroupBox>())
+                RecorrerCamposEncontrar(oControl.Controls, tipoBoolean, nombreTabla);
+
+            foreach (Control oControl in oControlesPadre.OfType<UserControl>())
+                RecorrerCamposEncontrar(oControl.Controls, tipoBoolean, nombreTabla);
+
+            foreach (Control oControl in oControlesPadre.OfType<RadTextBox>())
+                EncontrarTextBox(oControl, nombreTabla);
+
+            foreach (Control oControl in oControlesPadre.OfType<BRSCheckBox>())
+                EncontrarBRSCheckBox(oControl, tipoBoolean, nombreTabla);
+
+            foreach (Control oControl in oControlesPadre.OfType<RadCheckBox>())
+                EncontrarRadCheckBox(oControl, tipoBoolean, nombreTabla);
+
+            foreach (Control oControl in oControlesPadre.OfType<RadDropDownList>())
+                EncontrarRadDropDownList(oControl, nombreTabla);
+        }
+
+        public static void EncontrarTextBox(Control oControl, string nombreTabla = null)
+        {
+            RadTextBox textBox = (RadTextBox)oControl;
+            if (textBox.AccessibleDescription != null && textBox.AccessibleName != "NO" && textBox.Text.Length > 0)
+            {
+                if (string.IsNullOrWhiteSpace(nombreTabla))
+                    BRSLib.acCampos_ENCONTRAR[nIndiceEncontrar] = textBox.Name.Substring(3, textBox.Name.Length - 3);
+                else
+                    BRSLib.acCampos_ENCONTRAR[nIndiceEncontrar] = nombreTabla + "." + textBox.Name.Substring(3, textBox.Name.Length - 3);
+                BRSLib.acValores_ENCONTRAR[nIndiceEncontrar] = textBox.Text.Trim();
+                BRSLib.acTipoCampos_ENCONTRAR[nIndiceEncontrar] = textBox.AccessibleDescription.ToString();
+                nIndiceEncontrar++;
+            }
+        }
+
+        public static void EncontrarBRSCheckBox(Control oControl, TipoBoolean tipoBoolean, string nombreTabla = null)
+        {
+            var checkBox = (BRSCheckBox)oControl;
+            if (oControl.GetType().Name == "BRSCheckBox" && checkBox.AccessibleName != "NO" && checkBox.ToggleState != ToggleState.Indeterminate)
+            {
+                if (string.IsNullOrWhiteSpace(nombreTabla))
+                    BRSLib.acCampos_ENCONTRAR[nIndiceEncontrar] = checkBox.Name.Substring(3, checkBox.Name.Length - 3);
+                else
+                    BRSLib.acCampos_ENCONTRAR[nIndiceEncontrar] = nombreTabla + "." + checkBox.Name.Substring(3, checkBox.Name.Length - 3);
+                switch (tipoBoolean)
+                {
+                    case TipoBoolean.TrueFalse:
+                        BRSLib.acValores_ENCONTRAR[nIndiceEncontrar] = checkBox.Checked.ToString();
+                        break;
+                    case TipoBoolean.SiNo:
+                        BRSLib.acValores_ENCONTRAR[nIndiceEncontrar] = checkBox.Checked ? "S" : "N";
+                        break;
+                    case TipoBoolean.UnoCero:
+                        BRSLib.acValores_ENCONTRAR[nIndiceEncontrar] = checkBox.Checked ? "1" : "0";
+                        break;
+                }
+                BRSLib.acTipoCampos_ENCONTRAR[nIndiceEncontrar] = checkBox.AccessibleDescription.ToString();
+                nIndiceEncontrar++;
+            }
+        }
+
+        public static void EncontrarRadCheckBox(Control oControl, TipoBoolean tipoBoolean, string nombreTabla = null)
+        {
+            var checkBox = (RadCheckBox)oControl;
+            if (oControl.GetType().Name == "RadCheckBox" && checkBox.AccessibleName != "NO" && checkBox.ToggleState != ToggleState.Indeterminate)
+            {
+                if (string.IsNullOrWhiteSpace(nombreTabla))
+                    BRSLib.acCampos_ENCONTRAR[nIndiceEncontrar] = checkBox.Name.Substring(3, checkBox.Name.Length - 3);
+                else
+                    BRSLib.acCampos_ENCONTRAR[nIndiceEncontrar] = nombreTabla + "." + checkBox.Name.Substring(3, checkBox.Name.Length - 3);
+                switch (tipoBoolean)
+                {
+                    case TipoBoolean.TrueFalse:
+                        BRSLib.acValores_ENCONTRAR[nIndiceEncontrar] = checkBox.Checked.ToString();
+                        break;
+                    case TipoBoolean.SiNo:
+                        BRSLib.acValores_ENCONTRAR[nIndiceEncontrar] = checkBox.Checked ? "S" : "N";
+                        break;
+                    case TipoBoolean.UnoCero:
+                        BRSLib.acValores_ENCONTRAR[nIndiceEncontrar] = checkBox.Checked ? "1" : "0";
+                        break;
+                }
+                BRSLib.acTipoCampos_ENCONTRAR[nIndiceEncontrar] = checkBox.AccessibleDescription.ToString();
+                nIndiceEncontrar++;
+            }
+        }
+
+        public static void EncontrarRadDropDownList(Control oControl, string nombreTabla = null)
+        {
+            var comboBox = (RadDropDownList)oControl;
+            if (comboBox.AccessibleName != "NO" && comboBox.SelectedIndex != -1 && comboBox.Text != "<Sin valor>")
+            {
+                if (string.IsNullOrWhiteSpace(nombreTabla))
+                    BRSLib.acCampos_ENCONTRAR[nIndiceEncontrar] = comboBox.Name.Substring(3, comboBox.Name.Length - 3);
+                else
+                    BRSLib.acCampos_ENCONTRAR[nIndiceEncontrar] = nombreTabla + "." + comboBox.Name.Substring(3, comboBox.Name.Length - 3);
+                BRSLib.acValores_ENCONTRAR[nIndiceEncontrar] = comboBox.SelectedItem.Value.ToString();
+                BRSLib.acTipoCampos_ENCONTRAR[nIndiceEncontrar] = comboBox.AccessibleDescription.ToString();
+                nIndiceEncontrar++;
+            }
+        }
+
+        #endregion
+
+        #region Funciones para comprobar los campos obligatorios
+
+        private static bool CampoObligatorioVacio;
+        public static string NombreCampoVacio = "";
+
+        public static bool CamposObligatorios(List<string> camposObligatorios, Control.ControlCollection oControlesPadre)
+        {
+            bool bResult = false;
+
+            CampoObligatorioVacio = false;
+            NombreCampoVacio = "";
+
+            RecorrerCamposObligatorios(camposObligatorios, oControlesPadre);
+
+            if (!CampoObligatorioVacio)
+                bResult = true;
+
+            return bResult;
+        }
+
+        public static bool CamposObligatorios(ObservableCollection<string> camposObligatorios, Control.ControlCollection oControlesPadre)
+        {
+            return CamposObligatorios(new List<string>(camposObligatorios), oControlesPadre);
+        }
+
+        private static void RecorrerCamposObligatorios(List<string> camposObligatorios, Control.ControlCollection oControlesPadre)
+        {
+            foreach (Control oControl in oControlesPadre.Cast<Control>().OrderBy(c => c.TabIndex))
+            {
+                if (CampoObligatorioVacio) break;
+
+                if (oControl is RadPageView)
+                {
+                    foreach (Control oControl2 in oControl.Controls.OfType<RadPageViewPage>())
+                        RecorrerCamposObligatorios(camposObligatorios, oControl2.Controls);
+                }
+                else if (oControl is RadGroupBox)
+                {
+                    RecorrerCamposObligatorios(camposObligatorios, oControl.Controls);
+                }
+                else if (oControl is RadPanel)
+                {
+                    RecorrerCamposObligatorios(camposObligatorios, oControl.Controls);
+                }
+                else if (oControl is RadTextBox)
+                {
+                    RadTextBox txt = oControl as RadTextBox;
+                    if (txt.Visible && camposObligatorios.Contains(txt.Name.Substring(3)))
+                        if (string.IsNullOrWhiteSpace(txt.Text))
+                        {
+                            DarFocoControlPadre(txt);
+                            txt.Focus();
+                            ObtenerTextoLabel(txt);
+                            CampoObligatorioVacio = true;
+                        }
+                }
+            }
+        }
+
+        private static void DarFocoControlPadre(Control oControl)
+        {
+            if (!(oControl.Parent is RadForm))
+            { // Si el padre no es un formulario
+                if (oControl.Parent is RadPageViewPage page)
+                { // Si el padre es una página de un tabpage
+                  // Guardamos la página y cogiendo al padre la seleccionamos
+                    ((RadPageView)page.Parent).SelectedPage = page;
+                }
+
+                // Volvemos a preguntar hasta llegar al radform
+                DarFocoControlPadre(oControl.Parent);
+            }
+        }
+
+        private static void ObtenerTextoLabel(RadTextBox txt)
+        {
+            string nombreLabel = txt.Name.Replace("txt", "lbl");
+            Control[] controls = txt.Parent.Controls.Find(nombreLabel, true);
+            if (controls.Length > 0)
+                NombreCampoVacio = ((RadLabel)controls[0]).Text;
+        }
+
+        public static void EstablecerCamposObligatorios(int Modo, ObservableCollection<string> camposObligatorios, Control.ControlCollection oControlesPadre)
+        {
+            EstablecerCamposObligatorios(Modo, new List<string>(camposObligatorios), oControlesPadre);
+        }
+
+        public static void EstablecerCamposObligatorios(int Modo, List<string> camposObligatorios, Control.ControlCollection oControlesPadre)
+        {
+            foreach (Control oControl in oControlesPadre.OfType<RadPageView>())
+                foreach (Control oControl2 in oControl.Controls.OfType<RadPageViewPage>())
+                    EstablecerCamposObligatorios(Modo, camposObligatorios, oControl2.Controls);
+
+            foreach (Control oControl in oControlesPadre.OfType<RadGroupBox>())
+                EstablecerCamposObligatorios(Modo, camposObligatorios, oControl.Controls);
+
+            foreach (Control oControl in oControlesPadre.OfType<RadPanel>())
+                EstablecerCamposObligatorios(Modo, camposObligatorios, oControl.Controls);
+
+            foreach (Control oControl in oControlesPadre.OfType<UserControl>())
+                EstablecerCamposObligatorios(Modo, camposObligatorios, oControl.Controls);
+
+            foreach (Control oControl in oControlesPadre.OfType<RadLabel>())
+            {
+                RadLabel lbl = oControl as RadLabel;
+                if (lbl.BackColor != Color.SteelBlue)
+                {
+                    if (Modo <= ModoPantalla.MODIFICAR && camposObligatorios.Count > 0)
+                    {
+                        if (camposObligatorios.Contains(lbl.Name.Substring(3)))
+                        {
+                            RadTextBox textBox = BuscarTxt(lbl.FindForm(), lbl.Name.Substring(3));
+                            if (textBox == null)
+                            {
+                                lbl.ForeColor = BRSLibTemas.colorCampoObligatorio;
+                            }
+                            else
+                            {
+                                if (textBox.ReadOnly) lbl.ForeColor = BRSLibTemas.colorCampoNoObligatorio;
+                                else lbl.ForeColor = BRSLibTemas.colorCampoObligatorio;
+                            }
+                        }
+                        else
+                        {
+                            lbl.ForeColor = BRSLibTemas.colorCampoNoObligatorio;
+                        }
+                    }
+                    else
+                    {
+                        lbl.ForeColor = BRSLibTemas.colorCampoNoObligatorio;
+                    }
+                }
+            }
+        }
+
+        #region Establecer no modificables
+
+        /// <summary>
+        /// Función que recorre todos los componentes y limpia su contenido
+        /// </summary>
+        /// <param name="oControlesPadre"></param>
+        /// <param name="nombreCampos"></param>
+        public static void EstablecerCamposNoModificables(Control.ControlCollection oControlesPadre, params string[] nombreCampos)
+        {
+            foreach (Control oControl in oControlesPadre.OfType<RadPageView>())
+            {
+                foreach (Control oControl2 in oControl.Controls.OfType<RadPageViewPage>())
+                {
+                    EstablecerCamposNoModificables(oControl2.Controls, nombreCampos);
+                }
+            }
+
+            foreach (Control oControl in oControlesPadre.OfType<RadGroupBox>())
+            {
+                EstablecerCamposNoModificables(oControl.Controls, nombreCampos);
+            }
+
+            foreach (Control oControl in oControlesPadre.OfType<RadPanel>())
+            {
+                EstablecerCamposNoModificables(oControl.Controls, nombreCampos);
+            }
+
+            foreach (Control oControl in oControlesPadre.OfType<UserControl>())
+            {
+                EstablecerCamposNoModificables(oControl.Controls, nombreCampos);
+            }
+
+            foreach (Control oControl in oControlesPadre.OfType<RadTextBox>())
+            {
+                var textBox = oControl as RadTextBox;
+                if (nombreCampos.Contains(textBox.Name.Substring(3)))
+                {
+                    textBox.SoloLectura(true);
+                }
+            }
+
+            foreach (Control oControl in oControlesPadre.OfType<BRSCheckBox>())
+            {
+                var checkBox = oControl as BRSCheckBox;
+                if (nombreCampos.Contains(checkBox.Name.Substring(3)))
+                {
+                    checkBox.SoloLectura(true);
+                }
+            }
+
+            foreach (Control oControl in oControlesPadre.OfType<RadCheckBox>())
+            {
+                var checkBox = oControl as RadCheckBox;
+                if (nombreCampos.Contains(checkBox.Name.Substring(3)))
+                {
+                    checkBox.SoloLectura(true);
+                }
+            }
+
+            foreach (Control oControl in oControlesPadre.OfType<RadDropDownList>())
+            {
+                var comboBox = oControl as RadDropDownList;
+                if (nombreCampos.Contains(comboBox.Name.Substring(3)))
+                {
+                    comboBox.SoloLectura(true);
+                }
+            }
+        }
+
+        #endregion
+
+        /// <summary>
+        /// Función que devuelve si un campo de tipo numeric entraría en la base de datos
+        /// </summary>
+        /// <param name="cadena">La cadena con el número que queremos validar</param>
+        /// <param name="precision">El número de dígitos totales, incluyendo decimales</param>
+        /// <param name="escala">El número de dígitos de la parte decimal</param>
+        /// <param name="negativos">Admite valores negativos</param>
+        /// <param name="modo">Modo de la pantalla en el que se está entrando</param>
+        /// <param name="mensaje">Mensaje a mostrar</param>
+        /// <returns>Si es un número válido o no</returns>
+        public static bool ValidarCampoNumeric(string cadena, int precision, int escala, bool negativos, int modo, out string mensaje)
+        {
+            bool lValido = false;
+
+            if (modo != ModoPantalla.ENCONTRAR)
+            {
+                cadena = cadena.Replace(".", "");
+                string cadenaEntera = cadena.Split(',')[0];
+                string cadenaDecimal = cadena.Split(',')[1];
+
+                if (cadenaEntera.Length <= (precision - escala) && cadenaDecimal.Length <= escala)
+                {
+                    lValido = true;
+                    mensaje = "Valido";
+                }
+                else
+                {
+                    string max = new string('9', precision - escala) + "," + new string('9', escala);
+
+                    string min;
+                    min = negativos ? "-" + new string('9', precision - escala) + "," + new string('9', escala) : "0," + new string('0', escala);
+
+                    min = min.FormatearNumero(escala, !negativos);
+                    max = max.FormatearNumero(escala, !negativos);
+
+                    mensaje = "El valor introducido no es válido. Debe estar comprendido entre los siguientes valores:\n\r" + min + " y " + max;
+                }
+            }
+            else
+            {
+                lValido = true;
+                mensaje = "Valido";
+            }
+
+            return lValido;
+        }
+
+        #endregion
+
+        /// <summary>
+        /// Función que añade la letra de los hints a las opciones por defecto del menú
+        /// </summary>
+        /// <param name="rmi"></param>
+        public static void AnadirHintMenu(RadMenuItem rmi)
+        {
+            for (int i = 0; i < rmi.Items.Count; i++)
+            {
+                if (rmi.Items[i] is RadMenuItem)
+                {
+                    RadMenuItem item = rmi.Items[i] as RadMenuItem;
+                    string hint = "";
+                    switch (item.Text.ToLower())
+                    {
+                        case "añadir":
+                        case "&añadir":
+                            hint = "A"; break;
+                        case "modificar":
+                        case "&modificar":
+                            hint = "M"; break;
+                        case "ver":
+                        case "&ver":
+                            hint = "V"; break;
+                        case "borrar":
+                        case "&borrar":
+                            hint = "B"; break;
+                        case "encontrar":
+                        case "&encontrar":
+                            hint = "E"; break;
+                        case "imprimir":
+                        case "&imprimir":
+                            hint = "I"; break;
+                        case "opciones":
+                        case "&opciones":
+                            hint = "O"; break;
+                        case "configurar":
+                        case "&configurar":
+                        case "configurar campos":
+                        case "&configurar campos":
+                            hint = "C"; break;
+                        case "ayuda": hint = "F1"; break;
+                        case "cerrar":
+                        case "salir":
+                            hint = "Esc"; break;
+                    }
+                    if (item.Enabled)
+                        item.HintText = "<html><span style=\"color:#999999\"><b>" + hint + "</b></span></html>";
+                    else
+                        item.HintText = "";
+                }
+            }
+        }
+
+        /// <summary>
+        /// Función que añade la letra de los hints a los botones de opciones que no son comunes a todas las ventanas
+        /// </summary>
+        /// <param name="menu">El objeto menú</param>
+        /// <param name="boton">El objeto botón</param>
+        /// <param name="hint">La letra o comando que aparecerá en la ayuda</param>
+        public static void AnadirHintOpcion(RadMenuItem menu, RadMenuItem boton, string hint)
+        {
+            if (menu != null)
+            {
+                if (menu.Enabled)
+                    menu.HintText = "<html><span style=\"color:#999999\"><b>" + hint + "</b></span></html>";
+                else
+                    menu.HintText = "";
+            }
+            if (boton != null)
+            {
+                if (boton.Enabled)
+                    boton.HintText = "<html><span style=\"color:#999999\"><b>" + hint + "</b></span></html>";
+                else
+                    boton.HintText = "";
+            }
+        }
+
+        /// <summary>
+        /// Función que automatiza el proceso de configuración de la rejilla
+        /// </summary>
+        /// <param name="_rgvTabla">La rejilla</param>
+        /// <param name="_cNombreFormulario">El nombre del formulario</param>
+        /// <param name="_cNombreTabla">El nombre de la tabla</param>
+        /// <param name="_acTextBoxBusqueda">Un array con los textbox que forman parte de la búsqueda rápida</param>
+        /// <param name="_acColumnasOcultar">Un array con las columnas que queremos ocultar</param>
+        public static void PersonalizarRejilla(RadGridView _rgvTabla, string _cNombreFormulario, string _cNombreTabla, object[] _acTextBoxBusqueda = null, string[] _acColumnasOcultar = null)
+        {
+            try
+            {
+                if (_rgvTabla.ColumnCount > 0)
+                {
+                    string[] columnasOcultarAux = _acColumnasOcultar == null ? new string[] { } : _acColumnasOcultar;
+                    using (BRSPersonalizarTablaMantenimientos ofrmPersonalizarTablaMantenimientos =
+                        new BRSPersonalizarTablaMantenimientos
+                        {
+                            acColumnasNoMostrar = columnasOcultarAux,
+                            Tabla = _cNombreTabla,
+                            Grid = _rgvTabla
+                        })
+                    {
+                        ofrmPersonalizarTablaMantenimientos.ShowDialog();
+                        if (ofrmPersonalizarTablaMantenimientos.Aceptado)
+                        {
+                            if (ofrmPersonalizarTablaMantenimientos.Reset)
+                            {
+                                if (File.Exists(BRSLib.cRutaXML + "/" + BRSLib.nUsuario + "_" + _cNombreFormulario + ".xml"))
+                                    File.Delete(BRSLib.cRutaXML + "/" + BRSLib.nUsuario + "_" + _cNombreFormulario + ".xml");
+
+                                _rgvTabla.Rows.Clear();
+                                _rgvTabla.Columns.Clear();
+                                _rgvTabla.Refresh();
+
+                                if (_acTextBoxBusqueda != null)
+                                {
+                                    foreach (object obj in _acTextBoxBusqueda)
+                                    {
+                                        if (obj is RadTextBox)
+                                            (obj as RadTextBox).Text = "";
+                                        else
+                                            BRSLib.MostrarMensaje("Tipo no controlado en " + nameof(BRSComponentes) + ": "
+                                                + System.Reflection.MethodBase.GetCurrentMethod().Name + " - " + obj.GetType().ToString());
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                _rgvTabla.SaveLayout(BRSLib.cRutaXML + "/" + BRSLib.nUsuario + "_" + _cNombreFormulario + ".xml");
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    BRSLib.MostrarMensaje(Cadenas.local_cMensajeNoGrid);
+                }
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+
+            _rgvTabla.Focus();
+        }
+
+        /// <summary>
+        /// Función que quita los tres puntos del grip de una botonera
+        /// </summary>
+        /// <param name="botonera">La botonera de la que queremos quitar el grip</param>
+        public static void QuitarGripBotonera(RadCommandBar botonera)
+        {
+            foreach (CommandBarRowElement row in botonera.Rows)
+            {
+                foreach (CommandBarStripElement strip in row.Strips)
+                {
+                    strip.Grip.Image = null;
+                    strip.Grip.MaxSize = new System.Drawing.Size(3, 0);
+                    strip.Grip.Visibility = ElementVisibility.Hidden;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Función que selecciona un item de un combo a partir de su valor
+        /// </summary>
+        /// <param name="_combo">El combo</param>
+        /// <param name="_valor">El valor a buscar</param>
+        public static void SeleccionarValorCombo(RadDropDownList _combo, object _valor)
+        {
+            for (int i = 0; i < _combo.Items.Count; i++)
+            {
+                if (Convert.ToString(_combo.Items[i].Value) == Convert.ToString(_valor))
+                {
+                    _combo.SelectedIndex = i;
+                    break;
+                }
+            }
+        }
+
+        public static void ActivarModoDesarrollo(params object[] _objeto)
+        {
+            try
+            {
+                List<string> tiposNoAdministrados = new List<string>();
+                for (int i = 0; i < _objeto.Length; i++)
+                {
+                    if (_objeto[i] is RadMenuItem)
+                    {
+                        RadMenuItem rmi = _objeto[i] as RadMenuItem;
+                        if (Debugger.IsAttached || BRSLib.log_debug != null)
+                        {
+                            rmi.Visibility = ElementVisibility.Visible;
+                            //rmi.Visibility = ElementVisibility.Collapsed;
+                            ((FillPrimitive)rmi.Children[0]).BackColor = Color.Tomato;
+                        }
+                        else
+                        {
+                            rmi.Visibility = ElementVisibility.Collapsed;
+                            rmi.Enabled = false;
+                        }
+                    }
+                    else if (_objeto[i] is RadMenuSeparatorItem)
+                    {
+                        RadMenuSeparatorItem rmsi = _objeto[i] as RadMenuSeparatorItem;
+                        if (Debugger.IsAttached || BRSLib.log_debug != null)
+                        {
+                            rmsi.Visibility = ElementVisibility.Visible;
+                            //rmsi.Visibility = ElementVisibility.Collapsed;
+                            ((FillPrimitive)rmsi.Children[0]).BackColor = Color.Tomato;
+                        }
+                        else
+                        {
+                            rmsi.Visibility = ElementVisibility.Collapsed;
+                        }
+                    }
+                    else if (_objeto[i] is CommandBarButton)
+                    {
+                        CommandBarButton cbb = _objeto[i] as CommandBarButton;
+                        if (Debugger.IsAttached || BRSLib.log_debug != null)
+                        {
+                            cbb.Visibility = ElementVisibility.Visible;
+                            //cbb.Visibility = ElementVisibility.Collapsed;
+                            cbb.BackColor = cbb.BackColor2 = cbb.BackColor3 = cbb.BackColor4 = Color.Tomato;
+                        }
+                        else
+                        {
+                            cbb.Visibility = ElementVisibility.Collapsed;
+                            cbb.Enabled = false;
+                        }
+                    }
+                    else if (_objeto[i] is CommandBarSeparator)
+                    {
+                        CommandBarSeparator cbs = _objeto[i] as CommandBarSeparator;
+                        if (Debugger.IsAttached || BRSLib.log_debug != null)
+                        {
+                            cbs.Visibility = ElementVisibility.Visible;
+                            //cbb.Visibility = ElementVisibility.Collapsed;
+                            cbs.BackColor = cbs.BackColor2 = cbs.BackColor3 = cbs.BackColor4 = Color.Tomato;
+                        }
+                        else
+                        {
+                            cbs.Visibility = ElementVisibility.Collapsed;
+                            cbs.Enabled = false;
+                        }
+                    }
+                    else
+                    {
+                        if (Debugger.IsAttached || BRSLib.log_debug != null)
+                        {
+                            string nombreTipo = _objeto[i].GetType().Name;
+                            if (!tiposNoAdministrados.Contains(nombreTipo))
+                            {
+                                tiposNoAdministrados.Add(nombreTipo);
+                                BRSLib.MostrarMensaje("Tipo " + nombreTipo + " no controlado\n\rBRSComponentes : ActivarModoDesarrollo()", " ", BRSLib.Boton.OK, BRSLib.Icono.Error);
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception)
+            {
+            }
+        }
+
+        public static void RellenarContextMenu(ref RadContextMenu _contextMenu, string _cTitulo, EventHandler _evento)
+        {
+            if (_contextMenu == null)
+                _contextMenu = new RadContextMenu();
+
+            RadMenuItem item = new RadMenuItem(_cTitulo);
+            item.Click += _evento;
+            _contextMenu.Items.Add(item);
+        }
+
+        public static void DeseleccionarFilas(BRSGridView _rgvTabla)
+        {
+            List<int> indices = new List<int>();
+            foreach (GridViewRowInfo fila in _rgvTabla.FilasSeleccionadas)
+            {
+                indices.Add(fila.Index);
+            }
+            foreach (int indice in indices)
+            {
+                _rgvTabla.Rows[indice].Cells[BRSLibRejilla.cColumnaSeleccionMultiple].Value = false;
+            }
+        }
+
+        public static bool BuscarF2F3(Keys tecla, short modo, string tabla, string tablaDescriptivo, string clave1, string cDescripcion, string cConexion, RadTextBox txtCodigo, RadTextBox txtDescripcion, int[] anchosColumnas = null)
+        {
+            bool codigoObtenido;
+
+            if (anchosColumnas == null) anchosColumnas = new int[] { 80, 318 };
+
+            BRSLib.lFormularioF2F3Abierto = true;
+            using (BRSBuscarF2F3 ofrmBuscarF2F3 = new BRSBuscarF2F3())
+            {
+                if (modo == 3)
+                    ofrmBuscarF2F3.Metodo = modo;
+                else
+                    ofrmBuscarF2F3.Metodo = tecla == Keys.F2 ? Convert.ToInt16(2) : Convert.ToInt16(3);
+                ofrmBuscarF2F3.NombreTabla = tablaDescriptivo;
+                ofrmBuscarF2F3.Tabla = tabla;
+                ofrmBuscarF2F3.CampoCodigo = clave1;
+                ofrmBuscarF2F3.CampoNombre = cDescripcion;
+                ofrmBuscarF2F3.CadConexion = cConexion;
+                ofrmBuscarF2F3.TextoBusqueda = txtCodigo.Text;
+                ofrmBuscarF2F3.AnchosColumnas = anchosColumnas;
+                ofrmBuscarF2F3.ShowDialog();
+                if (ofrmBuscarF2F3.CodigoObtenido != null && txtCodigo != null)
+                    txtCodigo.Text = ofrmBuscarF2F3.CodigoObtenido;
+                if (ofrmBuscarF2F3.NombreObtenido != null && txtDescripcion != null)
+                    txtDescripcion.Text = ofrmBuscarF2F3.NombreObtenido;
+
+                codigoObtenido = ofrmBuscarF2F3.CodigoObtenido != null;
+            }
+            BRSLib.lFormularioF2F3Abierto = false;
+
+            return codigoObtenido;
+        }
+
+        #region Región para cmabiar el color de las barras de título
+
+        public static Color? TitleBarBackground = null;
+        public static Color? TitleBarForeground = null;
+
+        /// <summary>
+        /// Elemento FormElement.TitleBar del formulario
+        /// </summary>
+        public static void TitleBarColor(RadFormTitleBarElement titleBar)
+        {
+            //if (titleBar != null)
+            //{
+            //    //if (BRSLib.cTema == "ControlDefault")
+            //    //{
+            //    //    titleBar.CloseButton.Image = global::BRSERP.Properties.Resources.close;
+            //    //    titleBar.CloseButton.MouseEnter += CloseButton_MouseEnter;
+            //    //    titleBar.CloseButton.MouseLeave += CloseButton_MouseLeave;
+
+            //    //    titleBar.MinimizeButton.Image = global::BRSERP.Properties.Resources.minimize;
+            //    //    titleBar.MinimizeButton.MouseEnter += MinimizeButton_MouseEnter;
+            //    //    titleBar.MinimizeButton.MouseLeave += MinimizeButton_MouseLeave;
+
+            //    //    titleBar.MaximizeButton.Image = global::BRSERP.Properties.Resources.maximize;
+            //    //    titleBar.MaximizeButton.MouseEnter += MaximizeButton_MouseEnter;
+            //    //    titleBar.MaximizeButton.MouseLeave += MaximizeButton_MouseLeave;
+            //    //}
+            //    if (TitleBarBackground != null)
+            //    {
+            //        titleBar.Padding = new Padding(0, 0, 0, 0);
+            //        titleBar.FillPrimitive.BackColor = TitleBarBackground.Value;
+
+            //        titleBar.FillPrimitive.GradientStyle = Telerik.WinControls.GradientStyles.Solid;
+            //        titleBar.BorderPrimitive.BoxStyle = Telerik.WinControls.BorderBoxStyle.SingleBorder;
+            //        titleBar.BorderPrimitive.ForeColor = TitleBarBackground.Value;
+            //    }
+            //    if (TitleBarForeground != null)
+            //    {
+            //        titleBar.TitlePrimitive.ForeColor = TitleBarForeground.Value;
+            //    }
+            //}
+        }
+
+
+        #endregion
+
+        #region Control para activar o desactivar un componentes
+
+        /// <summary>
+        /// Función para habilitar/deshabilitar la modificación de un control
+        /// </summary>
+        /// <param name="oControl">El control que queremos cambiar su propiedad</param>
+        /// <param name="lReadOnly">Si queremos ponerlo en sólo lectura</param>
+        /// <param name="lLimpiar">Si es un textbox, si queremos limpiar su contenido al ponerlo en solo lectura</param>
+        /// <param name="valorDefecto">Si es un textbox y queremos limpiarlo, el valor que queremos que aparezca por defecto</param>
+        public static void ReadOnly_Control(Control oControl, bool lReadOnly, bool lLimpiar = false, string valorDefecto = "")
+        {
+            if (oControl is RadTextBox textBox)
+            {
+                ReadOnly_Control_TextBox(textBox, lReadOnly, lLimpiar, valorDefecto);
+            }
+            else if (oControl is RadCheckBox checkbox)
+            {
+                ReadOnly_Control_CheckBox(checkbox, lReadOnly);
+            }
+            else if (oControl is RadRadioButton radioButton)
+            {
+                ReadOnly_Control_RadioBution(radioButton, lReadOnly);
+            }
+            else if (oControl is RadDropDownList lista)
+            {
+                ReadOnly_Control_DropDownList(lista, lReadOnly);
+            }
+            else if (oControl is RadDateTimePicker datePicker)
+            {
+                ReadOnly_Control_DatePicker(datePicker, lReadOnly);
+            }
+            else if (oControl is RadTimePicker timePicker)
+            {
+                ReadOnly_Control_TimePicker(timePicker, lReadOnly);
+            }
+            else if (oControl is RadListControl listControl)
+            {
+                ReadOnly_Control_ListControl(listControl, lReadOnly);
+            }
+
+        }
+
+        private static void ReadOnly_Control_TextBox(RadTextBox oRadTextBox, bool lReadOnly, bool lLimpiar, string valorDefecto = "")
+        {
+            oRadTextBox.ReadOnly = lReadOnly;
+
+            if (lReadOnly)
+            {
+                oRadTextBox.TextBoxElement.TextBoxItem.BackColor = BRSLibTemas.colorSoloLectura;
+                if (lLimpiar) oRadTextBox.Text = valorDefecto;
+            }
+            else
+            {
+                oRadTextBox.TextBoxElement.TextBoxItem.BackColor = BRSLibTemas.colorLecturaEscritura;
+            }
+
+            oRadTextBox.TabStop = !oRadTextBox.ReadOnly;
+        }
+
+        private static void ReadOnly_Control_CheckBox(RadCheckBox oRadCheckBox, bool lReadOnly)
+        {
+            oRadCheckBox.ReadOnly = lReadOnly;
+
+            if (lReadOnly)
+            {
+                oRadCheckBox.GetBox().BackColor = BRSLibTemas.colorSoloLectura;
+                oRadCheckBox.GetBox().BackColor2 = BRSLibTemas.colorSoloLectura;
+            }
+            else
+            {
+                oRadCheckBox.GetBox().BackColor = BRSLibTemas.colorLecturaEscritura;
+                oRadCheckBox.GetBox().BackColor2 = BRSLibTemas.colorLecturaEscritura;
+            }
+
+            oRadCheckBox.TabStop = !oRadCheckBox.ReadOnly;
+        }
+
+        private static void ReadOnly_Control_RadioBution(RadRadioButton oRadRadioButon, bool lReadOnly)
+        {
+            oRadRadioButon.ReadOnly = lReadOnly;
+
+            if (lReadOnly)
+            {
+                oRadRadioButon.GetBox().BackColor = BRSLibTemas.colorSoloLectura;
+            }
+            else
+            {
+                oRadRadioButon.GetBox().BackColor = BRSLibTemas.colorLecturaEscritura;
+            }
+
+            oRadRadioButon.TabStop = !oRadRadioButon.ReadOnly;
+        }
+
+        private static void ReadOnly_Control_DropDownList(RadDropDownList oRadDropDownList, bool lReadOnly)
+        {
+            oRadDropDownList.ReadOnly = lReadOnly;
+
+            oRadDropDownList.DropDownStyle = lReadOnly ? RadDropDownStyle.DropDown : RadDropDownStyle.DropDownList;
+
+            foreach (RadDropDownListElement root in oRadDropDownList.RootElement.Children)
+            {
+                foreach (RadDropDownListEditableAreaElement rhijos in root.Children[2].GetChildren(ChildrenListOptions.IncludeCollapsed).Where(c => c.RadObjectType.Name == nameof(RadDropDownListEditableAreaElement)))
+                {
+                    foreach (RadTextBoxItem oTextBoxItem in rhijos.Children[0].GetChildren(ChildrenListOptions.IncludeCollapsed).Where(c => c.RadObjectType.Name == nameof(RadTextBoxItem)))
+                    {
+                        if (lReadOnly)
+                        {
+                            oTextBoxItem.BackColor = BRSLibTemas.colorSoloLectura;
+                            oRadDropDownList.GetArrow().Visibility = ElementVisibility.Collapsed;
+                        }
+                        else
+                        {
+                            oTextBoxItem.BackColor = BRSLibTemas.colorLecturaEscritura;
+                            oRadDropDownList.GetArrow().Visibility = ElementVisibility.Visible;
+                        }
+                    }
+                }
+            }
+
+            oRadDropDownList.TabStop = !lReadOnly;
+        }
+
+        private static void ReadOnly_Control_DatePicker(RadDateTimePicker datePicker, bool lReadOnly)
+        {
+            datePicker.ReadOnly = lReadOnly;
+
+            foreach (RadDateTimePickerElement root in datePicker.RootElement.Children)
+            {
+                foreach (RadMaskedEditBoxElement rhijos in root.Children[2].GetChildren(ChildrenListOptions.IncludeCollapsed).Where(c => c.RadObjectType.Name == nameof(RadMaskedEditBoxElement)))
+                {
+                    foreach (RadTextBoxItem radTextBoxItem in rhijos.GetChildren(ChildrenListOptions.IncludeCollapsed).Where(c => c.RadObjectType.Name == nameof(RadTextBoxItem)))
+                    {
+                        if (lReadOnly) radTextBoxItem.BackColor = BRSLibTemas.colorSoloLectura;
+                        else radTextBoxItem.BackColor = BRSLibTemas.colorLecturaEscritura;
+                    }
+                }
+            }
+
+            datePicker.TabStop = !datePicker.ReadOnly;
+        }
+
+        private static void ReadOnly_Control_TimePicker(RadTimePicker timePicker, bool lReadOnly)
+        {
+            timePicker.ReadOnly = lReadOnly;
+
+            foreach (RadTimePickerElement root in timePicker.RootElement.Children)
+            {
+                foreach (RadTimeMaskedEditBoxElement rhijos in root.Children[2].GetChildren(ChildrenListOptions.IncludeCollapsed).Where(c => c.RadObjectType.Name == nameof(RadTimeMaskedEditBoxElement)))
+                {
+                    foreach (RadTextBoxItem radTextBoxItem in rhijos.GetChildren(ChildrenListOptions.IncludeCollapsed).Where(c => c.RadObjectType.Name == nameof(RadTextBoxItem)))
+                    {
+                        if (lReadOnly) radTextBoxItem.BackColor = BRSLibTemas.colorSoloLectura;
+                        else radTextBoxItem.BackColor = BRSLibTemas.colorLecturaEscritura;
+                    }
+                }
+            }
+
+            timePicker.TabStop = !timePicker.ReadOnly;
+        }
+
+        private static void ReadOnly_Control_ListControl(RadListControl listControl, bool lReadOnly)
+        {
+            RadListElement oRadListElement = listControl.GetBox();
+
+            oRadListElement.ReadOnly = lReadOnly;
+
+            if (lReadOnly)
+                oRadListElement.BackColor = BRSLibTemas.colorSoloLectura;
+            else
+                oRadListElement.BackColor = BRSLibTemas.colorLecturaEscritura;
+
+            listControl.TabStop = !oRadListElement.ReadOnly;
+        }
+
+        #endregion
+
+        public static void EliminarSinValorCombos(Form formulario, int nModo)
+        {
+            try
+            {
+                foreach (Control oControles in formulario.Controls)
+                {
+                    if (oControles is RadDropDownList radDropDownList) //dentro del formulario, sin contenedor
+                    {
+                        if (radDropDownList.Items.Count != 0)
+                        {
+                            if ((radDropDownList.Items[0].Text == "<Sin valor>") && (nModo != 0)) radDropDownList.Items.RemoveAt(0);
+                        }
+                    }
+                    else if (oControles is RadGroupBox)
+                    {
+                        foreach (Control oControles2 in oControles.Controls)
+                        {
+                            if (oControles2 is RadDropDownList radDropDownList2) //dentro de un groupbox
+                            {
+                                if (radDropDownList2.Items.Count != 0)
+                                {
+                                    if ((radDropDownList2.Items[0].Text == "<Sin valor>") && (nModo != 0)) radDropDownList2.Items.RemoveAt(0);
+                                }
+                            }
+                        }
+                    }
+                    else if (oControles is RadPageView)
+                    {
+                        foreach (Control oControles2 in oControles.Controls)
+                        {
+                            if (oControles2 is RadPageViewPage)
+                            {
+                                foreach (Control oControles3 in oControles2.Controls)
+                                {
+                                    if (oControles3 is RadDropDownList radDropDownList3) //dentro de una pestaña
+                                    {
+                                        if (radDropDownList3.Items.Count != 0)
+                                        {
+                                            if ((radDropDownList3.Items[0].Text == "<Sin valor>") && (nModo != 0)) radDropDownList3.Items.RemoveAt(0);
+                                        }
+                                    }
+                                    else if (oControles3 is RadGroupBox)
+                                    {
+                                        foreach (Control oControles4 in oControles3.Controls)
+                                        {
+                                            if (oControles4 is RadDropDownList radDropDownList4) //dentro de un groupbox que está dentro de una pestaña
+                                            {
+                                                if (radDropDownList4.Items.Count != 0)
+                                                {
+                                                    if ((radDropDownList4.Items[0].Text == "<Sin valor>") && (nModo != 0)) radDropDownList4.Items.RemoveAt(0);
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                BRSLib.Logger?.LogExcepcion(ex);
+                BRSLibMensajes.Mostrar(ex.Message + "\n\r" + Name + " : " + MethodBase.GetCurrentMethod().Name + "()", " ", Boton.OK, Icono.Error);
+            }
+        }
+
+        public static void AgregarSinValorCombos(Form formulario)
+        {
+            try
+            {
+                AgregarSinValorCombos(formulario.Controls);
+            }
+            catch (Exception ex) { BRSLib.MostrarMensaje(ex.Message + "\n\rBRSLib : AgregarSinValor()", " ", BRSLib.Boton.OK, BRSLib.Icono.Error); }
+        }
+
+        private static void AgregarSinValorCombos(Control.ControlCollection controls)
+        {
+            foreach (Control oControles in controls)
+            {
+                if (oControles is RadDropDownList radDropDownList1) //dentro del formulario, sin contenedor
+                {
+                    if (radDropDownList1.AccessibleName != "NO" && radDropDownList1.Items[0].Text != "<Sin valor>")
+                    {
+                        RadListDataItem elemento = new RadListDataItem
+                        {
+                            Value = -1,
+                            Text = "<Sin valor>"
+                        };
+                        radDropDownList1.Items.Insert(0, elemento);
+                    }
+                    radDropDownList1.SelectedIndex = 0;
+                }
+                else if (oControles is RadGroupBox)
+                {
+                    AgregarSinValorCombos(oControles.Controls);
+                }
+                else if (oControles is RadPageView)
+                {
+                    foreach (Control oControles2 in oControles.Controls)
+                    {
+                        if (oControles2 is RadPageViewPage)
+                        {
+                            AgregarSinValorCombos(oControles2.Controls);
+                        }
+                    }
+                }
+                else if (oControles is UserControl)
+                {
+                    AgregarSinValorCombos(oControles.Controls);
+                }
+            }
+        }
+    }
+}

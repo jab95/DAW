@@ -1,0 +1,1461 @@
+using BRSERP.BD;
+using BRSERP.InterfacePlugins;
+using BRSERP.Modelos;
+using BRSERP.Modelos.BRSERP;
+using BRSERP.Modelos.BRSGestion;
+using BRSERP.Modelos.Contabilidad;
+using BRSERP.Modelos.Gestion;
+using BRSERP.Modelos.Gestion.BRSERP.Modelos.Gestion;
+using BRSERP.Modelos.Tesoreria;
+using BRSERP.NetWork;
+using FastReport;
+using Newtonsoft.Json;
+using Npgsql;
+using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Diagnostics;
+using System.Drawing;
+using System.Drawing.Drawing2D;
+using System.IO;
+using System.Linq;
+using System.Management;
+using System.Reflection;
+using System.Runtime.InteropServices;
+using System.Windows.Forms;
+using Telerik.WinControls;
+using Telerik.WinControls.UI;
+using Telerik.WinControls.UI.Localization;
+using Situaciones = BRSERP.Modelos.Tesoreria.Situaciones;
+
+
+namespace BRSERP
+{
+    public partial class frmPrincipal : Telerik.WinControls.UI.RadForm
+    {
+        #region Variables de sistema para poder manipular ventana de windows
+
+        [DllImport("User32.dll")]
+        private static extern bool SetForegroundWindow(IntPtr hWnd);
+        [DllImport("User32.dll")]
+        private static extern bool ShowWindow(IntPtr handle, int nCmdShow);
+        [DllImport("User32.dll")]
+        private static extern bool IsIconic(IntPtr handle);
+
+        const int SW_RESTORE = 9;
+        private IntPtr handle;
+
+        #endregion
+
+        #region Variables
+
+        public static bool lHayInstanciaAcercade;  // Por defecto se inicializa a false
+
+        //colores que forman el gradiente del fondo
+        public Color cGradSuperior = Color.WhiteSmoke;
+        public Color cGradInferior = Color.SteelBlue;
+
+        List<string> acDominioUsuarioProceso;
+
+        // Variable en la que almacenaremos los Plugins generados.
+        Dictionary<string, IPluginConversiones> _PluginsConversiones;
+
+        #endregion
+
+        #region Formulario
+
+        public frmPrincipal()
+        {
+            InitializeComponent();
+
+            //repintamos el fondo degradado
+            foreach (Control c in this.Controls)
+            {
+                if (c is MdiClient)
+                {
+                    c.Paint += new PaintEventHandler(PaintClientBG);
+                    c.SizeChanged += new EventHandler(SizeClientBG);
+                }
+            }
+
+            BRSComponentes.QuitarGripBotonera(radCommandBar1);
+            BRSComponentes.TitleBarColor(FormElement.TitleBar);
+
+            _PluginsConversiones = new Dictionary<string, IPluginConversiones>();
+            ICollection<IPluginConversiones> pluginsConversiones = GenericPluginLoader<IPluginConversiones>.LoadPlugins(Application.StartupPath + "\\Plugins");
+            if (pluginsConversiones != null && pluginsConversiones.Count != 0)
+            {
+                rmiMigracionNuestras.Visibility = ElementVisibility.Visible;
+                rmiMigracionNuestras.Enabled = true;
+
+                foreach (var item in pluginsConversiones)
+                {
+                    _PluginsConversiones.Add(item.Nombre, item);
+
+                    RadMenuItem rdMenuItem = new RadMenuItem
+                    {
+                        Name = item.Nombre,
+                        Text = item.Titulo
+                    };
+                    rdMenuItem.Click += plugin_Click;
+
+                    rmiMigracionNuestras.Items.Add(rdMenuItem);
+                }
+            }
+            else
+            {
+                rmiMigracionNuestras.Visibility = ElementVisibility.Collapsed;
+                rmiMigracionNuestras.Enabled = false;
+            }
+        }
+
+        private void frmPrincipal_Load(object sender, EventArgs e)
+        {
+            //Evitar que aparezca el menú contextutal al pulsar botón derecho
+            radCommandBar1.CustomizeContextMenu.DropDownOpening += new CancelEventHandler(BRSLib.CustomizeContextMenu_DropDownOpening);
+
+            //leemos la cadena de conexión a la base de datos principal y el terminal desde el archivo app.config
+            BRSLib.CargarAppConfig();
+
+            //leemos la configuración general, ya desde la base de datos
+            BRSLib.CargarConfiguracionGeneral();
+            //Aplicar idioma a objetos Telerik
+            RadGridLocalizationProvider.CurrentProvider = new MySpanishRadGridLocalizationProvider();
+
+            //Pantalla de Login
+            frmLogin ofrmLogin = new frmLogin(Program.cVersion)
+            {
+                NombreApp = Program.cNombreApp,
+                Version = Program.cVersion,
+                CodApp = BRSLib.COD_BRSERP
+            };
+
+            Program.ofrmSplash.Estado = "Esperando a usuario";
+            Program.ofrmSplash.Hide();
+
+            ofrmLogin.ShowDialog();
+            while (BRSLib.nUsuario == -1)
+            {
+                BRSLib.MostrarMensaje("¡Usuario o contraseña incorrecto!");
+                if (BRSLib.nIntentosLogin == 3)
+                {
+                    Environment.Exit(0);
+                }
+                try
+                {
+                    ofrmLogin.ShowDialog();
+                }
+                catch (ObjectDisposedException)
+                {
+                    BRSLib.nUsuario = -2;
+                    Application.Exit();
+                }
+            }
+
+            Program.ofrmSplash.Estado = "Comprobando actualizaciones";
+            Program.ofrmSplash.Show();
+
+            //configuramos las variables globales que utilizamos en función del idioma asignado al usuario
+            BRSLib.ConfigurarMensajesGlobales(BRSLib.nIdioma);
+
+            //leemos el motor de base de datos y la cadena de conexión que va a usar el usuario
+            BRSLib.CargarDatosConexionGrupoCentros(BRSLib.nGrupoCentros);
+
+            //obtenemos el nombre del terminal y centro
+            BRSLib.CargarDatosTerminal(BRSLib.nTerminal);
+
+            if (BRSLibNetwork.AccesoURL(BRSLibNetwork.cServidorFTPAct))
+            {
+                if (!ClienteNoActualizable())
+                {
+                    //if (ComprobarLaborable())
+                    //{
+                    //verificamos posible actualización
+                    if (BRSLib.nTerminal == 1) //actualización del servidor
+                    {
+                        if (BRSLibNetwork.cServidorFTPAct != null && BRSLibNetwork.cUsuarioFTPAct != null)
+                        {
+                            //if (BRSLib.DescargarArchivoTempFTP(BRSLibNetwork.cServidorFTPAct, BRSLibNetwork.cUsuarioFTPAct, BRSLibNetwork.cPassFTPAct, "ACTFTP/BRSERP", "version.new.xml"))
+                            if (BRSLibNetwork.DescargarArchivoFTPAct("version.new.xml", Application.StartupPath + "\\Temp\\version.new.xml"))
+                            {
+                                List<string> acModulosActualizar = BRSLib.CompararVersiones(Application.StartupPath + "\\Temp");
+                                if (acModulosActualizar.Count > 0)
+                                {
+                                    //BRSLib.DescargarArchivoTempFTP(BRSLibNetwork.cServidorFTPAct, BRSLibNetwork.cUsuarioFTPAct, BRSLibNetwork.cPassFTPAct, "ACTFTP/BRSERP", "historico.json");
+                                    if (BRSLibNetwork.DescargarArchivoFTPAct("historico.json", Application.StartupPath + "\\Temp\\historico.json"))
+                                        BRSLib.ActualizarVersionServidor(acModulosActualizar);
+                                }
+                            }
+                        }
+                    }
+                    else //actualización del puesto
+                    {
+                        try
+                        {
+                            List<string> acModulosActualizar = BRSLib.CompararVersiones(BRSLib.cRutaServidor);
+                            if (acModulosActualizar.Count > 0)
+                            {
+                                BRSLib.ActualizarVersionPuesto(acModulosActualizar);
+                            }
+                            else
+                            {
+                                ExisteNuevaVersionDisponible();
+                            }
+                        }
+                        catch (Exception)
+                        {
+                            Application.Exit();
+                        }
+                    }
+                    //}
+                }
+            }
+
+            Program.ofrmSplash.Estado = "Recuperando configuración";
+
+            this.Text = Program.cNombreApp + " " + Program.cVersion + BRSLib.CCopyright;
+
+            //BRSLib.ConfigurarAccesosMenu(BRSLib.COD_BRSERP, radMenu1, commandBarStripElement1);
+            BRSLib.ConfigurarPermisos(radMenu1, commandBarStripElement1, BRSLib.COD_BRSERP);
+            cbbContabilidad.Enabled = rmiContabilidad.Enabled = File.Exists(Application.StartupPath + "\\BRSContabilidad.exe");
+            cbbTesoreria.Enabled = rmiTesoreria.Enabled = File.Exists(Application.StartupPath + "\\BRSTesoreria.exe");
+            cbbGestion.Enabled = rmiMantenimientosComunes.Enabled = File.Exists(Application.StartupPath + "\\BRSGestionComunes.exe");
+            cbbSat.Enabled = rmiSat.Enabled = File.Exists(Application.StartupPath + "\\BRSSat.exe");
+            cbbVentas.Enabled = rmiVentas.Enabled = File.Exists(Application.StartupPath + "\\BRSVentas.exe");
+            cbbCompras.Enabled = rmiCompras.Enabled = File.Exists(Application.StartupPath + "\\BRSCompras.exe");
+            cbbCash.Enabled = rmiCash.Enabled = File.Exists(Application.StartupPath + "\\BRSTPV.exe");
+
+
+            #region Compilar BRSERP Sin Gestion
+
+            //BRSComponentes.ActivarModoDesarrollo(rmiSat, cbbSat, rmiCompras, cbbCompras, rmiBRSCompras, rmiPedidosCompras, rmiAlbaranesCompras, rmiVentas, cbbVentas, rmiBRSVentas, rmiContratos, rmiContratosCesionMedios, rmiCascada, cbbCash);
+
+            #endregion
+
+            #region Compilar BRSERP con Gestión
+
+            BRSComponentes.ActivarModoDesarrollo(rmiSat, cbbSat);
+
+            #endregion
+
+            #region Compilar BRSERP desarrollo
+
+            //BRSComponentes.ActivarModoDesarrollo(rmiSat, cbbSat, rmiCompras, cbbCompras, rmiBRSCompras, rmiPedidosCompras, rmiAlbaranesCompras, rmiVentas, cbbVentas, rmiBRSVentas, rmiContratos, rmiContratosCesionMedios);
+
+            #endregion
+
+            BRSLib.CargarEstadoFormulario(this);
+
+            Program.ofrmSplash.Close();
+            Program.ofrmSplash.Dispose();
+            BRSLib.AplicarTema(ref cGradInferior);
+        }
+
+        private void frmPrincipal_FormClosed(object sender, FormClosedEventArgs e)
+        {
+            BRSLib.GuardarEstadoFormulario(this);
+        }
+
+        private void frmPrincipal_Shown(object sender, EventArgs e)
+        {
+            if (BRSLib.nUsuario > 0)
+            {
+                string cSQL = "SELECT lmostraracercade FROM usuarios WHERE nusuario_id = :param0;";
+                bool lMostrar = BRSLibBD.SelectScalarBoolean(BRSLibBD.cConexionBRSERP, cSQL, BRSLib.nUsuario);
+                if (lMostrar)
+                {
+                    rmiAcercaDe.PerformClick();
+                    DialogResult dr = BRSLib.MostrarMensaje("¿Desea poder ver esta ayuda en futuras sesiones?", "", BRSLib.Boton.YesNo, BRSLib.Icono.Question);
+                    if (dr == DialogResult.No)
+                    {
+                        cSQL = "UPDATE usuarios SET lmostraracercade = false WHERE nusuario_id = :param0;";
+                        BRSLibBD.LanzarNonQuery(BRSLibBD.cConexionBRSERP, cSQL, BRSLib.nUsuario);
+                    }
+                }
+            }
+        }
+
+        private void frmPrincipal_Activated(object sender, EventArgs e)
+        {
+            if (BRSLibNetwork.AccesoURL(BRSLibNetwork.cServidorFTPAct, false))
+            {
+                ExisteNuevaVersionDisponible(false);
+            }
+
+            rmiConfiguraciones.Enabled = BRSLib.nUsuario == 1;
+        }
+
+        #endregion
+
+        #region Componentes del formulario
+
+        private void plugin_Click(object sender, EventArgs e)
+        {
+            if (sender is RadMenuItem menuItem)
+            {
+                string key = menuItem.Name;
+                if (_PluginsConversiones.ContainsKey(key))
+                {
+                    IPluginConversiones plugin = _PluginsConversiones[key];
+                    //bool lContinuar = ActualizarPlugin<IPluginConversiones>.Comenzar(key, ref plugin);
+                    //if (lContinuar)
+                    //{
+                    //    plugin.Iniciar();
+                    //}
+                    plugin.Iniciar();
+                }
+            }
+        }
+
+        private void lblNewVersion_Click(object sender, EventArgs e)
+        {
+            using (frmLeeme ofrmLeeme = new frmLeeme())
+            {
+                ofrmLeeme.ShowDialog();
+            }
+        }
+
+        private void lblNewVersion_MouseLeave(object sender, EventArgs e)
+        {
+            Cursor.Current = Cursors.Default;
+        }
+
+        private void lblNewVersion_MouseMove(object sender, MouseEventArgs e)
+        {
+            Cursor.Current = Cursors.Hand;
+        }
+
+        #endregion
+
+        #region Menu
+
+        #region Menu general
+
+        private void rmiBRSCompras_Click(object sender, EventArgs e)
+        {
+            Compras();
+        }
+
+        private void rmiPedidosCompras_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void rmiAlbaranesCompras_Click(object sender, EventArgs e)
+        {
+
+        }
+
+
+        private void rmiBRSVentas_Click(object sender, EventArgs e)
+        {
+            Ventas();
+        }
+
+        private void rmiContratos_Click(object sender, EventArgs e)
+        {
+            Ventas("frmContratosTabla");
+        }
+
+        private void rmiContratosCesionMedios_Click(object sender, EventArgs e)
+        {
+            Ventas("frmContratosCesionMediosTabla");
+        }
+
+
+        private void rmiTesoreria_Click(object sender, EventArgs e)
+        {
+            Tesoreria();
+        }
+
+        private void rmiContabilidad_Click(object sender, EventArgs e)
+        {
+            Contabilidad();
+        }
+
+        private void rmiSat_Click(object sender, EventArgs e)
+        {
+            SoporteTecnico();
+        }
+
+        private void rmiMantenimientosComunes_Click(object sender, EventArgs e)
+        {
+            bool lHayInstancia = false;
+            Process[] myProcesses = Process.GetProcesses();
+            foreach (Process myProcess in myProcesses)
+                if (myProcess.ProcessName.Equals("BRSGestionComunes"))
+                {
+                    acDominioUsuarioProceso = new List<string>();
+                    ObtenerDominioUsuarioProceso(myProcess.Id);
+                    string cDominioUsuarioWindows = Environment.UserDomainName + "\\" + Environment.UserName;
+
+                    if (acDominioUsuarioProceso.Contains(cDominioUsuarioWindows))
+                    {
+                        lHayInstancia = true;
+
+                        // Recuperamos el puntero de ese proceso
+                        handle = myProcess.MainWindowHandle;
+                        TraerProcesoAlFrente(handle);
+
+                        break;
+                    }
+                }
+
+            if (!lHayInstancia)
+            {
+                try
+                {
+                    ProcessStartInfo startInfo = new ProcessStartInfo
+                    {
+                        WorkingDirectory = Application.StartupPath,
+                        FileName = Application.StartupPath + "\\BRSGestionComunes.exe",
+                        Arguments = "\"" + BRSLib.cLoginUsuario + "\" \"" + BRSLib.cLoginPassword + "\""
+                    };
+                    Process.Start(startInfo);
+                }
+                catch (Exception ex)
+                {
+                    BRSLib.Logger?.LogExcepcion(ex);
+                    BRSLib.MostrarMensaje(ex.Message + "\n\r" + Name + " : " + System.Reflection.MethodBase.GetCurrentMethod().Name + "()", " ", BRSLib.Boton.OK, BRSLib.Icono.Error);
+                }
+            }
+        }
+
+        private void rmiSalir_Click(object sender, EventArgs e)
+        {
+            if (BRSLib.MostrarMensaje("\n" + Cadenas.local_cMensajeSalirPrograma, Program.cNombreApp, BRSLib.Boton.OKCancel, BRSLib.Icono.Information) == System.Windows.Forms.DialogResult.OK)
+            {
+                BRSLib.DesactivarGrupoUsuario(BRSLib.COD_BRSERP);
+                Application.Exit();
+            }
+        }
+
+
+        private void salirToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            Close();
+        }
+
+        private void mostarAplicacionToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            notifyIcon1.Visible = false;
+            this.Show();
+            this.WindowState = System.Windows.Forms.FormWindowState.Normal;
+        }
+
+        #endregion
+
+        #region Menu mantenimientos
+
+        private void rmiGruposCentros_Click(object sender, EventArgs e)
+        {
+            frmGruposCentrosTabla ofrmTabla = Application.OpenForms.OfType<frmGruposCentrosTabla>().FirstOrDefault();
+
+            if (ofrmTabla == null)
+            {
+                ofrmTabla = new frmGruposCentrosTabla
+                {
+                    MdiParent = this,
+                    CodAplicacion = GruposCentros.CodAplicacion,
+                    CodPrograma = GruposCentros.CodPrograma
+                };
+                ofrmTabla.Show();
+            }
+            else
+            {
+                if (ofrmTabla.WindowState == FormWindowState.Minimized)
+                    ofrmTabla.WindowState = FormWindowState.Normal;
+                ofrmTabla.Activate();
+            }
+        }
+
+        private void rmiGruposUsuarios_Click(object sender, EventArgs e)
+        {
+            frmGruposUsuariosTabla ofrmTabla = Application.OpenForms.OfType<frmGruposUsuariosTabla>().FirstOrDefault();
+
+            if (ofrmTabla == null)
+            {
+                ofrmTabla = new frmGruposUsuariosTabla
+                {
+                    MdiParent = this,
+                    CodPrograma = GruposUsu.CodPrograma
+                };
+                ofrmTabla.Show();
+            }
+            else
+            {
+                if (ofrmTabla.WindowState == FormWindowState.Minimized)
+                    ofrmTabla.WindowState = FormWindowState.Normal;
+                ofrmTabla.Activate();
+            }
+        }
+
+        private void rmiUsuarios_Click(object sender, EventArgs e)
+        {
+            frmUsuariosTabla ofrmTabla = Application.OpenForms.OfType<frmUsuariosTabla>().FirstOrDefault();
+
+            if (ofrmTabla == null)
+            {
+                ofrmTabla = new frmUsuariosTabla
+                {
+                    MdiParent = this,
+                    CodPrograma = Usuarios.CodPrograma
+                };
+                ofrmTabla.Show();
+            }
+            else
+            {
+                if (ofrmTabla.WindowState == FormWindowState.Minimized)
+                    ofrmTabla.WindowState = FormWindowState.Normal;
+                ofrmTabla.Activate();
+            }
+        }
+
+        private void rmiTerminales_Click(object sender, EventArgs e)
+        {
+            frmTerminalesTabla ofrmTabla = Application.OpenForms.OfType<frmTerminalesTabla>().FirstOrDefault();
+
+            if (ofrmTabla == null)
+            {
+                ofrmTabla = new frmTerminalesTabla
+                {
+                    MdiParent = this,
+                    CodAplicacion = Terminales.CodAplicacion,
+                    CodPrograma = Terminales.CodPrograma
+                };
+                ofrmTabla.Show();
+            }
+            else
+            {
+                if (ofrmTabla.WindowState == FormWindowState.Minimized)
+                    ofrmTabla.WindowState = FormWindowState.Normal;
+                ofrmTabla.Activate();
+            }
+        }
+
+        private void rmiImpresoras_Click(object sender, EventArgs e)
+        {
+            frmImpresorasTabla ofrmTabla = Application.OpenForms.OfType<frmImpresorasTabla>().FirstOrDefault();
+
+            if (ofrmTabla == null)
+            {
+                ofrmTabla = new frmImpresorasTabla
+                {
+                    MdiParent = this,
+                    CodPrograma = Impresoras.CodPrograma
+                };
+                ofrmTabla.Show();
+            }
+            else
+            {
+                if (ofrmTabla.WindowState == FormWindowState.Minimized)
+                    ofrmTabla.WindowState = FormWindowState.Normal;
+                ofrmTabla.Activate();
+            }
+        }
+
+        private void rmiPermisos_Click(object sender, EventArgs e)
+        {
+            frmPermisosUsuarioGrupoTabla ofrmTabla = Application.OpenForms.OfType<frmPermisosUsuarioGrupoTabla>().FirstOrDefault();
+
+            if (ofrmTabla == null)
+            {
+                ofrmTabla = new frmPermisosUsuarioGrupoTabla
+                {
+                    MdiParent = this,
+                    CodAplicacion = PermisosUsuarioGrupo.CodAplicacion,
+                    CodPrograma = PermisosUsuarioGrupo.CodPrograma
+                };
+                ofrmTabla.Show();
+            }
+            else
+            {
+                if (ofrmTabla.WindowState == FormWindowState.Minimized)
+                    ofrmTabla.WindowState = FormWindowState.Normal;
+                ofrmTabla.Activate();
+            }
+        }
+
+        private void rmiProgramas_Click(object sender, EventArgs e)
+        {
+            using (NpgsqlConnection oConexion = new NpgsqlConnection(BRSLibBD.cConexionBRSERP))
+            using (NpgsqlCommand oComando = oConexion.CreateCommand())
+            {
+                try
+                {
+                    oConexion.Open();
+                    oComando.Transaction = oConexion.BeginTransaction();
+                    oComando.CommandText = $"SELECT * FROM {Programas.TABLA} FOR UPDATE NOWAIT;";
+                    oComando.ExecuteNonQuery();
+
+                    using (frmProgramas ofrmProgramas = new frmProgramas())
+                    {
+                        ofrmProgramas.Comando = oComando;
+                        ofrmProgramas.ShowDialog();
+                    }
+                }
+                catch (NpgsqlException ex)
+                {
+                    if (ex.Code == Excepciones.CodErrorRegistroBloqueado)
+                    {
+                        BRSLib.MostrarMensaje("La tabla programas está siendo modificada por otro usuario.\nInténtelo de nuevo más tarde.", Cadenas.MBoxRegistroBloqueadoTitle, BRSLib.Boton.OK, BRSLib.Icono.Warning);
+                    }
+                    else
+                    {
+                        BRSLib.Logger?.LogExcepcion(ex);
+                        BRSLib.MostrarMensaje(ex.Message + "\n\r" + Name + " : " + MethodBase.GetCurrentMethod().Name + "()",
+                            " ", BRSLib.Boton.OK, BRSLib.Icono.Error);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    BRSLib.Logger?.LogExcepcion(ex);
+                    BRSLib.MostrarMensaje(ex.Message + "\n\r" + Name + " : " + MethodBase.GetCurrentMethod().Name + "()",
+                        " ", BRSLib.Boton.OK, BRSLib.Icono.Error);
+                }
+            }
+
+            //frmPerfilesTabla ofrmTabla = Application.OpenForms.OfType<frmPerfilesTabla>().FirstOrDefault();
+
+            //if (ofrmTabla == null)
+            //{
+            //    ofrmTabla = new frmPerfilesTabla
+            //    {
+            //        MdiParent = this,
+            //        CodPrograma = Programas.CodPrograma
+            //    };
+            //    ofrmTabla.Show();
+            //}
+            //else
+            //{
+            //    if (ofrmTabla.WindowState == FormWindowState.Minimized)
+            //        ofrmTabla.WindowState = FormWindowState.Normal;
+            //    ofrmTabla.Activate();
+            //}
+        }
+
+        #endregion
+
+        #region Menu herramientas
+
+        private void rmiAuditoria_Click(object sender, EventArgs e)
+        {
+            frmAuditoriaTabla ofrmTabla = Application.OpenForms.OfType<frmAuditoriaTabla>().FirstOrDefault();
+
+            if (ofrmTabla == null)
+            {
+                ofrmTabla = new frmAuditoriaTabla
+                {
+                    MdiParent = this,
+                    CodAplicacion = Auditoria.CodAplicacion,
+                    CodPrograma = Auditoria.CodPrograma
+                };
+                ofrmTabla.Show();
+            }
+            else
+            {
+                if (ofrmTabla.WindowState == FormWindowState.Minimized)
+                    ofrmTabla.WindowState = FormWindowState.Normal;
+                ofrmTabla.Activate();
+            }
+        }
+
+        private void rmiBackup_Click(object sender, EventArgs e)
+        {
+            frmBackup ofrmTabla = Application.OpenForms.OfType<frmBackup>().FirstOrDefault();
+
+            if (ofrmTabla == null)
+            {
+                ofrmTabla = new frmBackup
+                {
+                    MdiParent = this,
+                    CodPrograma = 24
+                };
+                ofrmTabla.Show();
+            }
+            else
+            {
+                if (ofrmTabla.WindowState == FormWindowState.Minimized)
+                    ofrmTabla.WindowState = FormWindowState.Normal;
+                ofrmTabla.Activate();
+            }
+        }
+
+        private void rmiDisenador_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                FastReport.Report report1 = new Report();
+                report1.Design();
+            }
+            catch (Exception ex)
+            {
+                BRSLib.Logger?.LogExcepcion(ex);
+                BRSLib.MostrarMensaje(ex.Message + "\n\r" + Name + " : " + System.Reflection.MethodBase.GetCurrentMethod().Name + "()", " ", BRSLib.Boton.OK, BRSLib.Icono.Error);
+            }
+        }
+
+        private void rmiActualizar_Click(object sender, EventArgs e)
+        {
+            //verificamos posible actualización
+            if (BRSLib.nTerminal == 1) //actualización del servidor
+            {
+                if (BRSLibNetwork.AccesoURL(BRSLibNetwork.cServidorFTPAct))
+                {
+                    if (!ClienteNoActualizable())
+                    {
+                        if (BRSLibNetwork.cServidorFTPAct != null && BRSLibNetwork.cUsuarioFTPAct != null)
+                        {
+                            //if (BRSLib.DescargarArchivoTempFTP(BRSLibNetwork.cServidorFTPAct, BRSLibNetwork.cUsuarioFTPAct, BRSLibNetwork.cPassFTPAct, "ACTFTP/BRSERP", "version.new.xml"))
+                            if (BRSLibNetwork.DescargarArchivoFTPAct("version.new.xml",
+                                Application.StartupPath + "\\Temp\\version.new.xml"))
+                            {
+                                //BRSLib.ObtenerVersionXML(Application.StartupPath + "\\Temp");
+                                List<string> acModulosActualizar =
+                                    BRSLib.CompararVersiones(Application.StartupPath + "\\Temp");
+                                if (acModulosActualizar.Count > 0)
+                                {
+                                    //BRSLib.DescargarArchivoTempFTP(BRSLibNetwork.cServidorFTPAct, BRSLibNetwork.cUsuarioFTPAct, BRSLibNetwork.cPassFTPAct, "ACTFTP/BRSERP", "historico.json");
+                                    BRSLibNetwork.DescargarArchivoFTPAct("historico.json",
+                                        Application.StartupPath + "\\Temp\\historico.json");
+                                    BRSLib.ActualizarVersionServidor(acModulosActualizar);
+                                }
+                                else
+                                    BRSLib.MostrarMensaje(
+                                        "No es necesario actualizar. Tiene instalada la última versión.");
+                            }
+                        }
+                    }
+                }
+            }
+            else
+                BRSLib.MostrarMensaje("Solo es posible actualizar remotamente desde el terminal 1 (Servidor).");
+        }
+
+        private void rmiConfiguracion_Click(object sender, EventArgs e)
+        {
+            frmConfiguracion ofrmTabla = Application.OpenForms.OfType<frmConfiguracion>().FirstOrDefault();
+
+            if (ofrmTabla == null)
+            {
+                ofrmTabla = new frmConfiguracion
+                {
+                    MdiParent = this,
+                    CodPrograma = 27
+                };
+                ofrmTabla.Show();
+            }
+            else
+            {
+                if (ofrmTabla.WindowState == FormWindowState.Minimized)
+                    ofrmTabla.WindowState = FormWindowState.Normal;
+                ofrmTabla.Activate();
+            }
+        }
+
+        #endregion
+
+        #region Menu ventana
+
+        private void rmiCascada_Click(object sender, EventArgs e)
+        {
+            this.LayoutMdi(MdiLayout.Cascade);
+        }
+
+        private void rmiMosaicoHorizontal_Click(object sender, EventArgs e)
+        {
+            this.LayoutMdi(MdiLayout.TileHorizontal);
+        }
+
+        private void rmiMosaicoVertical_Click(object sender, EventArgs e)
+        {
+            this.LayoutMdi(MdiLayout.TileVertical);
+        }
+
+        private void rmiMinimizarTodo_Click(object sender, EventArgs e)
+        {
+            foreach (Form frm in this.MdiChildren)
+                frm.WindowState = FormWindowState.Minimized;
+        }
+
+        private void rmiRestaurarTodo_Click(object sender, EventArgs e)
+        {
+            foreach (Form frm in this.MdiChildren)
+                frm.WindowState = FormWindowState.Normal;
+        }
+
+        private void rmiMaximizarTodo_Click(object sender, EventArgs e)
+        {
+            foreach (Form frm in this.MdiChildren)
+                frm.WindowState = FormWindowState.Maximized;
+        }
+
+        private void rmiCerrarTodo_Click(object sender, EventArgs e)
+        {
+            foreach (Form frm in this.MdiChildren)
+                frm.Close();
+        }
+
+        #endregion
+
+        #region Menu ayuda
+
+        private void rmiAcercade_Click(object sender, EventArgs e)
+        {
+            using (frmAcercade ofrmAcercaDe = new frmAcercade())
+            {
+                ofrmAcercaDe.VersionNueva = true;
+                ofrmAcercaDe.ShowDialog();
+            }
+        }
+
+        #endregion
+
+        #endregion
+
+        #region Métodos privados
+
+        private void ObtenerDominioUsuarioProceso(int nId)
+        {
+            string query = "SELECT * FROM Win32_Process WHERE ProcessID = " + nId;
+            ManagementObjectSearcher searcher = new ManagementObjectSearcher(query);
+            ManagementObjectCollection processList = searcher.Get();
+
+            foreach (ManagementObject obj in processList)
+            {
+                string[] argList = new string[] { string.Empty, string.Empty };
+                int returnVal = Convert.ToInt32(obj.InvokeMethod("GetOwner", argList));
+                if (returnVal == 0)
+                {
+                    // Guardamos Dominio\Usuario
+                    acDominioUsuarioProceso.Add(argList[1] + "\\" + argList[0]);
+                }
+            }
+        }
+
+        private void Tesoreria(string cFormulario = null)
+        {
+            bool lHayInstancia = false;
+            Process[] myProcesses = Process.GetProcesses();
+            foreach (Process myProcess in myProcesses)
+            {
+                if (myProcess.ProcessName.Equals("BRSTesoreria"))
+                {
+                    acDominioUsuarioProceso = new List<string>();
+                    ObtenerDominioUsuarioProceso(myProcess.Id);
+                    string cDominioUsuarioWindows = Environment.UserDomainName + "\\" + Environment.UserName;
+
+                    if (acDominioUsuarioProceso.Contains(cDominioUsuarioWindows))
+                    {
+                        lHayInstancia = true;
+
+                        // Recuperamos el puntero de ese proceso
+                        handle = myProcess.MainWindowHandle;
+                        TraerProcesoAlFrente(handle);
+
+                        break;
+                    }
+                }
+            }
+
+            if (!lHayInstancia)
+            {
+                try
+                {
+                    ProcessStartInfo startInfo = new ProcessStartInfo
+                    {
+                        WorkingDirectory = Application.StartupPath,
+                        FileName = Application.StartupPath + "\\BRSTesoreria.exe",
+                        Arguments = "\"" + BRSLib.cLoginUsuario + "\" \"" + BRSLib.cLoginPassword + "\""
+                    };
+                    if (cFormulario != null)
+                    {
+                        startInfo.Arguments += " " + cFormulario;
+                    }
+                    Process.Start(startInfo);
+                }
+                catch (Exception ex)
+                {
+                    BRSLib.Logger?.LogExcepcion(ex);
+                    BRSLib.MostrarMensaje(ex.Message + "\n\r" + Name + " : " + System.Reflection.MethodBase.GetCurrentMethod().Name + "()", " ", BRSLib.Boton.OK, BRSLib.Icono.Error);
+                }
+            }
+        }
+
+        private void Contabilidad(string cFormulario = null)
+        {
+            bool lHayInstancia = false;
+
+            // Contabilidad al contrario que tesorería, permitirá abrir varios modulos.
+            if (!lHayInstancia)
+            {
+                try
+                {
+                    ProcessStartInfo startInfo = new ProcessStartInfo
+                    {
+                        WorkingDirectory = Application.StartupPath,
+                        FileName = Application.StartupPath + "\\BRSContabilidad.exe",
+                        Arguments = "\"" + BRSLib.cLoginUsuario + "\" \"" + BRSLib.cLoginPassword + "\""
+                    };
+                    if (cFormulario != null)
+                    {
+                        startInfo.Arguments += " " + cFormulario;
+                    }
+                    Process.Start(startInfo);
+                }
+                catch (Exception ex)
+                {
+                    BRSLib.Logger?.LogExcepcion(ex);
+                    BRSLib.MostrarMensaje(ex.Message + "\n\r" + Name + " : " + System.Reflection.MethodBase.GetCurrentMethod().Name + "()", " ", BRSLib.Boton.OK, BRSLib.Icono.Error);
+                }
+            }
+        }
+
+        private void SoporteTecnico(string cFormulario = null)
+        {
+            bool lHayInstancia = false;
+
+            // Contabilidad al contrario que tesorería, permitirá abrir varios modulos.
+            if (!lHayInstancia)
+            {
+                try
+                {
+                    ProcessStartInfo startInfo = new ProcessStartInfo
+                    {
+                        WorkingDirectory = Application.StartupPath,
+                        FileName = Application.StartupPath + "\\BRSSat.exe",
+                        Arguments = "\"" + BRSLib.cLoginUsuario + "\" \"" + BRSLib.cLoginPassword + "\""
+                    };
+                    if (cFormulario != null)
+                    {
+                        startInfo.Arguments += " " + cFormulario;
+                    }
+                    Process.Start(startInfo);
+                }
+                catch (Exception ex)
+                {
+                    BRSLib.Logger?.LogExcepcion(ex);
+                    BRSLib.MostrarMensaje(ex.Message + "\n\r" + Name + " : " + System.Reflection.MethodBase.GetCurrentMethod().Name + "()", " ", BRSLib.Boton.OK, BRSLib.Icono.Error);
+                }
+            }
+        }
+
+        private void Ventas(string cFormulario = null)
+        {
+            bool lHayInstancia = false;
+
+            if (!lHayInstancia)
+            {
+                try
+                {
+                    ProcessStartInfo startInfo = new ProcessStartInfo
+                    {
+                        WorkingDirectory = Application.StartupPath,
+                        FileName = Application.StartupPath + "\\BRSVentas.exe",
+                        Arguments = "\"" + BRSLib.cLoginUsuario + "\" \"" + BRSLib.cLoginPassword + "\""
+                    };
+                    if (cFormulario != null)
+                    {
+                        startInfo.Arguments += " " + cFormulario;
+                    }
+                    Process.Start(startInfo);
+                }
+                catch (Exception ex)
+                {
+                    BRSLib.Logger?.LogExcepcion(ex);
+                    BRSLib.MostrarMensaje(ex.Message + "\n\r" + Name + " : " + System.Reflection.MethodBase.GetCurrentMethod().Name + "()", " ", BRSLib.Boton.OK, BRSLib.Icono.Error);
+                }
+            }
+        }
+
+        private void Compras(string cFormulario = null)
+        {
+            bool lHayInstancia = false;
+
+            if (!lHayInstancia)
+            {
+                try
+                {
+                    ProcessStartInfo startInfo = new ProcessStartInfo
+                    {
+                        WorkingDirectory = Application.StartupPath,
+                        FileName = Application.StartupPath + "\\BRSCompras.exe",
+                        Arguments = "\"" + BRSLib.cLoginUsuario + "\" \"" + BRSLib.cLoginPassword + "\""
+                    };
+                    if (cFormulario != null)
+                    {
+                        startInfo.Arguments += " " + cFormulario;
+                    }
+                    Process.Start(startInfo);
+                }
+                catch (Exception ex)
+                {
+                    BRSLib.Logger?.LogExcepcion(ex);
+                    BRSLib.MostrarMensaje(ex.Message + "\n\r" + Name + " : " + System.Reflection.MethodBase.GetCurrentMethod().Name + "()", " ", BRSLib.Boton.OK, BRSLib.Icono.Error);
+                }
+            }
+        }
+
+        protected void PaintClientBG(object sender, PaintEventArgs e)
+        {
+            //dibuja un fondo degradado vertical compuesto por los colores de fondo a cabecera
+            MdiClient mc = (MdiClient)sender;
+            e.Graphics.Clip = new Region(mc.ClientRectangle);
+            if (mc.ClientRectangle.Width != 0 && mc.ClientRectangle.Height != 0)
+            {
+                LinearGradientBrush lgb = new LinearGradientBrush(mc.ClientRectangle, cGradSuperior, cGradInferior, 90f, false);
+                e.Graphics.FillRectangle(lgb, mc.ClientRectangle);
+                lgb.Dispose();
+            }
+        }
+
+        protected void SizeClientBG(object sender, EventArgs e)
+        {
+            //redibuja el fondo degradado cuando se cambia el tamaño de las ventanas
+            ((MdiClient)sender).Invalidate();
+        }
+
+        private void TraerProcesoAlFrente(IntPtr handle)
+        {
+            if (IsIconic(handle))
+            { // Si la el proceso se encuentra minimizado
+                // Lo maximizamos
+                ShowWindow(handle, SW_RESTORE);
+            }
+            // Llevamos el proceso al frente
+            SetForegroundWindow(handle);
+        }
+
+        /// <summary>
+        /// Método que indica si el cliente puede o no actualizarse. Si no puede, no se le muestra nunca opción de nueva
+        /// actualización.
+        /// </summary>
+        /// <returns></returns>
+        private static bool ClienteNoActualizable()
+        {
+            bool lBaneado = false;
+
+            // Si están cumplimentados los campos del servidor y del usuairo de ftp
+            if (!string.IsNullOrWhiteSpace(BRSLibNetwork.cServidorFTPAct) && !string.IsNullOrWhiteSpace(BRSLibNetwork.cUsuarioFTPAct))
+            {
+                //if (BRSLib.DescargarArchivoTempFTP(BRSLibNetwork.cServidorFTPAct, BRSLibNetwork.cUsuarioFTPAct, BRSLibNetwork.cPassFTPAct, "ACTFTP/BRSERP", "ban.json"))
+                if (BRSLibNetwork.DescargarArchivoFTPAct("ban.json", Application.StartupPath + "\\Temp\\ban.json"))
+                {
+                    if (File.Exists(Application.StartupPath + "\\Temp\\ban.json"))
+                    {
+                        List<string> aoClientesBaneados = new List<string>();
+                        // Cargamos lista histórico de versiones
+                        using (StreamReader oReader = new StreamReader(Application.StartupPath + "\\Temp\\ban.json"))
+                        {
+                            string cJSON = oReader.ReadToEnd();
+                            aoClientesBaneados = JsonConvert.DeserializeObject<List<string>>(cJSON);
+                        }
+
+                        string cSQL = "SELECT ncliact FROM configgeneral";
+                        string cClienAct = BRSLib.SelectScalarCadena(cSQL, null, BRSLibBD.cConexionBRSERP);
+
+                        // Si hay versiones en el json, obtenemos el valor de la última asignada.
+                        if (aoClientesBaneados.Count != 0 && !string.IsNullOrWhiteSpace(cClienAct))
+                        {
+                            for (int i = 0; i <= aoClientesBaneados.Count - 1; i++)
+                            {
+                                if (aoClientesBaneados[i] == cClienAct)
+                                {
+                                    lBaneado = true;
+                                    break;
+                                }
+                            }
+                        }
+
+                        //Borramos al final el fichero.
+                        File.Delete(Application.StartupPath + "\\Temp\\ban.json");
+                    }
+                }
+            }
+
+            return lBaneado;
+        }
+
+        private bool ComprobarLaborable()
+        {
+            bool laborable = false;
+            try
+            {
+                DateTime hoy = DateTime.Today;
+                if (hoy.DayOfWeek != DayOfWeek.Saturday && hoy.DayOfWeek != DayOfWeek.Sunday)
+                {
+                    //if (BRSLib.DescargarArchivoTempFTP(BRSLibNetwork.cServidorFTPAct, BRSLibNetwork.cUsuarioFTPAct, BRSLibNetwork.cPassFTPAct, "ACTFTP/BRSERP", "festivos.json"))
+                    if (BRSLibNetwork.DescargarArchivoFTPAct("festivos.json", Application.StartupPath + "\\Temp\\festivos.json"))
+                    {
+                        if (File.Exists(Application.StartupPath + "\\Temp\\festivos.json"))
+                        {
+                            List<string> aoFestivosC = new List<string>();
+                            List<DateTime> aoFestivosD = new List<DateTime>();
+                            // Cargamos lista histórico de versiones
+                            using (StreamReader oReader = new StreamReader(Application.StartupPath + "\\Temp\\festivos.json"))
+                            {
+                                string cJSON = oReader.ReadToEnd();
+                                aoFestivosC = JsonConvert.DeserializeObject<List<string>>(cJSON);
+                            }
+
+                            foreach (string fecha in aoFestivosC)
+                            {
+                                string aux = fecha;
+                                aux = aux.Replace("****", Convert.ToString(DateTime.Now.Year));
+                                aoFestivosD.Add(Convert.ToDateTime(aux));
+                            }
+
+                            if (!aoFestivosD.Contains(hoy))
+                            {
+                                if (hoy.DayOfWeek == DayOfWeek.Friday)
+                                {
+                                    if (DateTime.Now.Hour < 14)
+                                    {
+                                        laborable = true;
+                                    }
+                                }
+                                else
+                                {
+                                    laborable = true;
+                                }
+                            }
+
+                            //Borramos al final el fichero.
+                            File.Delete(Application.StartupPath + "\\Temp\\festivos.json");
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                BRSLib.MostrarMensaje(ex.Message);
+            }
+            return laborable;
+        }
+
+        /// <summary>
+        /// Método que comprueba si existe una versión disponible nueva en el servidor de versiones.
+        /// </summary>
+        private void ExisteNuevaVersionDisponible(bool mostrarError = true)
+        {
+            // Si están cumplimentados los campos del servidor y del usuairo de ftp
+            if (!string.IsNullOrWhiteSpace(BRSLibNetwork.cServidorFTPAct) && !string.IsNullOrWhiteSpace(BRSLibNetwork.cUsuarioFTPAct))
+            {
+                //if (BRSLib.DescargarArchivoTempFTP(BRSLibNetwork.cServidorFTPAct, BRSLibNetwork.cUsuarioFTPAct, BRSLibNetwork.cPassFTPAct, "ACTFTP/BRSERP", "historico.json"))
+                if (BRSLibNetwork.DescargarArchivoFTPAct("historico.json", Application.StartupPath + "\\Temp\\historico.json", null, "", mostrarError))
+                {
+                    if (File.Exists(Application.StartupPath + "\\Temp\\historico.json"))
+                    {
+                        List<string> aoHistoricoVersiones = new List<string>();
+                        // Cargamos lista histórico de versiones
+                        using (StreamReader oReader = new StreamReader(Application.StartupPath + "\\Temp\\historico.json"))
+                        {
+                            string cJSON = oReader.ReadToEnd();
+                            aoHistoricoVersiones = JsonConvert.DeserializeObject<List<string>>(cJSON);
+                        }
+
+                        // Si hay versiones en el json, obtenemos el valor de la última asignada.
+                        if (aoHistoricoVersiones.Count != 0)
+                        {
+                            string cLastVersion = aoHistoricoVersiones[aoHistoricoVersiones.Count - 1];
+
+                            if (cLastVersion != BRSLib.cVersion + BRSLib.cRevision)
+                            {
+                                string cVersion = cLastVersion.Substring(0, 2) + "." +
+                                  cLastVersion.Substring(2, 2) + "." +
+                                  cLastVersion.Substring(4, 2) + "." +
+                                  cLastVersion.Substring(6, 2);
+
+                                lblNewVersion.Visible = true;
+                                lblNewVersion.Text = "Versión " + cVersion + " ya disponible.\n" +
+                                                     "Actualice el servidor para disfrutar de las mejoras.\n" +
+                                                     "Pulse aquí para ver un avance de dichas mejoras.";
+                            }
+                        }
+
+                        //Borramos al final el fichero.
+                        //File.Delete(Application.StartupPath + "\\Temp\\historico.json");
+                    }
+                }
+            }
+        }
+
+        public static void RefrescarConexionesModelos()
+        {
+            var types = AppDomain.CurrentDomain.GetAssemblies().SelectMany(x => x.GetTypes()).Where(x =>
+                typeof(IModeloTesoreria).IsAssignableFrom(x) && !x.IsInterface && !x.IsAbstract).ToList();
+
+            foreach (var type in types)
+            {
+                var property = type.GetField("cConexion", BindingFlags.Static | BindingFlags.Public);
+                property.SetValue(type, BRSLibBD.cConexionTesoreria);
+            }
+
+            types = AppDomain.CurrentDomain.GetAssemblies().SelectMany(x => x.GetTypes()).Where(x =>
+                typeof(IModeloContabilidad).IsAssignableFrom(x) && !x.IsInterface && !x.IsAbstract).ToList();
+
+            foreach (var type in types)
+            {
+                var property = type.GetField("cConexion", BindingFlags.Static | BindingFlags.Public);
+                property.SetValue(type, BRSLibBD.cConexionContabilidad);
+            }
+
+            types = AppDomain.CurrentDomain.GetAssemblies().SelectMany(x => x.GetTypes()).Where(x =>
+                typeof(IModeloGestion).IsAssignableFrom(x) && !x.IsAbstract && !x.IsAbstract).ToList();
+
+            foreach (var type in types)
+            {
+                var property = type.GetField("cConexion", BindingFlags.Static | BindingFlags.Public);
+                property.SetValue(type, BRSLibBD.cConexionGestion);
+            }
+            /*
+            #region Modelos de Contabilidad
+            Actiejer.cConexion = BRSLibBD.cConexionContabilidad;
+            Apuntes.cConexion = BRSLibBD.cConexionContabilidad;
+            BaseRegIva.cConexion = BRSLibBD.cConexionContabilidad;
+            CabDefApu.cConexion = BRSLibBD.cConexionContabilidad;
+            Conceptos.cConexion = BRSLibBD.cConexionContabilidad;
+            Criterios.cConexion = BRSLibBD.cConexionContabilidad;
+            Cuentas.cConexion = BRSLibBD.cConexionContabilidad;
+            ECPN.cConexion = BRSLibBD.cConexionContabilidad;
+            EnlaceCont.cConexion = BRSLibBD.cConexionContabilidad;
+            ExtCuentas.cConexion = BRSLibBD.cConexionContabilidad;
+            IVA.cConexion = BRSLibBD.cConexionContabilidad;
+            LinDefApu.cConexion = BRSLibBD.cConexionContabilidad;
+            Niveles.cConexion = BRSLibBD.cConexionContabilidad;
+            PorcentajeIVA.cConexion = BRSLibBD.cConexionContabilidad;
+            Presupuestos.cConexion = BRSLibBD.cConexionContabilidad;
+            RegistroIva.cConexion = BRSLibBD.cConexionContabilidad;
+            SaldosCuenta.cConexion = BRSLibBD.cConexionContabilidad;
+            SaldosCuentaDocumento.cConexion = BRSLibBD.cConexionContabilidad;
+            TiposDiario.cConexion = BRSLibBD.cConexionContabilidad;
+            TmpBalances.cConexion = BRSLibBD.cConexionContabilidad;
+            TmpModelo347.cConexion = BRSLibBD.cConexionContabilidad;
+            TmpRegistroIVAUnificado.cConexion = BRSLibBD.cConexionContabilidad;
+            #endregion
+
+            #region Modelos de Tesorería
+            Bancos.cConexion = BRSLibBD.cConexionTesoreria;
+            CarterasCobro.cConexion = BRSLibBD.cConexionTesoreria;
+            CarterasPago.cConexion = BRSLibBD.cConexionTesoreria;
+            ConceptosBancarios.cConexion = BRSLibBD.cConexionTesoreria;
+            HistorialPagosCobros.cConexion = BRSLibBD.cConexionTesoreria;
+            MediosPago.cConexion = BRSLibBD.cConexionTesoreria;
+            RegCarCobro.cConexion = BRSLibBD.cConexionTesoreria;
+            RegCarPago.cConexion = BRSLibBD.cConexionTesoreria;
+            RegistrosCobro.cConexion = BRSLibBD.cConexionTesoreria;
+            RegistrosPago.cConexion = BRSLibBD.cConexionTesoreria;
+            RemesasCob.cConexion = BRSLibBD.cConexionTesoreria;
+            RemesasPago.cConexion = BRSLibBD.cConexionTesoreria;
+            Situaciones.cConexion = BRSLibBD.cConexionTesoreria;
+            TiposRegistro.cConexion = BRSLibBD.cConexionTesoreria;
+            TiposRemesaCobro.cConexion = BRSLibBD.cConexionTesoreria;
+            TiposRemesaPago.cConexion = BRSLibBD.cConexionTesoreria;
+            ValidacionesDevolucionesCobro.cConexion = BRSLibBD.cConexionTesoreria;
+            ValidacionesDevolucionesPago.cConexion = BRSLibBD.cConexionTesoreria;
+            ValidacionesDocumentosCobro.cConexion = BRSLibBD.cConexionTesoreria;
+            ValidacionesDocumentosPago.cConexion = BRSLibBD.cConexionTesoreria;
+            ValidacionesRemesaCobro.cConexion = BRSLibBD.cConexionTesoreria;
+            ValidacionesRemesaPago.cConexion = BRSLibBD.cConexionTesoreria;
+            #endregion
+
+            #region Modelos de Gestión
+
+            AcciClie.cConexion = BRSLibBD.cConexionGestion;
+            Acciones.cConexion = BRSLibBD.cConexionGestion;
+            ActiClientes.cConexion = BRSLibBD.cConexionGestion;
+            ActiPrev.cConexion = BRSLibBD.cConexionGestion;
+            Actividades.cConexion = BRSLibBD.cConexionGestion;
+            AgrupaMarcas.cConexion = BRSLibBD.cConexionGestion;
+            AlmacenCas.cConexion = BRSLibBD.cConexionGestion;
+            Almacenes.cConexion = BRSLibBD.cConexionGestion;
+            AreasCarga.cConexion = BRSLibBD.cConexionGestion;
+            ArtEsc.cConexion = BRSLibBD.cConexionGestion;
+            Articulos.cConexion = BRSLibBD.cConexionGestion;
+            ArticulosAlt.cConexion = BRSLibBD.cConexionGestion;
+            ArtiProv.cConexion = BRSLibBD.cConexionGestion;
+            Aseguradoras.cConexion = BRSLibBD.cConexionGestion;
+            AuditoriasGPS.cConexion = BRSLibBD.cConexionGestion;
+            AvalesProveedor.cConexion = BRSLibBD.cConexionGestion;
+            CabAlbComp.cConexion = BRSLibBD.cConexionGestion;
+            CabAlb.cConexion = BRSLibBD.cConexionGestion;
+            CabAyu.cConexion = BRSLibBD.cConexionGestion;
+            CabCierre.cConexion = BRSLibBD.cConexionGestion;
+            CabConCli.cConexion = BRSLibBD.cConexionGestion;
+            CabFac.cConexion = BRSLibBD.cConexionGestion;
+            CabMedCli.cConexion = BRSLibBD.cConexionGestion;
+            CabPedCli.cConexion = BRSLibBD.cConexionGestion;
+            CabPedPrv.cConexion = BRSLibBD.cConexionGestion;
+            CabPlaCen.cConexion = BRSLibBD.cConexionGestion;
+            CabPlanProy.cConexion = BRSLibBD.cConexionGestion;
+            Cabplaope.cConexion = BRSLibBD.cConexionGestion;
+            CabPre.cConexion = BRSLibBD.cConexionGestion;
+            CabPreCli.cConexion = BRSLibBD.cConexionGestion;
+            CabRep.cConexion = BRSLibBD.cConexionGestion;
+            Cajas.cConexion = BRSLibBD.cConexionGestion;
+            Calidades.cConexion = BRSLibBD.cConexionGestion;
+            Categorias.cConexion = BRSLibBD.cConexionGestion;
+            CentrosFabri.cConexion = BRSLibBD.cConexionGestion;
+            Clasif1Art.cConexion = BRSLibBD.cConexionGestion;
+            Clasif1Fab.cConexion = BRSLibBD.cConexionGestion;
+            Clasif1Prv.cConexion = BRSLibBD.cConexionGestion;
+            Clasif2Art.cConexion = BRSLibBD.cConexionGestion;
+            Clasif2Fab.cConexion = BRSLibBD.cConexionGestion;
+            Clasif2Prv.cConexion = BRSLibBD.cConexionGestion;
+            Clasif3Art.cConexion = BRSLibBD.cConexionGestion;
+            Clasif3Fab.cConexion = BRSLibBD.cConexionGestion;
+            Clasif3Prv.cConexion = BRSLibBD.cConexionGestion;
+            ClasifClieSat.cConexion = BRSLibBD.cConexionGestion;
+            Clasificaciones.cConexion = BRSLibBD.cConexionGestion;
+            Clasificaciones2.cConexion = BRSLibBD.cConexionGestion;
+            Clasificaciones3.cConexion = BRSLibBD.cConexionGestion;
+            ClasVehiculos.cConexion = BRSLibBD.cConexionGestion;
+            Claves.cConexion = BRSLibBD.cConexionGestion;
+            ClienteMarcas.cConexion = BRSLibBD.cConexionGestion;
+            Clientes.cConexion = BRSLibBD.cConexionGestion;
+            ClienteSat.cConexion = BRSLibBD.cConexionGestion;
+            CodigosEAN.cConexion = BRSLibBD.cConexionGestion;
+            Combustibles.cConexion = BRSLibBD.cConexionGestion;
+            ConductoresVehi.cConexion = BRSLibBD.cConexionGestion;
+            ContactosCli.cConexion = BRSLibBD.cConexionGestion;
+            ContratoSat.cConexion = BRSLibBD.cConexionGestion;
+            DatosAlmacen.cConexion = BRSLibBD.cConexionGestion;
+            DeleClientes.cConexion = BRSLibBD.cConexionGestion;
+            DeleProveedores.cConexion = BRSLibBD.cConexionGestion;
+            Descextendidas.cConexion = BRSLibBD.cConexionGestion;
+            DistNeumaticos.cConexion = BRSLibBD.cConexionGestion;
+            DocsRiesgo.cConexion = BRSLibBD.cConexionGestion;
+            Entidades.cConexion = BRSLibBD.cConexionGestion;
+            Envases.cConexion = BRSLibBD.cConexionGestion;
+            Epigrafes.cConexion = BRSLibBD.cConexionGestion;
+            EscaladosRappel.cConexion = BRSLibBD.cConexionGestion;
+            Estaciones.cConexion = BRSLibBD.cConexionGestion;
+            ExclusionCli.cConexion = BRSLibBD.cConexionGestion;
+            ExclusivasCli.cConexion = BRSLibBD.cConexionGestion;
+            ExcPlaCen.cConexion = BRSLibBD.cConexionGestion;
+            Fabricantes.cConexion = BRSLibBD.cConexionGestion;
+            Familias.cConexion = BRSLibBD.cConexionGestion;
+            Ficheros.cConexion = BRSLibBD.cConexionGestion;
+            FlujosXRT.cConexion = BRSLibBD.cConexionGestion;
+            Formatos.cConexion = BRSLibBD.cConexionGestion;
+            FPClientes.cConexion = BRSLibBD.cConexionGestion;
+            GrupoCliente.cConexion = BRSLibBD.cConexionGestion;
+            GruposProveedor.cConexion = BRSLibBD.cConexionGestion;
+            Gruposschw.cConexion = BRSLibBD.cConexionGestion;
+            GruposTalla.cConexion = BRSLibBD.cConexionGestion;
+            HorariosReparto.cConexion = BRSLibBD.cConexionGestion;
+            HuecosAlmacen.cConexion = BRSLibBD.cConexionGestion;
+            Idiomas.cConexion = BRSLibBD.cConexionGestion;
+            IncPlaCen.cConexion = BRSLibBD.cConexionGestion;
+            InterMarcas.cConexion = BRSLibBD.cConexionGestion;
+            LicenProd.cConexion = BRSLibBD.cConexionGestion;
+            LinAlb.cConexion = BRSLibBD.cConexionGestion;
+            LinAyu.cConexion = BRSLibBD.cConexionGestion;
+            LinConCli.cConexion = BRSLibBD.cConexionGestion;
+            LineasProducto.cConexion = BRSLibBD.cConexionGestion;
+            LinAlbComp.cConexion = BRSLibBD.cConexionGestion;
+            LinMedCli.cConexion = BRSLibBD.cConexionGestion;
+            LinPedCli.cConexion = BRSLibBD.cConexionGestion;
+            LinTipIVA.cConexion = BRSLibBD.cConexionGestion;
+            LoteAlmacen.cConexion = BRSLibBD.cConexionGestion;
+            LoteArticulos.cConexion = BRSLibBD.cConexionGestion;
+            LoteHistorico.cConexion = BRSLibBD.cConexionGestion;
+            Marcas.cConexion = BRSLibBD.cConexionGestion;
+            MarcasVehi.cConexion = BRSLibBD.cConexionGestion;
+            MargsArt.cConexion = BRSLibBD.cConexionGestion;
+            Medios.cConexion = BRSLibBD.cConexionGestion;
+            Modelos.Gestion.Modelos.cConexion = BRSLibBD.cConexionGestion;
+            Monedas.cConexion = BRSLibBD.cConexionGestion;
+            Motivos.cConexion = BRSLibBD.cConexionGestion;
+            MultiClientes.cConexion = BRSLibBD.cConexionGestion;
+            NeumVehiculos.cConexion = BRSLibBD.cConexionGestion;
+            Nomenclaturas.cConexion = BRSLibBD.cConexionGestion;
+            Observaciones.cConexion = BRSLibBD.cConexionGestion;
+            Pendientes.cConexion = BRSLibBD.cConexionGestion;
+            PeriodosCtr.cConexion = BRSLibBD.cConexionGestion;
+            PrioridadArt.cConexion = BRSLibBD.cConexionGestion;
+            Promociones.cConexion = BRSLibBD.cConexionGestion;
+            PromoClientes.cConexion = BRSLibBD.cConexionGestion;
+            PromoProveedores.cConexion = BRSLibBD.cConexionGestion;
+            Proveedores.cConexion = BRSLibBD.cConexionGestion;
+            RapVenCl2.cConexion = BRSLibBD.cConexionGestion;
+            RazonesSociales.cConexion = BRSLibBD.cConexionGestion;
+            Repostadas.cConexion = BRSLibBD.cConexionGestion;
+            RutaClientes.cConexion = BRSLibBD.cConexionGestion;
+            Rutas.cConexion = BRSLibBD.cConexionGestion;
+            RutasPob.cConexion = BRSLibBD.cConexionGestion;
+            Sabores.cConexion = BRSLibBD.cConexionGestion;
+            SaboresColores.cConexion = BRSLibBD.cConexionGestion;
+            SectorArticulos.cConexion = BRSLibBD.cConexionGestion;
+            Sectores.cConexion = BRSLibBD.cConexionGestion;
+            SegClientes.cConexion = BRSLibBD.cConexionGestion;
+            Segmentacion1.cConexion = BRSLibBD.cConexionGestion;
+            Segmentacion2.cConexion = BRSLibBD.cConexionGestion;
+            Segmentacion3.cConexion = BRSLibBD.cConexionGestion;
+            Segmentacion4.cConexion = BRSLibBD.cConexionGestion;
+            Segmentacion5.cConexion = BRSLibBD.cConexionGestion;
+            SerieArticulos.cConexion = BRSLibBD.cConexionGestion;
+            SerieHistorico.cConexion = BRSLibBD.cConexionGestion;
+            SeriesFab.cConexion = BRSLibBD.cConexionGestion;
+            Modelos.Gestion.Situaciones.cConexion = BRSLibBD.cConexionGestion;
+            SubAreasCarga.cConexion = BRSLibBD.cConexionGestion;
+            Subfamilias.cConexion = BRSLibBD.cConexionGestion;
+            Tallas.cConexion = BRSLibBD.cConexionGestion;
+            TarifArtic.cConexion = BRSLibBD.cConexionGestion;
+            Tarifas.cConexion = BRSLibBD.cConexionGestion;
+            TarifOfici.cConexion = BRSLibBD.cConexionGestion;
+            Temporadas.cConexion = BRSLibBD.cConexionGestion;
+            Tiempos.cConexion = BRSLibBD.cConexionGestion;
+            TipoClientes.cConexion = BRSLibBD.cConexionGestion;
+            TipoFormatos.cConexion = BRSLibBD.cConexionGestion;
+            TiposEnvases.cConexion = BRSLibBD.cConexionGestion;
+            TiposIVA.cConexion = BRSLibBD.cConexionGestion;
+            TiposOperacion.cConexion = BRSLibBD.cConexionGestion;
+            TiposPriArt.cConexion = BRSLibBD.cConexionGestion;
+            TiposPriCli.cConexion = BRSLibBD.cConexionGestion;
+            TiposViaje.cConexion = BRSLibBD.cConexionGestion;
+            TpvCentros.cConexion = BRSLibBD.cConexionGestion;
+            TpvFabricantes.cConexion = BRSLibBD.cConexionGestion;
+            TPVPCS.cConexion = BRSLibBD.cConexionGestion;
+            TpvRutas.cConexion = BRSLibBD.cConexionGestion;
+            TpvSeries.cConexion = BRSLibBD.cConexionGestion;
+            TpvTarifas.cConexion = BRSLibBD.cConexionGestion;
+            Transportistas.cConexion = BRSLibBD.cConexionGestion;
+            VehiculosRemolq.cConexion = BRSLibBD.cConexionGestion;
+            VehiculosTrans.cConexion = BRSLibBD.cConexionGestion;
+
+            #endregion
+            */
+        }
+
+        #endregion
+
+        #region Funciones para abrir la instancia ya creada
+
+        protected override void WndProc(ref Message m)
+        {
+            if (m.Msg == NativeMethods.WM_SHOWME)
+            {
+                ShowMe();
+            }
+            base.WndProc(ref m);
+        }
+
+        private void ShowMe()
+        {
+            if (WindowState == FormWindowState.Minimized)
+            {
+                WindowState = FormWindowState.Normal;
+            }
+            // get our current "TopMost" value (ours will always be false though)
+            bool top = TopMost;
+            // make our form jump to the top of everything
+            TopMost = true;
+            // set it back to whatever it was
+            TopMost = top;
+        }
+
+        #endregion
+
+    }
+}

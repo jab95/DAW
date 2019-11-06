@@ -1,0 +1,25 @@
+div {
+    position: absolute;
+    height: 120px;
+    width: 200px;
+    border-style: solid;
+    background-color: white;
+}
+
+#caja1 {
+    z-index: 5;
+    top: 1em;
+    left: 8em;
+}
+
+#caja2 {
+    z-index: 15;
+    top: 5em;
+    left: 5em;
+}
+
+#caja3 {
+    z-index: 25;
+    top: 2em;
+    left: 2em;
+}

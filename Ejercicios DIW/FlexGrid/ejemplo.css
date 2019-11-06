@@ -1,0 +1,40 @@
+.contenedor {
+    background: grey;
+    display: flex;
+    justify-content: space-evenly;
+    /* align-items: center; */
+    /* height: 200px;
+    width: 800px; */
+}
+
+.item {
+    width: 300px;
+    height: 50px;
+    color: white;
+    font-size: 32px;
+    text-align: center;
+    line-height: 50px;
+}
+
+.item-1 {
+    background: navy;
+    /* flex-basis: 50%; */
+    flex-grow: 5;
+    flex-shrink: 6;
+}
+
+.item-2 {
+    background: blue;
+    /* flex-basis: 10%; */
+    flex-grow: 1;
+    flex-shrink: 1;
+}
+
+.item-3 {
+    background: steelblue;
+    align-self: flex-start;
+    order: -1;
+    /* flex-basis: 25%; */
+    flex-grow: 1;
+    flex-shrink: 1;
+}

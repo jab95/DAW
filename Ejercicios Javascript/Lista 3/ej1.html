@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <title>Document</title>
+    <script type="text/javascript" src="ej1.js"></script>
+  </head>
+
+  <body>
+    <form action="ej1-2.php" method="post" onsubmit="return Validar()">
+      Nombre :
+      <input
+        type="text"
+        name="nombre"
+        id="nombre"
+        onfocusout="ValidaNombre()"
+      />
+      <label id="errorNombre" style="color: red;"></label>
+      <br />
+      Direccion de correo:
+      <input
+        type="text"
+        name="correo"
+        id="correo"
+        onfocusout="ValidaCorreo()"
+      />
+      <label id="errorCorreo" style="color: red;"></label>
+      <br />
+      Contraseña:
+      <input
+        type="password"
+        name="contra"
+        id="contra"
+        onfocusout="ValidaContraseñas()"
+      />
+      <label id="errorContra" style="color: red;"></label>
+      <br />
+      Repeticion de la contraseña:
+      <input
+        type="password"
+        name="contra2"
+        id="contra2"
+        onfocusout="ValidaContraseñas()"
+      />
+      <label id="errorContra2" style="color: red;"></label>
+      <br />
+      Realize esta suma:
+      <br />
+      <p id="suma">
+        <input type="number" name="resultadoSuma" id="resultadoSuma" />
+        <label id="errorSuma" style="color: red;"></label>
+      </p>
+      Acepta las condiciones y servicios
+      <input
+        type="checkbox"
+        name="condiciones"
+        id="condiciones"
+        value="1"
+        onclick="ValidaCB()"
+        ;
+      />
+      <label id="errorCondiciones" style="color: red;"></label>
+      <br />
+      <input type="submit" id="submit" value="Crear cuenta" disabled />
+    </form>
+  </body>
+</html>

@@ -1,0 +1,83 @@
+#contenedor {
+  width: 900px;
+  height: 500px;
+  /* PARA CENTRAL LA PAGINA VERTICALMENTE */
+
+  /*position: absolute;
+    top: 50%;
+    left: 50%;
+    margin-top: -250px;
+    margin-left: -450px;
+    */
+
+  /* PARA CENTRAL LA PAGINA HORIZONTALMENTE */
+
+  margin: 0 auto;
+}
+
+#cabezera {
+  background-color: green;
+  height: 50px;
+  padding: 5px;
+  position: relative;
+  /*background-image: url("fuente2.png");
+    background-repeat: repeat-y;
+    PARA QUE LA IMAGEN DEL FONDO NO SE REPITA
+    */
+}
+
+#textoCab {
+  position: absolute;
+  left: 380px;
+  top: 10px;
+}
+#telefono {
+  position: absolute;
+  left: 60px;
+  top: 35px;
+  font-size: 10px;
+}
+
+#imagen {
+  height: inherit;
+  width: 40px;
+  position: absolute;
+  left: 10px;
+}
+
+#barra-lateral {
+  background-color: orange;
+  float: left;
+  width: 135px;
+  height: 100%;
+}
+
+#contenido {
+  background-color: gray;
+  float: left;
+  width: 600px;
+  height: 100%;
+}
+
+#menu-derecha {
+  background-color: orangered;
+  float: left;
+  width: 135px;
+  height: 49%;
+}
+#menu-derecha-2 {
+  background-color: darkorange;
+  float: left;
+  width: 135px;
+  height: 49%;
+}
+
+#pie {
+  background-color: blue;
+  clear: both;
+  height: 30px;
+}
+
+div {
+  padding: 5px;
+}

@@ -1,0 +1,48 @@
+#contenedor {
+  position: relative;
+  left: 400px;
+}
+
+#crono {
+  position: absolute;
+  width: 500px;
+  height: 500px;
+}
+#flecha {
+  height: 160px;
+  position: absolute;
+  top: 235px;
+  left: 250px;
+}
+
+#start {
+  position: absolute;
+  width: 100px;
+  height: 100px;
+  left: 425px;
+  top: 95px;
+}
+
+#stop {
+  position: absolute;
+  width: 100px;
+  left: 10px;
+  height: 100px;
+  top: 90px;
+}
+#reset {
+  position: absolute;
+  width: 80px;
+  left: 225px;
+  height: 60px;
+  top: 50px;
+}
+
+#tiempoCrono {
+  position: absolute;
+  top: 500px;
+  font-size: 40px;
+  left: 190px;
+  background: lightcyan;
+  border-style: dashed;
+}

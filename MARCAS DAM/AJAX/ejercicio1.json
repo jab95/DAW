@@ -1,0 +1,23 @@
+
+
+{
+	 "ciudades": [
+	 
+	 	{ "Nombre": "Jerez" , "Temperatura": "22º" ,"Viento": " 15m/s", "Icono": "6.png"},
+		{ "Nombre": "Sevilla", "Temperatura": "30º", "Viento": "30m/s" , "Icono": "6.png"}
+
+	]
+}
+
+
+{
+	 "nombre": [
+	 
+	 	{ "Nombre": "Jerez" , "Temperatura": "22º" ,"Viento": " 15m/s", "Icono": "6.png"},
+		{ "Nombre": "Sevilla", "Temperatura": "30º", "Viento": "30m/s" , "Icono": "6.png"}
+
+	]
+}
+
+
+		

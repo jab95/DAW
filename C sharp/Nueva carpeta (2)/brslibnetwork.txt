@@ -1,0 +1,169 @@
+using BRSLibReyes.Mensajes;
+using System;
+using System.IO;
+using System.Net;
+using System.Reflection;
+using System.Threading;
+
+namespace BRSLibReyes.NetWork
+{
+
+    /// <summary>
+    /// Biblioteca de funciones utilizadas para realizar operaciones con ordenadores remotos, accesos web o ftp
+    /// </summary>
+    public class BRSLibNetwork
+    {
+        private static string Name = nameof(BRSLibNetwork);
+
+        #region Variables de acceso al servidor FTP de actualizaciones
+
+        /// <summary>Ruta del servidor FTP de actualizaciones</summary>
+        public static string cServidorFTPAct = "ftp://www.serviciodesoporte.com";
+        /// <summary>Usuario del servidor FTP de actualizaciones</summary>
+        public static string cUsuarioFTPAct = "actftp";
+        /// <summary>Contraseña del servidor FTP de actualizaciones</summary>
+        public static string cPassFTPAct = "3hOb72kT";
+
+        #endregion
+
+        /// <summary>
+        /// Comprueba si se puede establecer una conexión con una URL
+        /// </summary>
+        /// <param name="url">La URL a la que queremos acceder</param>
+        /// <param name="mostrarMensaje">Si queremos mostrar un mensaje si no se pudo establecer la conexión</param>
+        /// <returns>Si se pudo establecer la conexión o no</returns>
+        public static bool AccesoURL(string url, bool mostrarMensaje = true)
+        {
+            try
+            {
+                IPHostEntry host = Dns.GetHostEntry(url);
+                return true;
+            }
+            catch (Exception)
+            {
+                if (mostrarMensaje)
+                    BRSLibMensajes.Mostrar(BRSLibMensajes.ErroresGenericos.ImposibleConectarAUrl.Formatear(url));
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Función para descargar un archivo del servidor de actualizaciones
+        /// </summary>
+        /// <param name="_cRutaArchivoFTP">Ruta y nombre del archivo en el servidor a partir de la ruta /ACTFTP/BRSERP/</param>
+        /// <param name="_cRutaDestino">Ruta y nombre del archivo donde descargar</param>
+        /// <param name="_frmProcesando">Si queremos mostrar una barra de proceso</param>
+        /// <param name="_cMensaje">Mensaje para la barra de proceso</param>
+        /// <returns></returns>
+        public static bool DescargarArchivoFTPAct(string _cRutaArchivoFTP, string _cRutaDestino, frmProcesandoV2 _frmProcesando = null, string _cMensaje = "", bool _lMostrarError = true)
+        {
+            bool lDescargado = false;
+            if (AccesoURL(cServidorFTPAct, false))
+            {
+                try
+                {
+                    _cRutaArchivoFTP = "/ACTFTP/" + NombresModulos.BRSERPREYES + "/" + _cRutaArchivoFTP;
+                    lDescargado = DescargarArchivoFTP(cServidorFTPAct, _cRutaArchivoFTP, _cRutaDestino, cUsuarioFTPAct, cPassFTPAct, _frmProcesando, _cMensaje, _lMostrarError);
+                }
+                catch (Exception ex)
+                {
+                    BRSLib.Logger?.LogExcepcion(ex);
+                    if (_lMostrarError)
+                    {
+                        BRSLibMensajes.Mostrar(
+                            ex.Message + "\n\r" + Name + " : " + MethodBase.GetCurrentMethod().Name + "()", " ",
+                            Boton.OK, Icono.Error);
+                    }
+                }
+            }
+            return lDescargado;
+        }
+
+        /// <summary>
+        /// Función para descargar un archivo de un servidor FTP
+        /// </summary>
+        /// <param name="_cRutaServidor">Ruta del servidor</param>
+        /// <param name="_cRutaArchivoFTP">Ruta y nombre del archivo en el servidor</param>
+        /// <param name="_cRutaDestino">Ruta y nombre del archivo donde descargar</param>
+        /// <param name="_cUsuario">Usuario del ftp</param>
+        /// <param name="_cPassword">Contraseña del ftp</param>
+        /// <param name="_frmProcesando">Si queremos mostrar una barra de proceso</param>
+        /// <param name="_cMensaje">Mensaje para la barra de proceso</param>
+        /// <returns></returns>
+        public static bool DescargarArchivoFTP(string _cRutaServidor, string _cRutaArchivoFTP, string _cRutaDestino, string _cUsuario, string _cPassword, frmProcesandoV2 _frmProcesando = null, string _cMensaje = "", bool _lMostrarError = true)
+        {
+            bool lDescargado = false;
+            if (AccesoURL(_cRutaServidor, false))
+            {
+                try
+                {
+                    if (_frmProcesando != null) _frmProcesando.CambiarMensaje("Conectando con el servidor FTP");
+                    if (!_cRutaServidor.StartsWith("ftp://"))
+                    { // Si la ruta del servidor no empieza por el protocolo se lo asignamos
+                        _cRutaServidor = "ftp://" + _cRutaServidor;
+                    }
+                    if ((!_cRutaServidor.EndsWith("\\") || !_cRutaServidor.EndsWith("/")) && (!_cRutaArchivoFTP.StartsWith("\\") || !_cRutaArchivoFTP.StartsWith("/")))
+                    { // Si la ruta del servidor no termina con barra y la ruta de la carpeta no empieza con barra la añadimos
+                        _cRutaServidor = _cRutaServidor + "/";
+                    }
+
+                    string cRutaFTP = _cRutaServidor + _cRutaArchivoFTP;
+                    string cRutaDestino = _cRutaDestino;
+
+                    // Creamos la carpeta de la ruta de destino en caso de que no exista
+                    FileInfo fileInfo = new FileInfo(cRutaDestino);
+                    if (!fileInfo.Directory.Exists) fileInfo.Directory.Create();
+
+                    const int iBuffLength = 1024;
+                    byte[] aBuff = new byte[iBuffLength];
+                    using (FileStream outputStream = new FileStream(cRutaDestino, FileMode.Create))
+                    {
+                        // Obtenemos la longitud del fichero
+                        FtpWebRequest ftpRequest = (FtpWebRequest)WebRequest.Create(cRutaFTP);
+                        ftpRequest.Credentials = new NetworkCredential(_cUsuario, _cPassword);
+                        ftpRequest.Method = WebRequestMethods.Ftp.GetFileSize;
+
+                        int dataLength = (int)ftpRequest.GetResponse().ContentLength;
+
+                        // Descargamos el fichero
+                        ftpRequest = (FtpWebRequest)WebRequest.Create(cRutaFTP);
+                        ftpRequest.Credentials = new NetworkCredential(_cUsuario, _cPassword);
+                        ftpRequest.Method = WebRequestMethods.Ftp.DownloadFile;
+
+                        int descargado = 0;
+                        using (FtpWebResponse response = (FtpWebResponse)ftpRequest.GetResponse())
+                        using (Stream ftpStream = response.GetResponseStream())
+                        {
+                            int i = ftpStream.Read(aBuff, 0, iBuffLength);
+                            while (i > 0)
+                            {
+                                outputStream.Write(aBuff, 0, i);
+                                i = ftpStream.Read(aBuff, 0, iBuffLength);
+
+                                if (_frmProcesando != null)
+                                {
+                                    descargado += i;
+                                    _frmProcesando.CambiarPorcentaje(descargado, dataLength, _cMensaje, false);
+                                }
+                            }
+                        }
+                    }
+                    Thread.Sleep(500);
+                    lDescargado = true;
+                }
+                catch (Exception ex)
+                {
+                    BRSLib.Logger?.LogExcepcion(ex);
+                    if (_lMostrarError)
+                    {
+                        FileInfo fileinfo = new FileInfo(_cRutaArchivoFTP);
+                        BRSLibMensajes.Mostrar(
+                            "!No ha sido posible obtener el archivo " + fileinfo.FullName + " del servidor FTP!\n\r" +
+                            ex.Message, " ", Boton.OK, Icono.Error);
+                    }
+                }
+            }
+            return lDescargado;
+        }
+    }
+}

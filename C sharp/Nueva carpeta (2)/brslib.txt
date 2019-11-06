@@ -1,0 +1,3728 @@
+using BRSLibReyes.BD;
+using BRSLibReyes.ConfigXML;
+using BRSLibReyes.Mensajes;
+using BRSLibReyes.Modelos.BRSERP;
+using BRSLibReyes.NetWork;
+using BRSLibReyes.Temas;
+using BRSLibReyes.Validadores;
+using BRSLibReyes.VersionNewXML;
+using Ionic.Zip;
+using Logger;
+using Microsoft.Win32;
+using Newtonsoft.Json;
+using Npgsql;
+using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Collections.Specialized;
+using System.ComponentModel;
+using System.Data;
+using System.Data.OleDb;
+using System.Diagnostics;
+using System.Drawing;
+using System.IO;
+using System.Linq;
+using System.Reflection;
+using System.Text;
+using System.Text.RegularExpressions;
+using System.Windows.Forms;
+using Telerik.WinControls;
+using Telerik.WinControls.UI;
+
+namespace BRSLibReyes
+{
+
+    public class BRSLib
+    {
+        #region Variables globales
+
+        public static frmProcesandoV2 ofrmProcesandoV2;
+        private const string Name = nameof(BRSLib);
+
+        public const int MAXLENGTH_SHORT = 4;
+        public const int MAXLENGTH_INT = 8;
+        public const int MAXLENGTH_EJERCICIO = 4;
+        public const int MAXLENGTH_DATE = 10;
+        public const int MAXLENGTH_TIME = 5;
+
+        //Variables globales para la moneda y el rendondeo
+        public static string cMonAct;
+        public static int nDecAct;
+
+        public static OleDbCommand pnlCommand_GEST;
+        public static NpgsqlCommand pnlCommand_ERP;
+
+        #region Versión de la aplicación
+
+        public static string cVersion = "010000";
+        public static string cRevision = "01";
+        public static string cVersion_Ultima;
+        public static string cRevision_Ultima;
+        public static int nIntentosLogin = 0;
+
+        public static readonly string CCopyright = " (C) 2018 Soluciones de Sistemas y Gestión, S.L.";
+
+        #endregion
+
+        #region Variables que hacen referencia al usuario y a sus propiedades
+
+        /// <summary>Código del usuario actual</summary>
+        public static int nUsuario = -1;
+        /// <summary>Nombre del usuario actual</summary>
+        public static string cUsuarioNombre;
+        /// <summary>Indica si el usuario es un usuario del sistema</summary>
+        public static bool lAdministrador;
+        /// <summary>Grupo de usuario al que pertenece el usuario actual</summary>
+        public static int nGrupoUsuario;
+        /// <summary>Indica si el usuario utiliza los perfiles del grupo o los de él mismo</summary>
+        public static bool lUsarPerfilGrupo = true;
+        /// <summary>Indica si el usuario tiene permiso para entrar en el diseñador de informes</summary>
+        public static bool lModificarInformes = true;
+        /// <summary>Ubicación en el equipo del ejecutable en el servidor</summary>
+        public static string cRutaServidor;
+
+        /// <summary>Código del centro de trabajo obligatorio para el usuario definido en la tabla permisousuariogrupo</summary>
+        public static string nCentroObligatorioUsuario;
+        /// <summary>Usuario para el login</summary>
+        public static string cLoginUsuario;
+        /// <summary>Contraseña para el login</summary>
+        public static string cLoginPassword;
+        /// <summary>Código de idioma para el usuario</summary>
+        public static int nIdioma = 1;
+        /// <summary>Nivel de acceso del usuario, valores 1 ó 2</summary>
+        public static string cNivelAcceso = "1";
+
+        /// <summary>Indica si el usuario tiene acceso al módulo de gestión</summary>
+        public static bool moduloGestion;
+        /// <summary>Indica si el usuario tiene acceso al módulo de contabilidad</summary>
+        public static bool moduloContabilidad;
+        /// <summary>Indica si el usuario tiene acceso al módulo de tesorería</summary>
+        public static bool moduloTesoreria;
+
+        /// <summary>Almacena el tema utilizado por el usuario</summary>
+        public static string cTema = BRSLibTemas.TEMA_DEFECTO;
+        /// <summary>Configuración de la fuente utilizada por el usuario en las rejillas</summary>
+        public static string[] acFuenteMantenimientos = new string[] { BRSLibTemas.FUENTE_FAMILIA_DEFECTO, BRSLibTemas.FUENTE_TAMANO_DEFECTO };
+        /// <summary>Fuente utilizada por el usuario en las rejillas</summary>
+        public static Font f = new Font(acFuenteMantenimientos[0], float.Parse(acFuenteMantenimientos[1]));
+
+        #endregion
+
+        #region Instancias
+
+        public static bool HayInstanciaSeleccionarGrupoCentros;
+        public static bool HayInstanciaSeleccionarGrupoEjercicios;
+        public static bool HayInstanciaTiposInformes;
+        public static bool HayInstanciaInformes;
+        public static bool HayInstanciaFiltrosInformes;
+        public static bool HayInstanciaSectoresArticulos;
+        public static bool HayInstanciaArticulos;
+        public static bool HayInstanciaArticuloEscandallo;
+        public static bool HayInstanciaConsultaAlmacenes;
+        public static bool HayInstanciaCodigosBarra;
+        public static bool HayInstanciaTarifaArticulos;
+        public static bool HayInstanciaTarifasOficiales;
+        public static bool HayInstanciaHuecosAlmacen;
+        public static bool HayInstanciaArticulosProveedores;
+        public static bool HayInstanciaMargenesArticulos;
+        public static bool HayInstanciaActividadesClientes;
+        public static bool HayInstanciaCreacionCodigoArticulo;
+        public static bool HayInstanciaRazonesSociales;
+        public static bool HayInstanciaClientes;
+        public static bool HayInstanciaDelegacionesDeClientes;
+        public static bool HayInstanciaRutasClientes;
+        public static bool HayInstanciaMulticodigosClientes;
+        public static bool HayInstanciaPromocionesClientes;
+        public static bool HayInstanciaFormasPagoClientes;
+        public static bool HayInstanciaEnvasesYDepositos;
+        public static bool HayInstanciaSeguimientoClientes;
+        public static bool HayInstanciaContactosDeClientes;
+        public static bool HayInstanciaMarcasClientes;
+        public static bool HayInstanciaVehiculos;
+        public static bool HayInstanciaExclusividadesClientes;
+        public static bool HayInstanciaExclusionesClientes;
+        public static bool HayInstanciaRappelClientes;
+
+        #endregion
+
+        #region Variables relacionadas con el terminal y el usuario
+
+        /// <summary>Código del centro por defecto asignado al terminal</summary>
+        public static int? nCentroDefecto = 1;
+        /// <summary>Nombre del centro por defecto asignado al terminal</summary>
+        public static string cCentroDefectoNombre;
+        /// <summary>Código del terminal</summary>
+        public static int nTerminal = -1;
+        /// <summary>Nombre del terminal</summary>
+        public static string cTerminalNombre;
+
+        #endregion
+
+        #region Variables que indican sobre que base de datos está atacando el usuario
+
+        /// <summary>Código de grupo de centros actual</summary>
+        public static int nGrupoCentros = -1;
+        /// <summary>Código de grupo de centros actual obtenido como cadena</summary>
+        public static string CGrupoCentros
+        {
+            get { return Convert.ToString(nGrupoCentros); }
+            set { nGrupoCentros = Convert.ToInt32(value); }
+        }
+
+        /// <summary>Nombre del grupo de centros actual</summary>
+        public static string nGrupoCentrosNombre;
+        /// <summary>Código del centro contable actual</summary>
+        public static int nCentroContable = 1;
+        /// <summary>Nombre del centro contable actual</summary>
+        public static string cCentroContableNombre;
+        /// <summary>Código del ejercicio de contabilidad actual</summary>
+        public static int nEjercicio = -1;
+        /// <summary>Nombre del ejercicio de contabilidad actual</summary>
+        public static string cEjercicioNombre;
+        /// <summary>Código del centro de trabajo actual</summary>
+        public static int nCentro = 1;
+        /// <summary>Nombre del centro de trabajo actual</summary>
+        public static string cCentroNombre;
+
+        #endregion
+
+        #region Variables para almacenar los valores seleccionados de una rejilla y la búsqueda realizada sobre ella
+
+        /// <summary>Esta variable contendrá el WHERE de la última consulta sql que se realiza en las pantallas padre de tipo frm***Tabla.cs</summary>
+        public static string cUltimosEncontrados;
+        /// <summary>Primer valor de la clave primaria del registro que vamos a tratar</summary>
+        public static string cCodigoSeleccionado;
+        /// <summary>Segundo valor de la clave primaria del registro que vamos a tratar</summary>
+        public static string cCodigoSeleccionado2;
+        /// <summary>Tercer valor de la clave primaria del registro que vamos a tratar</summary>
+        public static string cCodigoSeleccionado3;
+        /// <summary>Cuarto valor de la clave primaria del registro que vamos a tratar</summary>
+        public static string cCodigoSeleccionado4;
+
+        public static bool HayCodigoSeleccionado()
+        {
+            return cCodigoSeleccionado != "-1" && cCodigoSeleccionado2 != "-1" && cCodigoSeleccionado3 != "-1" &&
+                   cCodigoSeleccionado4 != "-1";
+        }
+
+        #endregion
+
+        #region Variables de código de las aplicaciones
+
+        /// <summary>Variable que almacena el nombre de la aplicación activa</summary>
+        public static string cNombreApp;
+        /// <summary>Variable que almacena el código de la aplicación activa</summary>
+        public static int COD_APLICACIONACTIVA = 1;
+        /// <summary>Variable con el código de la aplicación "Principal"</summary>
+        public const int COD_BRSERPREYES = 1;
+
+        #endregion
+
+        #region Variables de rutas de directorios o ficheros
+
+        /// <summary>Ruta donde se guarda la configuración de las rejillas y otros</summary>
+        public static string cRutaXML;
+        /// <summary>Ruta donde se guardan las copias de seguridad</summary>
+        public static string cRutaBackup;
+        /// <summary>Ruta de la carpeta BIN de postgres</summary>
+        public static string cRutaPostgres;
+        /// <summary>Ruta donde se almacenarán los logs</summary>
+        public static string cRutaLogs = Application.StartupPath + "\\Logs\\";
+
+        #endregion
+
+
+        #endregion
+
+        #region Variables de uso sin clasificar
+
+        public static string cPrefijoColumnasImagen = "img_";
+        public static string cPrefijoColumnasCalculadas = "brsB_";
+
+        public static bool lEjercicioCerrado = false; // Indica si el ejercicio está o no cerrado.
+        public static int nMaxNumCamposTabla = 250; //número máximo de campos en una tabla
+        /// <summary>¿Se maximizan las ventanas al abrir?</summary>
+        public static bool lMaximizar = false;
+        public static int nMaxNumPerfiles = 20; //número de opciones de perfiles de usuario.
+
+        /// <summary>
+        /// Nombre de los campos que contienen un valor para ENCONTRAR
+        /// </summary>
+        public static string[] acCampos_ENCONTRAR = new string[nMaxNumCamposTabla];
+        /// <summary>
+        /// Valores de los campos a ENCONTRAR
+        /// </summary>
+        public static string[] acValores_ENCONTRAR = new string[nMaxNumCamposTabla];
+        /// <summary>
+        /// Tipo del campo a ENCONTRAR. 1)Entero 2)Decimal 3)Fecha 4)Cadena
+        /// </summary>
+        public static string[] acTipoCampos_ENCONTRAR = new string[nMaxNumCamposTabla];
+
+        public static bool[] opcMenus = new bool[nMaxNumPerfiles + 2]; //Se almacenarán los permisos de las diferentes opciones de menu de cada pantalla (incluyendo si es accesible y el registro de historial)
+
+        public static bool lFechaHoraListados = false;
+
+        //Esta variable nos indicará si hemos aceptado o no eliminar un registro o hubo un error al eliminarlo
+        public static bool lErrorBorrado;
+
+        //Valores para caracteres especiales (>, :, =)
+        private static List<int> anValoresCaracteresEspeciales = new List<int> { 226, 190, 48 };
+        public const string cTeclaBusquedaRapida = "º";
+
+        //Constantes para la función CadenaDentroRango()
+        public static int SMALLINT = 0;
+        public static int INTEGER = 1;
+        public static int DECIMAL = 2;
+        public static string local_cMensajeFueraRangoShort = "{0} fuera del rango " + short.MinValue + " ... " + short.MaxValue;
+        public static string local_cMensajeFueraRangoInt = "{0} fuera del rango " + int.MinValue + " ... " + int.MaxValue;
+        public static string local_cMensajeFueraRangoDecimal = "{0} fuera del rango. Debe contener {1} dígitos como máximo en total, de los cuales como máximo {2} serán de la parte decimal";
+
+        // Enums para la función MostrarMensaje()
+        public enum Boton { OK, OKCancel, YesNoCancel, YesNo, AbortRetryIgnore };
+        public enum Icono { Information, Error, Warning, Question };
+        public enum MotorBD { PG, MB };
+
+        // Temporizadores
+        public static double tiempoWidthChanged = 500;
+        public static double tiempoBusquedaRapida = 250;
+
+        public static bool lFormularioF2F3Abierto;
+
+
+        /// <summary>
+        /// Objeto auxiliar. Cronómetro para medir la duración de un proceso en tiempo de ejecución.
+        /// <para>Para iniciarlo:   BRSLib.oCrono = System.Diagnostics.Stopwatch.StartNew();</para>
+        /// <para>Para pararlo:     BRSLib.oCrono.Stop();</para>
+        /// <para>Tiempo en ms:     BRSLib.oCrono.ElapsedMilliseconds;</para>
+        /// </summary>
+        public static Stopwatch oCrono;
+
+        #region Componente de ventana de control de procesos.
+        // frmProcesando
+        static frmProcesandoV2 ofrmProcesando;
+        //static FINPROCESO nResultadoProcesando = FINPROCESO.SINRESULTADO;
+        //static string cMensajeProcesando = "";
+        #endregion
+
+        public enum ConsultasTipoOperacion { Existencias, Envases, PuntoVerde_Alcohol, Manipulacion };
+        #endregion
+
+        #region Funciones relativas a informes/listados
+
+        /// <summary>Código del usuario que está bloqueando el informe</summary>
+        public static int nUsuarioInformeBloqueo = -1;
+        /// <summary>Nombre del usuario que está bloqueando el informe</summary>
+        public static string cUsuarioNombreInformeBloqueo;
+
+        /// <summary>
+        /// Función que comprueba si un informe/listado está bloqueado. En caso de estarlo rellena las variables nUsuarioInformeBloqueo y cUsuarioNombreInformeBloqueo
+        /// </summary>
+        /// <param name="_cTipoInforme">El código del tipo de informe</param>
+        /// <param name="_cInforme">El código del subtipo de informe</param>
+        /// <returns>Si el informe se encuentra bloqueado</returns>
+        /// <exception cref="Exception"></exception>
+        public static bool ComprobarBloqueoInforme(string _cTipoInforme, string _cInforme)
+        {
+            Logger?.LogFunction(Name, nameof(ComprobarBloqueoInforme), $"Comprobación si el informe {_cTipoInforme}/{_cInforme} se encuentra bloqueado");
+            try
+            {
+                InformesBloqueados informeBloqueado = InformesBloqueados.SeleccionarPorClavePrimaria(_cTipoInforme, _cInforme);
+
+                if (informeBloqueado.Vacio)
+                {
+                    Logger?.LogInfo($"El informe {_cTipoInforme}/{_cInforme} no se encuentra bloqueado");
+                    return false;
+                }
+                else
+                {
+                    if (informeBloqueado.lbloqueado.Value)
+                    {
+                        Logger?.LogInfo($"El informe {_cTipoInforme}/{_cInforme} se encuentra bloqueado por el usuario {nUsuarioInformeBloqueo} - {cUsuarioNombreInformeBloqueo}");
+                        nUsuarioInformeBloqueo = informeBloqueado.nusuario.Value;
+                        cUsuarioNombreInformeBloqueo = informeBloqueado.cnombreusuario;
+                    }
+                    else
+                    {
+                        Logger?.LogInfo($"El informe {_cTipoInforme}/{_cInforme} no se encuentra bloqueado");
+                        nUsuarioInformeBloqueo = -1;
+                        cUsuarioNombreInformeBloqueo = null;
+                    }
+                }
+
+                return informeBloqueado.lbloqueado.Value;
+            }
+            catch (Exception)
+            {
+                Logger?.LogExcepcionInfo(Name, nameof(ComprobarBloqueoInforme));
+                throw;
+            }
+        }
+
+        #endregion
+
+        #region FUNCIONES PARA EL TRATAMIENTO DEL REGISTRO DE WINDOWS
+
+        /// <summary>
+        /// Método con el que guardamos la información en el registro.
+        /// </summary>
+        /// <param name="_RegistryPath">Ruta del registro a la que debe acceder para obtener la clave / valor.</param>
+        /// <param name="_Key">Clave para la que se desea guardar el valor pasado.</param>
+        /// <param name="_Value">Valor que se guardará en el registró para la clave dada.</param>
+        public static void GuardarRegistroString(string _RegistryPath, string _Key, string _Value)
+        {
+            Registry.CurrentUser.CreateSubKey(_RegistryPath);
+            RegistryKey regKey = Registry.CurrentUser.OpenSubKey(_RegistryPath, true);
+
+            regKey.SetValue(_Key, _Value);
+        }
+
+        /// <summary>
+        /// Método con el que leemos la información para el usuario del nodo indicado.
+        /// </summary>
+        /// <param name="_RegistryPath">Ruta de la que se desea obtener el valor almacenado.</param>
+        /// <param name="_Key">Clave de la que se leerá su valor para usarlo en el programa.</param>
+        /// <returns></returns>
+        public static string CargarRegistroString(string _RegistryPath, string _Key)
+        {
+            RegistryKey regKey = Registry.CurrentUser.OpenSubKey(_RegistryPath, false);
+
+            // Comprobamos si regKey está a nulo, si es así significa que no hemos encontrado el nodo
+            // en el registro, por lo que se entiende que es la primera vez o se borró éste por algún motivo.
+            string Value = (regKey != null) ? (string)regKey.GetValue(_Key) : "";
+
+            return Value;
+        }
+
+
+        /// <summary>
+        /// Método con el que guardamos la información en el registro
+        /// </summary>
+        /// <param name="_RegistryPath">Ruta del registro a la que debe acceder para obtener la clave / valor</param>
+        /// <param name="_Key">Clave para que se desea guardar el valor pasado</param>
+        /// <param name="_Value">Valor que se guardará en el registro para la clave dada</param>
+        /// <param name="_Tipo">El tipo de dato que se guardará en el registro</param>
+        public static void GuardarRegistro(string _RegistryPath, string _Key, string _Value, RegistryValueKind _Tipo = RegistryValueKind.String)
+        {
+            Registry.CurrentUser.CreateSubKey(_RegistryPath);
+            RegistryKey regKey = Registry.CurrentUser.OpenSubKey(_RegistryPath, true);
+
+            regKey.SetValue(_Key, _Value, RegistryValueKind.DWord);
+        }
+
+        /// <summary>
+        /// Método que comprueba si existe una clave en el registro
+        /// </summary>
+        /// <param name="_RegistryPath">Ruta del registro donde se comprobará si existe la clave</param>
+        /// <param name="_Key">Clave que se desea comprobar si existe</param>
+        /// <returns></returns>
+        public static bool ExisteRegistro(string _RegistryPath, string _Key)
+        {
+            bool lExiste = false;
+            RegistryKey regKey = Registry.CurrentUser.OpenSubKey(_RegistryPath);
+            if (regKey != null)
+            {
+                object key = regKey.GetValue(_Key);
+                if (!string.IsNullOrWhiteSpace(Convert.ToString(key)))
+                    lExiste = true;
+                else
+                    lExiste = false;
+            }
+            else
+            {
+                lExiste = false;
+            }
+
+            return lExiste;
+        }
+
+        #endregion
+
+        #region Funciones relativas a activar o desactivar un grupo de centros / ejercicicio para un usuario
+
+        /// <summary>
+        /// Función que guarda en la tabla configusuarios el último grupo de centros seleccionado en cada aplicación por cada usuario
+        /// </summary>
+        /// <param name="_nAplicacion">El código de la aplicación</param>
+        /// <param name="_nGrupoCentro">El código del grupo</param>
+        public static void GrabarGrupoCentroActivo(int _nAplicacion, int _nGrupoCentro)
+        {
+            //Logger?.LogFunction(Name, MethodBase.GetCurrentMethod().Name);
+            Logger?.LogFunction(Name, nameof(GrabarGrupoCentroActivo), $"El usuario {nUsuario} establece el grupo {_nGrupoCentro} para la aplicación {_nAplicacion}");
+            try
+            {
+                bool lInsertando = false;
+
+                // Actualizamos todos los grupos que tiene definido el usuario como no activos
+                DesactivarGrupoUsuario(_nAplicacion);
+
+                // Comprobamos si existe un registro en dicha tabla para el usuario/grupo que estamos tratando
+                ConfigUsuarios configUsuario = ConfigUsuarios.SeleccionarPorClavePrimaria(_nAplicacion.AsInt16(), nUsuario.AsInt16());
+                if (configUsuario.Vacio)
+                {
+                    lInsertando = true;
+                    configUsuario.naplicacion = Convert.ToInt16(_nAplicacion);
+                    configUsuario.nusuario = Convert.ToInt16(nUsuario);
+                }
+                configUsuario.ngrupo = Convert.ToInt16(_nGrupoCentro);
+                configUsuario.lactivo = 1;
+
+                if (!configUsuario.Validar(lInsertando))
+                {
+                    throw new ValidarModeloException(configUsuario.ErroresValidacion);
+                }
+                else
+                {
+                    configUsuario.Upsert();
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger?.LogExcepcion(ex);
+                BRSLib.MostrarMensaje(ex.Message + "\n\r" + Name + " : " + nameof(GrabarGrupoCentroActivo) + "()", " ", Boton.OK, Icono.Error);
+            }
+        }
+
+        /// <summary>
+        /// Función que pone como no activos los grupos de centros para el usuario y aplicación especificados
+        /// </summary>
+        /// <param name="_nAplicacion">El código de la aplicación</param>
+        /// <exception cref="Exception"></exception>
+        public static void DesactivarGrupoUsuario(int _nAplicacion)
+        {
+            Logger?.LogFunction(Name, nameof(DesactivarGrupoUsuario), $"El usuario {nUsuario} desactiva el acceso a la aplicación {_nAplicacion}");
+            try
+            {
+                string cSQL = ConfigUsuarios.SQL_UpdateActivoFalseParaUsuarioYAplicacion();
+                BRSLibBD.LanzarNonQuery(ConfigUsuarios.cConexion, cSQL, _nAplicacion, nUsuario);
+            }
+            catch (Exception)
+            {
+                Logger?.LogExcepcionInfo(Name, nameof(DesactivarGrupoUsuario));
+                throw;
+            }
+        }
+
+        ///// <summary>
+        ///// Función que guarda en la tabla usucfgcont el último grupo/ejercicio/centro contable seleccionado en la contabilidad por cada usuario
+        ///// </summary>
+        ///// <param name="_nGrupoCentro">El código del grupo</param>
+        ///// <param name="_nCentroContable">El código del centro contable</param>
+        ///// <param name="_nEjercicio">El código del ejercicio</param>
+        //public static void GrabarGrupoEjercicioActivo(int _nGrupoCentro, int _nCentroContable, int _nEjercicio)
+        //{
+        //    Logger?.LogFunction(Name, nameof(GrabarGrupoEjercicioActivo), $"El usuario {nUsuario} establece el ejercicio {_nEjercicio}, grupo {_nGrupoCentro} y centro contable {_nCentroContable} para la aplicación {COD_BRSCONTABILIDAD}");
+        //    try
+        //    {
+        //        bool lInsertando = false;
+
+        //        // Actualizamos todos los ejercicios/centros contables que tiene definido el usuario como no activos
+        //        DesactivarEjercicioUsuario();
+
+        //        // Comprobamos si existe un registro en dicha tabla para el usuario que estamos tratando
+        //        UsuCfgCont usuCfgCont = UsuCfgCont.SeleccionarPorClavePrimaria(nUsuario);
+        //        if (usuCfgCont.Vacio)
+        //        {
+        //            lInsertando = true;
+        //            usuCfgCont.nusuario = Convert.ToInt16(nUsuario);
+        //        }
+        //        usuCfgCont.ngrupo_centro = _nGrupoCentro;
+        //        usuCfgCont.nejercicio = _nEjercicio;
+        //        usuCfgCont.centrocontable = _nCentroContable;
+        //        usuCfgCont.lactivo = true;
+
+        //        if (!usuCfgCont.Validar(lInsertando))
+        //        {
+        //            throw new Excepciones.ValidarModeloException(usuCfgCont.ErroresValidacion);
+        //        }
+        //        else
+        //        {
+        //            usuCfgCont.Upsert();
+        //        }
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        Logger?.LogExcepcion(ex);
+        //        BRSLib.MostrarMensaje(ex.Message + "\n\r" + Name + " : " + nameof(GrabarGrupoEjercicioActivo) + "()", " ", Boton.OK, Icono.Error);
+        //    }
+        //}
+
+        ///// <summary>
+        ///// Función que pone como no activos los ejercicios a los que se conectó el usuario
+        ///// </summary>
+        ///// <exception cref="Exception"></exception>
+        //public static void DesactivarEjercicioUsuario()
+        //{
+        //    Logger?.LogFunction(Name, nameof(DesactivarEjercicioUsuario), $"El usuario {nUsuario} desactiva el acceso a todos los ejercicios");
+        //    try
+        //    {
+        //        string cSQL = UsuCfgCont.SQL_UpdateActivoFalseParaUsuario();
+        //        BRSLibBD.LanzarNonQuery(UsuCfgCont.cConexion, cSQL, nUsuario);
+        //    }
+        //    catch (Exception)
+        //    {
+        //        Logger?.LogExcepcionInfo(Name, nameof(DesactivarEjercicioUsuario));
+        //        throw;
+        //    }
+        //}
+
+        #endregion
+
+        #region Funciones y variables para trabajar con el log de depuración
+
+        // Objeto log para guardar mensajes de depuración
+        public static BRSLog log_debug;
+
+        public static bool DebugMode;
+        public static LogStrategy Logger;
+
+        /// <summary>
+        /// Función que inicializa el log de depuración
+        /// </summary>
+        public static void InicializarLog()
+        {
+            // Borramos logs anteriores hasta quedarnos con 10
+            Directory.CreateDirectory(cRutaLogs + "\\debug");
+            string cNombreAplicacion = cNombreApp;
+            // Recupera del directorio de logs los logs que pertenecen a la aplicación actual
+            string[] acFicheros = Directory.GetFiles(cRutaLogs + "\\debug", cNombreAplicacion + "*", SearchOption.TopDirectoryOnly);
+            // Los ordena por orden descendente
+            Array.Sort<string>(acFicheros, new Comparison<string>((i1, i2) => i2.CompareTo(i1)));
+            for (int i = 0; i < acFicheros.Length; i++)
+            {
+                // Borramos todos los logs que no se encuentren entre los 9 primeros
+                if (i > 8)
+                {
+                    try
+                    {
+                        File.Delete(acFicheros[i]);
+                    }
+                    catch (Exception)
+                    {
+                        Console.WriteLine($"No se pudo borrar el fichero {acFicheros[i]}");
+                    }
+                }
+            }
+
+            // Inicializamos el archivo del log
+            Logger = new FileLogStrategy($"{Application.StartupPath}/Logs/debug/{cNombreApp}_{DateTime.Now.ToString("yyyy_MM_dd_HH-mm-ss")}.log", Nivel.FINEST);
+            if (Debugger.IsAttached || KeyboardInfo.GetKeyState(Keys.ShiftKey).IsPressed)
+            { // Si se ha iniciado desde visual studio o se ejecutó pulsando shift establecemos el nivel del log al máximo nivel
+                DebugMode = true;
+                log_debug = new BRSLog(cNombreApp + "_" + DateTime.Now.ToString("yyyy_MM_dd_HH-mm-ss"), cNombreApp.ToUpper() + " DEBUG", "log", true);
+                Logger.NivelLog = Nivel.SEVERE;
+            }
+        }
+
+        #endregion
+
+
+        #region Funciones para crear la base de datos principal
+
+        /// <summary>
+        /// Función que comprueba si existe la base de datos BRSERPC. Si es así generamos la cadena de conexión hacia dicha base de datos, en caso contrario le preguntamos al usuario si desea crearla
+        /// </summary>
+        private static void ComprobarCrearBD()
+        {
+            Logger?.LogFunction(Name, nameof(ComprobarCrearBD), $"Comprobación que la base de datos {BRSLibBD.cDatabase} existe");
+            try
+            {
+                if (BRSLibBD.ComprobarBDEXiste(BRSLibBD.cDatabase))
+                {
+                    Logger?.LogInfo($"La base de datos {BRSLibBD.cDatabase} existe");
+                    BRSLibBD.cConexionBRSERP = BRSLibBD.CadenaConexion(BRSLibBD.cDatabase);
+                }
+                else
+                {
+                    Logger?.LogInfo($"La base de datos {BRSLibBD.cDatabase} no existe");
+                    DialogResult dr = BRSLib.MostrarMensaje(BRSLibMensajes.ErroresGenericos.NoExisteBDBRSERP, "", Boton.YesNo, Icono.Warning);
+                    if (dr == DialogResult.Yes)
+                    {
+                        Logger?.LogInfo($"El usuario elige crearla");
+                        ofrmProcesando = new frmProcesandoV2(Generar_BaseDatosERP_Procesando, Generar_BaseDatosERP_Completed)
+                        {
+                            OcultarCancelar = true
+                        };
+                        ofrmProcesando.ShowDialog();
+
+                        if (!ofrmProcesando.Aceptado)
+                        {
+                            Environment.Exit(0);
+                        }
+                    }
+                    else
+                    {
+                        Logger?.LogInfo($"El usuario elige no crearla");
+                        Environment.Exit(0);
+                    }
+                }
+
+                BRSLibBD.cConexionGenericaAccess = BRSLibBD.CadenaConexionAccess();
+                if (!string.IsNullOrWhiteSpace(BRSLibBD.cConexionGenericaAccess))
+                    Logger?.LogFunction(Name, nameof(ComprobarCrearBD), $"La base de datos {BRSLibBD.CadenaConexionAccess()} existe");
+                else
+                {
+                    Logger?.LogFunction(Name, nameof(ComprobarCrearBD), $"La base de datos {BRSLibBD.CadenaConexionAccess()} no existe");
+                    BRSLib.MostrarMensaje("La base de datos generica de Access no se encuentra en la ruta indicada.",
+                        "", Boton.OK, Icono.Warning);
+                    Environment.Exit(0);
+                }
+
+            }
+            catch (Exception ex)
+            {
+                Logger?.LogExcepcion(ex);
+                BRSLib.MostrarMensaje(ex.Message + "\n\r" + Name + " : " + nameof(ComprobarCrearBD) + "()", " ", Boton.OK, Icono.Error);
+            }
+        }
+
+        /// <summary>
+        /// Hilo que creará la base de datos principal
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        /// <exception cref="Exception"></exception>
+        private static void Generar_BaseDatosERP_Procesando(object sender, DoWorkEventArgs e)
+        {
+            Logger?.LogFunction(Name, nameof(Generar_BaseDatosERP_Procesando), $"Comienza el proceso de generar la base de datos {BRSLibBD.cDatabase}");
+            string cSQL;
+            BRSLibBD.cConexionBRSERP = BRSLibBD.CadenaConexion("postgres");
+
+            try
+            {
+                DescargarEstructuraBD();
+                InstalarEstructuraBD();
+            }
+            catch (Exception)
+            {
+                Logger?.LogExcepcionInfo(Name, nameof(Generar_BaseDatosERP_Procesando));
+                cSQL = $"DROP DATABASE \"{BRSLibBD.cDatabase}\";";
+                BRSLibBD.LanzarNonQuery(BRSLibBD.cConexionBRSERP, cSQL);
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Evento al terminar el hilo que creará la base de datos principal
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private static void Generar_BaseDatosERP_Completed(object sender, RunWorkerCompletedEventArgs e)
+        {
+            Logger?.LogFunction(Name, nameof(Generar_BaseDatosERP_Completed), $"Finaliza el proceso de generar la base de datos {BRSLibBD.cDatabase}");
+            ofrmProcesando.Close();
+        }
+
+        /// <summary>
+        /// Función que descarga el master sql desde el servidor de actualizaciones
+        /// </summary>
+        /// <exception cref="Exception"></exception>
+        private static void DescargarEstructuraBD()
+        {
+            Logger?.LogFunction(Name, nameof(DescargarEstructuraBD), $"Descarga la estructura de la BD {BRSLibBD.cDatabase}");
+            try
+            {
+                Directory.CreateDirectory(Application.StartupPath + "\\Temp");
+                string cRutaFTP = "Masters\\" + BRSLib.cVersion + BRSLib.cRevision + ".zip";
+                string cRutaLocal = Application.StartupPath + "\\Temp\\" + BRSLib.cVersion + BRSLib.cRevision + ".zip";
+                BRSLibNetwork.DescargarArchivoFTPAct(cRutaFTP, cRutaLocal, ofrmProcesando, BRSLibMensajes.InstalacionBD.DescargandoEstructuraBD);
+                ofrmProcesando.CambiarMensaje(BRSLibMensajes.InstalacionBD.DescomprimiendoArchivosBD);
+                using (ZipFile zip = ZipFile.Read(cRutaLocal))
+                {
+                    zip.ExtractAll(Application.StartupPath + "\\Temp", ExtractExistingFileAction.OverwriteSilently);
+                }
+            }
+            catch (Exception)
+            {
+                Logger?.LogExcepcionInfo(Name, nameof(DescargarEstructuraBD));
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Función que ejecuta los scripts del master en la base de datos
+        /// </summary>
+        /// <exception cref="Exception"></exception>
+        private static void InstalarEstructuraBD()
+        {
+            Logger?.LogFunction(Name, nameof(InstalarEstructuraBD), $"Instalando scripts de la base de datos {BRSLibBD.cDatabase}");
+            try
+            {
+                ofrmProcesando.CambiarMensaje("Creando base de datos");
+
+                string cSQL = $"CREATE DATABASE \"{BRSLibBD.cDatabase}\"" +
+                             $" WITH OWNER postgres" +
+                             $" ENCODING = {BRSLibBD.cEncoding.Quoted()}" +
+                             $" TABLESPACE = pg_default" +
+                             $" CONNECTION LIMIT = -1;";
+                BRSLibBD.LanzarNonQuery(BRSLibBD.cConexionBRSERP, cSQL);
+
+                string[] Archivos = { "01-Extensiones.sql", "02-Funciones.sql", "03-Tablas.sql", "04-Vistas.sql", "05-Secuenciadores.sql", "06-Datos.sql", "07-PrimaryKeys.sql", "08-UniqueKeys.sql", "09-Indices.sql", "10-Triggers.sql", "11-ForeignKeys.sql", "12-DatosPostTriggers.sql", "13-Fin.sql" };
+                foreach (string archivo in Archivos)
+                {
+                    string cArgumentos = $"-h {BRSLibBD.cIPServidorBD} " +
+                            $"-U {BRSLibBD.cUserID} " +
+                            $"-d {BRSLibBD.cDatabase} " +
+                            $"-f \"{Application.StartupPath}\\Temp\\{cVersion}{cRevision}\\ERP\\{archivo}\" " +
+                            $"-v ON_ERROR_STOP=1 " +
+                            $"-1";
+
+                    ProcessStartInfo processStartInfo = new ProcessStartInfo
+                    {
+                        FileName = Application.StartupPath + "\\Apps Externas\\Postgres\\9.3\\psql.exe",
+                        Arguments = cArgumentos,
+                        CreateNoWindow = true,
+                        RedirectStandardOutput = true,
+                        RedirectStandardInput = true,
+                        RedirectStandardError = true,
+                        UseShellExecute = false
+                    };
+
+
+                    using (Process process = new Process { StartInfo = processStartInfo })
+                    {
+                        process.Start();
+                        while (!process.StandardOutput.EndOfStream)
+                            WriteLogDebug(process.StandardOutput.ReadLine(), "", "");
+                        while (!process.StandardError.EndOfStream)
+                            WriteLogDebug(process.StandardError.ReadLine(), "", "");
+                        process.WaitForExit();
+                        if (process.ExitCode != 0)
+                            throw new Exception("Se produjo una incidencia durante la ejecución del archvo SQL " + archivo);
+                    }
+                }
+            }
+            catch (Exception)
+            {
+                Logger?.LogExcepcionInfo(Name, nameof(InstalarEstructuraBD));
+                throw;
+            }
+        }
+
+        #endregion
+
+        #region Funciones para cargar datos de configuraciones
+
+        /// <summary>
+        /// Obtiene del archivo configuracion.xml los datos del servidor
+        /// </summary>
+        public static void CargarAppConfig()
+        {
+            Logger?.LogFunction(Name, nameof(CargarAppConfig), "Cargando archivo configuracion.xml");
+            try
+            {
+                Configuracion config = Configuracion.Deserializar(Application.StartupPath + "\\configuracion.xml");
+
+                // Guardamos en variables los parametros del archivo de configuración
+                BRSLibBD.cIPServidorBD = config.AppSettings.ServidorPostgres;
+                BRSLibBD.cPuertoBD = config.AppSettings.PuertoPostgres;
+                BRSLibBD.cEncoding = config.AppSettings.Encodig;
+                BRSLibBD.cGenericaAccess = config.AppSettings.BDAccess;
+                //BRSLibBD.cGenericaAccess = "Provider=Microsoft.ACE.OLEDB.12.0;Data Source=" + config.AppSettings.BDAccess;
+                nTerminal = config.AppSettings.Terminal;
+
+                if (!config.AppSettings.RutaServidor.Vacio())
+                {
+                    cRutaServidor = config.AppSettings.RutaServidor;
+                }
+
+                if (!DebugMode && Logger != null)
+                { // Si la aplicación no está en modo debug
+                    if (config.log.Vacio())
+                    {
+                        Logger.NivelLog = Nivel.FINEST;
+                    }
+                    else
+                    {
+                        switch (config.log.ToUpper())
+                        {
+                            case nameof(Nivel.SEVERE): Logger.NivelLog = Nivel.SEVERE; break;
+                            case nameof(Nivel.INFO): Logger.NivelLog = Nivel.INFO; break;
+                            default: Logger.NivelLog = Nivel.FINEST; break;
+                        }
+                    }
+                }
+
+                ComprobarCrearBD();
+            }
+            catch (Exception ex)
+            {
+                Logger?.LogExcepcion(ex);
+                BRSLib.MostrarMensaje(ex.Message + "\n\r" + Name + " : " + nameof(CargarAppConfig) + "()", " ", Boton.OK, Icono.Error);
+            }
+        }
+
+        /// <summary>
+        /// Obtiene de la base de datos la configuración general y la pasa a variables globales
+        /// </summary>
+        public static void CargarConfiguracionGeneral()
+        {
+            Logger?.LogFunction(Name, nameof(CargarConfiguracionGeneral), "Cargando configuración general");
+            cRutaXML = Application.StartupPath + "\\XML";
+            cRutaBackup = Application.StartupPath + "\\Backup";
+
+            try
+            {
+                ConfigGeneral configGeneral = ConfigGeneral.Seleccionar();
+                if (!configGeneral.Vacio)
+                {
+                    lMaximizar = configGeneral.bmaximizar.Value;
+                    cTema = configGeneral.cultimo_tema;
+                    if (!configGeneral.cruta_xml.Vacio()) cRutaXML = configGeneral.cruta_xml;
+                    if (!configGeneral.cruta_backup.Vacio()) cRutaBackup = configGeneral.cruta_backup;
+                    cRutaPostgres = configGeneral.cruta_postgres;
+
+                    BRSLibNetwork.cServidorFTPAct = configGeneral.cservidor_ftp_act;
+                    BRSLibNetwork.cUsuarioFTPAct = configGeneral.cusuario_ftp_act;
+                    if (!configGeneral.cpass_ftp_act.Vacio()) BRSLibNetwork.cPassFTPAct = BRSLibEncode.Descifrar(configGeneral.cpass_ftp_act); ;
+
+                    if (cRutaServidor.Vacio())
+                    { // Si la ruta del servidor viene vacía significa que el archivo configuracion.xml no tenía esa configuración
+                      // Si el archivo configuracion.xml lo tuviera, tendría preferencia sobre el valor en la base de datos
+                        cRutaServidor = configGeneral.cruta_servidor;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger?.LogExcepcion(ex);
+                BRSLib.MostrarMensaje(ex.Message + "\n\r" + Name + " : " + nameof(CargarConfiguracionGeneral) + "()", " ", Boton.OK, Icono.Error);
+            }
+
+            if (!Directory.Exists(cRutaXML)) Directory.CreateDirectory(cRutaXML);
+            if (!Directory.Exists(cRutaBackup)) Directory.CreateDirectory(cRutaBackup);
+            if (!Directory.Exists(cRutaLogs)) Directory.CreateDirectory(cRutaLogs);
+        }
+
+        ///// <summary>
+        ///// Obtiene de la base de datos la cadena de conexión y el motor de base de datos del grupo de centros asociado al usuario
+        ///// </summary>
+        ///// <param name="nGrupoCentros">Código del grupo de centros</param>
+        ///// <param name="cModulo">1 para Contabilidad, 2 para Tesorería, nulo para el resto</param>
+        //public static void CargarDatosConexionGrupoCentros(int nGrupoCentros, string cModulo = null)
+        //{
+        //    Logger?.LogFunction(Name, nameof(CargarDatosConexionGrupoCentros), $"Cargando configuración del grupo de centros {nGrupoCentros}");
+        //    try
+        //    {
+        //        GruposCentros grupoCentros = GruposCentros.SeleccionarPorClavePrimaria(nGrupoCentros.AsInt16());
+        //        if (!grupoCentros.Vacio)
+        //        {
+        //            nGrupoCentrosNombre = grupoCentros.cnombre_grupo;
+        //            // Por defecto cogemos el ejercicio que tenga asignado el gurpo de centros. Si no tuviese asignado ejercicio le ponemos al actual
+        //            nEjercicio = grupoCentros.nejercicio == null ? DateTime.Today.Year : grupoCentros.nejercicio.Value;
+        //            // Seleccionamos el centro obligatorio del usuario, si lo tuviese
+        //            PermisosUsuarioGrupo permisosUsuarioGrupo = PermisosUsuarioGrupo.SeleccionarPorClavePrimaria(nUsuario.AsInt16(), nGrupoCentros.AsInt16());
+        //            nCentroObligatorioUsuario = permisosUsuarioGrupo.ncentro == null ? null : Convert.ToString(permisosUsuarioGrupo.ncentro.Value);
+
+        //            if (cModulo == "1")
+        //            {
+        //                UsuCfgCont usuCfgCont = UsuCfgCont.SeleccionarPorClavePrimaria(nUsuario);
+        //                if (!usuCfgCont.Vacio && usuCfgCont.ngrupo_centro.Value == nGrupoCentros && usuCfgCont.lactivo.Value)
+        //                {
+        //                    nCentroContable = usuCfgCont.centrocontable.Value;
+        //                    nEjercicio = usuCfgCont.nejercicio.Value;
+        //                }
+        //                else
+        //                { // Si no tiene la configuración hacemos la conexión con el ejercicio modelo, nunca debería entrar por aquí
+        //                    nCentroContable = 1;
+        //                    nEjercicio = 1;
+        //                }
+        //                cConexionGR = BRSLibBD.CadenaConexion(nGrupoCentros.ToString("0000") + nCentroContable.ToString("0000") + nEjercicio.ToString("0000"));
+        //            }
+        //        }
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        Logger?.LogExcepcion(ex);
+        //        BRSLib.MostrarMensaje(ex.Message + "\n\r" + Name + " : " + nameof(CargarDatosConexionGrupoCentros) + "()", " ", Boton.OK, Icono.Error);
+        //    }
+        //}
+
+        /// <summary>
+        /// Obtiene los datos de un termina
+        /// </summary>
+        /// <param name="nTerminal">El código del terminal</param>
+        public static void CargarDatosTerminal(int nTerminal)
+        {
+            Logger?.LogFunction(Name, nameof(CargarDatosTerminal), $"Cargando configuración del terminal {nTerminal}");
+            try
+            {
+                Terminales terminal = Terminales.SeleccionarPorClavePrimaria(nGrupoCentros.AsInt16(), nTerminal.AsInt16());
+                if (!terminal.Vacio)
+                {
+                    cTerminalNombre = terminal.cnombre_terminal;
+                    nCentro = terminal.ncentro.Value;
+                    nCentroDefecto = terminal.ncentro_defecto ?? null;
+                    cCentroDefectoNombre = terminal.ncentro_defecto_objeto.nombre;
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger?.LogExcepcion(ex);
+                BRSLib.MostrarMensaje(ex.Message + "\n\r" + Name + " : " + nameof(CargarDatosTerminal) + "()", " ", Boton.OK, Icono.Error);
+            }
+        }
+
+        /// <summary>
+        /// Función que recupera los datos del usuario que se conectó a la aplicación
+        /// </summary>
+        /// <param name="cUsuario">El login del usuario</param>
+        /// <param name="cContra">La contraseña del usuario</param>
+        /// <param name="nAplicacion">La aplicación desde la que accede el usuario</param>
+        public static void ObtenerDatosUsuario(string cUsuario, string cContra, int nAplicacion)
+        {
+            Logger?.LogFunction(Name, nameof(ObtenerDatosUsuario), $"Cargando configuración del usuario {cUsuario}");
+            try
+            {
+                Usuarios usuario = Usuarios.SeleccionarPorLoginPassword(cUsuario, cContra);
+                if (!usuario.Vacio)
+                {
+                    nUsuario = usuario.nusuario_id.Value;
+                    cUsuarioNombre = usuario.cnombre_usuario;
+                    cLoginUsuario = usuario.clogin;
+                    cLoginPassword = usuario.cpassword;
+                    cTema = usuario.ctema;
+                    acFuenteMantenimientos[0] = usuario.ctipo_letra;
+                    acFuenteMantenimientos[1] = Convert.ToString(usuario.ntamano_letra);
+                    f = new Font(acFuenteMantenimientos[0], float.Parse(acFuenteMantenimientos[1]));
+                    lAdministrador = usuario.badministrador.Value;
+                    nIdioma = usuario.nidioma.Value;
+                    nGrupoUsuario = usuario.ncodgrupo.Value;
+                    lUsarPerfilGrupo = usuario.busarperfilgrupo.Value;
+                    lModificarInformes = usuario.bmodificarinformes.Value;
+                    lFechaHoraListados = usuario.bfechahoralistados.Value;
+                    cNivelAcceso = Convert.ToString(usuario.nnivelacceso);
+                }
+
+                // Seleccionamos el último grupo de centros al que se conectó el usuario
+                string cSQL = $"SELECT {ConfigUsuarios.NGRUPO}" +
+                             $" FROM {ConfigUsuarios.TABLA}" +
+                             $" WHERE {ConfigUsuarios.NAPLICACION} = :param0" +
+                             $" AND {ConfigUsuarios.NUSUARIO} = :param1;";
+                object aux = BRSLibBD.SelectScalar(BRSLibBD.cConexionBRSERP, cSQL, nAplicacion, nUsuario);
+                if (aux != null) BRSLib.nGrupoCentros = Convert.ToInt32(aux);
+            }
+            catch (Exception ex)
+            {
+                Logger?.LogExcepcion(ex);
+                BRSLib.MostrarMensaje(ex.Message + "\n\r" + Name + " : " + nameof(ObtenerDatosUsuario) + "()", " ", Boton.OK, Icono.Error);
+            }
+        }
+
+        #endregion
+
+        #region Funciones relativas a idiomas
+
+        /// <summary>
+        /// Aplicación del idioma del usuario
+        /// </summary>
+        /// <param name="Formulario">El objeto formulario</param>
+        /// <param name="nAplic">El código de aplicación</param>
+        /// <param name="nPanta">El código de programa</param>
+        /// <param name="nTipoPanta">El tipo de pantalla</param>
+        /// <param name="nIdiomaAplicar">El idioma a aplicar</param>
+        /// <param name="nModo">El modo en que se abrió la ventana</param>
+        public static void AplicarIdioma(Form Formulario, int nAplic, int nPanta, int nTipoPanta, int nIdiomaAplicar, int nModo)
+        {
+            Logger?.LogFunction(Name, nameof(AplicarIdioma), $"Aplicando idioma {nIdiomaAplicar} al formulario {Formulario.Name}");
+            string cComponente = null;
+            string cPropiedad = null;
+            string cSQL = null;
+            string cModo = null;
+
+            //En función de Modo de pantalla utilizamos la variable cmodo para posteriormente visualizarlo en el titulo de la pantalla
+            switch (nModo)
+            {
+                case ModoPantalla.INSERTAR: cModo = Cadenas.local_cAñadir; break;
+                case ModoPantalla.MODIFICAR: cModo = Cadenas.local_cModificar; break;
+                case ModoPantalla.VER: cModo = Cadenas.local_cVer; break;
+                default: cModo = Cadenas.local_cEncontrar; break;
+            }
+
+            using (NpgsqlConnection oConexionPostgres = new NpgsqlConnection(BRSLibBD.cConexionBRSERP))
+            using (NpgsqlCommand oComandoPostgres = oConexionPostgres.CreateCommand())
+            {
+                oConexionPostgres.Open();
+
+                //Especificamos si lo tiene el titulo de la pantalla
+                cSQL = $"SELECT ctitulopanta FROM sys_lengpant WHERE ncod_aplic = {Convert.ToString(nAplic)}" +
+                      $" AND ncod_pant = {Convert.ToString(nPanta)}" +
+                      $" AND ncod_tipopant = {Convert.ToString(nTipoPanta)}" +
+                      $" AND ncod_idioma = {Convert.ToString(nIdiomaAplicar)};";
+                oComandoPostgres.CommandText = cSQL;
+
+                using (NpgsqlDataReader oDataReader = oComandoPostgres.ExecuteReader())
+                {
+                    while (oDataReader.Read())
+                    {
+                        if (!(oDataReader["ctitulopanta"] is Nullable)) Formulario.Text = oDataReader["ctitulopanta"].ToString() + " - " + cModo;
+                    }
+                }
+
+                //Vamos a asignarle el idioma a todos los componentes de la pantalla
+                cSQL = $"SELECT * FROM sys_lengconf WHERE ncod_aplic = " + Convert.ToString(nAplic) +
+                      $" AND ncod_pant = {Convert.ToString(nPanta)}" +
+                      $" AND ncod_tipopant = {Convert.ToString(nTipoPanta)}" +
+                      $" AND ncod_idioma = {Convert.ToString(nIdiomaAplicar)}" +
+                      $" ORDER BY ncod_orden";
+                oComandoPostgres.CommandText = cSQL;
+
+                using (NpgsqlDataReader oDataReader = oComandoPostgres.ExecuteReader())
+                {
+                    while (oDataReader.Read())
+                    {
+                        if (Convert.ToInt16(oDataReader["bvisible"]) != 0)
+                        {
+                            if (!(oDataReader["ctexto"] is Nullable))
+                            {
+
+                                cComponente = Convert.ToString(oDataReader["cpropiedad_obj"]).Split('.')[0];
+                                cPropiedad = Convert.ToString(oDataReader["cpropiedad_obj"]).Split('.')[1];
+
+                                Control[] ctls = Formulario.Controls.Find(cComponente, true);
+                                if (ctls.Length > 0)
+                                {
+                                    if (Convert.ToInt16(oDataReader["ntipocontrol"]) == 1) //Estamos ante un control RadLabel
+                                    {
+                                        RadLabel control = ctls[0] as RadLabel;
+                                        control.Text = Convert.ToString(oDataReader["ctexto"]);
+                                    }
+                                    else if (Convert.ToInt16(oDataReader["ntipocontrol"]) == 2) //Estamos ante un control RadTextBox
+                                    {
+                                        RadTextBox control = ctls[0] as RadTextBox;
+                                        control.Tag = Convert.ToString(oDataReader["ctexto"]);
+                                    }
+                                    else if (Convert.ToInt16(oDataReader["ntipocontrol"]) == 3) //Estamos ante control ComboBox
+                                    {
+                                        RadDropDownList control = ctls[0] as RadDropDownList;
+                                        control.Tag = Convert.ToString(oDataReader["ctexto"]);
+                                    }
+                                    else if (Convert.ToInt16(oDataReader["ntipocontrol"]) == 4) //Estamos ante control CheckBox
+                                    {
+                                        BRSCheckBox control = ctls[0] as BRSCheckBox;
+                                        if (cPropiedad.ToUpper() == "TEXT")
+                                            control.Text = Convert.ToString(oDataReader["ctexto"]);
+                                        else
+                                            control.Tag = Convert.ToString(oDataReader["ctexto"]);
+                                    }
+                                    else if (Convert.ToInt16(oDataReader["ntipocontrol"]) == 5) //Estamos ante control GroupBox
+                                    {
+                                        RadGroupBox control = ctls[0] as RadGroupBox;
+                                        control.Text = Convert.ToString(oDataReader["ctexto"]);
+                                    }
+                                    else if (Convert.ToInt16(oDataReader["ntipocontrol"]) == 6) //Estamos ante control Pestaña
+                                    {
+                                        RadPageViewPage control = ctls[0] as RadPageViewPage;
+                                        control.Text = Convert.ToString(oDataReader["ctexto"]);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        #endregion
+
+        #region Funciones para formatear valores
+
+        /// <summary>
+        /// Función que devuelve una hora en formato HHmmss o HHmm en formato HH:mm:ss o HH:mm
+        /// </summary>
+        /// <param name="cHora">La hora a devolver formateada</param>
+        /// <returns>La hora formateada</returns>
+        public static string FormatearHora(string cHora)
+        {
+            Logger?.LogFunction(Name, nameof(FormatearHora), $"Formateando la hora {cHora}");
+            string cHoraFormateada = cHora;
+            bool error = true;
+
+            if (cHoraFormateada.Length == 8 && cHoraFormateada.Substring(2, 1) == ":" && cHoraFormateada.Substring(5, 1) == ":")
+            { // Si la longitud es de 8 y contiene : en la tercera y la sexta posición (0:00:00)
+                error = BRSLibValidadores.EsHoraCorrecta(cHoraFormateada);
+            }
+            else if (cHoraFormateada.Length == 7 && cHoraFormateada.Substring(1, 1) == ":" && cHoraFormateada.Substring(4, 1) == ":")
+            { // Si la longitud es de 7 y contiene : en la segunda y la quinta posición (0:00:00)
+                error = BRSLibValidadores.EsHoraCorrecta(cHoraFormateada);
+                cHoraFormateada = "0" + cHoraFormateada;
+            }
+            else if (cHoraFormateada.Length == 6 && !cHoraFormateada.Contains(":"))
+            { // Si la longitud es de 6 y no contiene : (000000) -> (00:00:00)
+                cHoraFormateada = cHoraFormateada.Substring(0, 2) + ":" + cHoraFormateada.Substring(2, 2) + ":" + cHoraFormateada.Substring(4, 2);
+                error = BRSLibValidadores.EsHoraCorrecta(cHoraFormateada);
+            }
+            else if (cHoraFormateada.Length == 5 && cHoraFormateada.Substring(2, 1) == ":")
+            { // Si la longitud es de 5 y contiene : en medio (00:00) -> (00:00)
+                error = BRSLibValidadores.EsHoraCorrecta(cHoraFormateada);
+            }
+            else if (cHoraFormateada.Length == 4 && !cHoraFormateada.Contains(":"))
+            { // Si la longitud es de 4 y no contiene : (0000) -> (00:00) le añadimos los :
+                cHoraFormateada = cHoraFormateada.Substring(0, 2) + ":" + cHoraFormateada.Substring(2, 2);
+                error = BRSLibValidadores.EsHoraCorrecta(cHoraFormateada);
+            }
+            else if (cHoraFormateada.Length == 4 && cHoraFormateada.Substring(1, 1) == ":")
+            { // Si la longitud es de 4 y contiene : en la segunda posicion (0:00) -> (0:00)
+                error = BRSLibValidadores.EsHoraCorrecta(cHoraFormateada);
+            }
+            else if (cHoraFormateada.Length == 3 && !cHoraFormateada.Contains(":"))
+            { // Si la longitud es de 3 y no contiene : (000) -> (0:00) le añadimos los :
+                cHoraFormateada = cHoraFormateada.Substring(0, 1) + ":" + cHoraFormateada.Substring(1, 2);
+                error = BRSLibValidadores.EsHoraCorrecta(cHoraFormateada);
+            }
+
+            if (error)
+            { // Si ha habido un error en el formato borramos el texto
+                cHoraFormateada = "";
+            }
+
+            return cHoraFormateada;
+        }
+
+        /// <summary>
+        /// Función utilizada para capitalizar el mes y el día de la semana en una fecha escrita con letras
+        /// </summary>
+        /// <param name="fecha">Una cadena escrita con letras</param>
+        /// <returns>La fecha con el mes y el día de la semana capitalizados</returns>
+        public static string CapitalizarFecha(string fecha)
+        {
+            Logger?.LogFunction(Name, nameof(CapitalizarFecha), $"Capitalizando la fecha {fecha}");
+            string[] dias = { "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo" };
+            string[] meses = { "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre" };
+            foreach (string dia in dias)
+                if (fecha.Contains(dia.ToLower()))
+                {
+                    fecha = fecha.Replace(dia.ToLower(), dia);
+                    break;
+                }
+            foreach (string mes in meses)
+                if (fecha.Contains(mes.ToLower()))
+                {
+                    fecha = fecha.Replace(mes.ToLower(), mes);
+                    break;
+                }
+            return fecha;
+        }
+
+        #endregion
+
+        #region Funciones usuadas en el proceso de actualizacion
+
+        /// <summary>
+        /// Función que devuelve una lista con los módulos a actualizar
+        /// </summary>
+        /// <param name="cRuta">Ruta donde se encuentra el archivo version.new.xml</param>
+        /// <returns>Una lista con los nombres de los módulos actualizar: [Módulo|VersiónActual(VVVVVVRR)|VersiónNueva(VVVVVVRR)]</returns>
+        public static List<string> CompararVersiones(string cRuta)
+        {
+            Logger?.LogFunction(Name, nameof(CompararVersiones), "Comparando las versiones de los ejecutables para actualizar");
+            // Recorreremos cada módulo para comprobar su versión.
+            // Debe ir en primer lugar el actualizador y en segundo lugar BRSLib porque esos dos programas se actualizan independientemente y no conjuntamente con el resto de programas
+            string[] acModulos = { NombresProcesos.BRSACT, NombresProcesos.BRSLIB, NombresProcesos.BRSERPREYES, };
+
+            List<string> acModulosActualizar = new List<string>();
+            try
+            {
+                NodoBRSERP documento = NodoBRSERP.Deserializar(cRuta + "\\version.new.xml");
+                foreach (var modulo in documento.Module)
+                {
+                    int nVersionXML, nRevisionXML, nVersionEXE, nRevisionEXE;
+                    nVersionXML = modulo.Version.AsInt();
+                    nRevisionXML = modulo.Revision.AsInt();
+
+                    if (modulo.Name == NombresProcesos.BRSLIB)
+                    { // Si se trata de BRSLib, actualizaremos la aplicación completa
+                        nVersionEXE = Convert.ToInt32(cVersion);
+                        nRevisionEXE = Convert.ToInt32(cRevision);
+                    }
+                    else
+                    { // Si no, actualizamos solamente el módulo
+                        if (!File.Exists(modulo.Name + ".exe"))
+                        { // Si no existe el módulo saltamos al siguiente
+                            continue;
+                        }
+
+                        string[] acVersionEXE = AssemblyName.GetAssemblyName(modulo.Name + ".exe").Version.ToString().Split('.');
+                        nVersionEXE = Convert.ToInt32(acVersionEXE[0].PadLeft(2, '0') + acVersionEXE[1].PadLeft(2, '0') + acVersionEXE[2].PadLeft(2, '0'));
+                        nRevisionEXE = Convert.ToInt32(acVersionEXE[3].PadLeft(2, '0'));
+                    }
+
+                    if (nVersionEXE < nVersionXML || (nVersionEXE == nVersionXML && nRevisionEXE < nRevisionXML))
+                    { // Si nuestra versión es menor, necesitamos actualizar
+                        acModulosActualizar.Add(modulo.Name + "|" + nVersionEXE.AsString().PadLeft(6, '0') + nRevisionEXE.AsString().PadLeft(2, '0') + "|" + nVersionXML.AsString().PadLeft(6, '0') + nRevisionXML.AsString().PadLeft(2, '0'));
+                        if (modulo.Name == NombresProcesos.BRSACT || modulo.Name == NombresProcesos.BRSLIB)
+                            break;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger?.LogExcepcion(ex);
+                BRSLibMensajes.Mostrar($"{BRSLibMensajes.Actualizacion.ImposibleVerificarActualizaciones}\r\n{ex.Message}", BRSLibMensajes.TitulosMessageBox.Advertencia);
+                throw;
+            }
+
+            return acModulosActualizar;
+        }
+
+        /// <summary>
+        /// Función que muestra el mensaje de actualización pendiente desde el servidor
+        /// </summary>
+        /// <param name="acModulosActualizar">Una lista de módulos donde cada objeto de la lista tiene la siguiente estructura: [Módulo|VersiónActual(VVVVVVRR)|VersiónNueva(VVVVVVRR)]</param>
+        public static void ActualizarVersionServidor(List<string> acModulosActualizar)
+        {
+            Logger?.LogFunction(Name, nameof(ActualizarVersionServidor), $"Actualiza el servidor: {string.Join("; ", acModulosActualizar)}");
+            bool lActualizar = false;
+
+            // Guardamos la nueva versión en caso de ser BRSLib
+            string cVersionNuevaBRSLib = null;
+
+            // Texto para el mensaje a presentar antes de la actualización
+            StringBuilder cMensaje = new StringBuilder($"{BRSLibMensajes.Actualizacion.NuevaVersionDisponibleFTP}:\r\n\r\n");
+
+            foreach (string modulo in acModulosActualizar)
+            {
+                string[] acDatos = modulo.Split('|');
+                string cNombre = acDatos[0];
+                string cVersionActual = $"{acDatos[1].Substring(0, 2)}.{acDatos[1].Substring(2, 2)}.{acDatos[1].Substring(4, 2)}.{acDatos[1].Substring(6, 2)}";
+                string cVersionNueva = $"{acDatos[2].Substring(0, 2)}.{acDatos[2].Substring(2, 2)}.{acDatos[2].Substring(4, 2)}.{acDatos[2].Substring(6, 2)}";
+
+                if (cNombre == NombresModulos.BRSLIB)
+                {
+                    cVersionNuevaBRSLib = $"{acDatos[1].Substring(0, 2)}.{acDatos[1].Substring(2, 2)}.{acDatos[1].Substring(4, 2)}";
+                    cMensaje.Append($"{BRSLibMensajes.Actualizacion.VersionInstalada}: {cVersionActual}\r\n");
+                    cMensaje.Append($"{BRSLibMensajes.Actualizacion.VersionServidor}: {cVersionNueva}\r\n\r\n");
+                }
+                else
+                {
+                    cMensaje.Append($"{cNombre}:\r\n");
+                    cMensaje.Append($"    {BRSLibMensajes.Actualizacion.VersionInstalada}: {cVersionActual}\r\n");
+                    cMensaje.Append($"    {BRSLibMensajes.Actualizacion.VersionServidor}: {cVersionNueva}\r\n\r\n");
+                }
+            }
+
+            cMensaje.Append(BRSLibMensajes.Actualizacion.AceptarCancelarActualizacion);
+
+            DialogResult dr = BRSLib.MostrarMensaje(cMensaje.ToString(), "", Boton.OKCancel);
+            if (dr == DialogResult.OK)
+            {
+                if (BRSLib.lAdministrador)
+                { // Si es un usuario administrador
+                    lActualizar = true;
+                }
+                else
+                {
+                    Logger?.LogInfo($"El usuario {nUsuario} no puede actualizar al no ser administrador");
+                    BRSLib.MostrarMensaje(BRSLibMensajes.Actualizacion.NoAdministrador, BRSLibMensajes.TitulosMessageBox.Advertencia);
+                }
+
+                if (lActualizar)
+                {
+                    LanzarActualizador(acModulosActualizar);
+                }
+            }
+            else
+            {
+                Logger?.LogInfo($"El usuario {nUsuario} rechaza la actualización");
+            }
+        }
+
+        /// <summary>
+        /// Función que muestra el mensaje de actualización pendiente desde el puesto
+        /// </summary>
+        /// <param name="acModulosActualizar">Una lista de módulos donde cada objeto de la lista tiene la siguiente estructura: [Módulo|VersiónActual(VVVVVVRR)|VersiónNueva(VVVVVVRR)]</param>
+        public static void ActualizarVersionPuesto(List<string> acModulosActualizar)
+        {
+            Logger?.LogFunction(Name, nameof(ActualizarVersionServidor), $"Actualiza el puesto: {string.Join("; ", acModulosActualizar)}");
+            // Texto para el mensaje a presentar antes de la actualización
+            StringBuilder cMensaje = new StringBuilder($"{BRSLibMensajes.Actualizacion.NuevaVersionDisponibleServidor}\r\n\r\n");
+            cMensaje.Append(BRSLibMensajes.Actualizacion.AceptarCancelarActualizacion);
+
+            DialogResult dr = BRSLib.MostrarMensaje(cMensaje.ToString(), "", Boton.OKCancel);
+            if (dr == DialogResult.OK)
+            {
+                LanzarActualizador(acModulosActualizar);
+            }
+            else
+            {
+                Logger?.LogInfo($"El usuario {nUsuario} rechaza la actualización");
+            }
+        }
+
+        /// <summary>
+        /// Función que llama a la aplicación del actualizador pasándole los parámetros necesarios
+        /// </summary>
+        /// /// <param name="acModulosActualizar">Una lista de módulos donde cada objeto de la lista tiene la siguiente estructura: [Módulo|VersiónActual(VVVVVVRR)|VersiónNueva(VVVVVVRR)]</param>
+        private static void LanzarActualizador(List<string> acModulosActualizar)
+        {
+            Logger?.LogFunction(Name, nameof(LanzarActualizador), "Ejecuta el actualizador");
+            try
+            {
+                ProcessStartInfo startInfo = new ProcessStartInfo
+                {
+                    WorkingDirectory = Application.StartupPath,
+                    FileName = Application.StartupPath + "\\BRSAct.exe"
+                };
+
+                // Quitamos la barra final (si existiese de cRutaServidor y cRutaPostgres
+                if (cRutaServidor.EndsWith("\\"))
+                    cRutaServidor = cRutaServidor.Remove(cRutaServidor.Length - 1);
+
+                if (cRutaPostgres.EndsWith("\\"))
+                    cRutaPostgres = cRutaPostgres.Remove(cRutaPostgres.Length - 1);
+
+                /*
+                 *  [0]: Cadena de conexión
+                 *  [1]: Terminal
+                 *  [2]: Lista de actualizables
+                 *  [3]: Servidor FTP
+                 *  [4]: Usuario FTP
+                 *  [5]: Contraseña FTP
+                 *  [6]: Ruta servidor
+                 *  [7]: Ruta de instalación Postgres
+                 *  [8]: Base de datos Postgres
+                 *  [9]: Servidor Postgres
+                 * [10]: Puerto Postgres
+                 * [11]: Ruta backup
+                 * [12]: Usuario Login
+                 * [13]: Password Login
+                 */
+                startInfo.Arguments = $"\"{BRSLibBD.cConexionBRSERP}\" " +
+                                      $"{nTerminal.AsString()} " +
+                                      $"{string.Join("&", acModulosActualizar.ToArray())} " +
+                                      $"{BRSLibNetwork.cServidorFTPAct} " +
+                                      $"{BRSLibNetwork.cUsuarioFTPAct} " +
+                                      $"{BRSLibNetwork.cPassFTPAct} " +
+                                      $"\"{cRutaServidor}\" " +
+                                      $"\"{cRutaPostgres}\" " +
+                                      $"{BRSLibBD.cDatabase} " +
+                                      $"{BRSLibBD.cIPServidorBD} " +
+                                      $"{BRSLibBD.cPuertoBD} " +
+                                      $"\"{cRutaBackup}\" " +
+                                      $"\"{BRSLib.cLoginUsuario}\" " +
+                                      $"\"{BRSLib.cLoginPassword}\"";
+                Process.Start(startInfo);
+            }
+            catch (Exception ex)
+            {
+                BRSLib.MostrarMensaje($"{BRSLibMensajes.Actualizacion.AplicacionNoEncontrada}\r\n{ex.Message}", BRSLibMensajes.TitulosMessageBox.Advertencia);
+                Application.Exit();
+            }
+        }
+
+        #endregion
+
+        #region Funciones generales
+
+        /// <summary>
+        /// Graba en la base de datos un registro de auditoría utilizando la fecha y hora del servidor
+        /// </summary>
+        /// <param name="nUsuario">El código del usuario</param>
+        /// <param name="nTerminal">El terminal desde el que realizó la acción</param>
+        /// <param name="cDescripcion">El mensaje a guardar en la auditoría</param>
+        /// <param name="nCodAplicacion">La aplicación desde la que se lanzó el mensaje</param>
+        /// <param name="nCodPrograma">El programa desde el que se lanzó el mensaje</param>
+        /// <param name="cConexion">La cadena de conexión sobre la base de datos que hemos ejecutado la acción para obtener el nombre de su base de datos</param>
+        /// <param name="cSQLEjecutada">Consulta SQL Ejecutada</param>
+        public static void GrabarRegistroAuditoria(int nUsuario, int nTerminal, string cDescripcion, int nCodAplicacion = -1, int nCodPrograma = -1, string cConexion = null, string cSQLEjecutada = null)
+        {
+            Logger?.LogFunction(Name, nameof(GrabarRegistroAuditoria), $"El usuario {nUsuario} graba un mensaje en la auditoría");
+            try
+            {
+                string cDatabase = BRSLibBD.ExtraerBaseDatosConexion(cConexion);
+                const string cSQL = "INSERT INTO auditorias (dfecha, thora, nusuario, nterminal, cdescripcion, ncodaplicacion, ncodprograma, cbasedatos, sql)" +
+                                   " VALUES (localtimestamp::date, localtimestamp::time, :param0, :param1, :param2, :param3, :param4, :param5, :param6);";
+                BRSLibBD.LanzarNonQuery(BRSLibBD.cConexionBRSERP, cSQL, nUsuario, nTerminal, cDescripcion, nCodAplicacion, nCodPrograma, cDatabase, cSQLEjecutada);
+            }
+            catch (Exception ex)
+            {
+                Logger?.LogExcepcion(ex);
+                BRSLib.MostrarMensaje("Hubo un problema al guardar el registro de auditoría\n\r\n\r" + ex.Message +
+                    "\n\r" + nameof(BRSLib) + " : " + System.Reflection.MethodBase.GetCurrentMethod().Name + "()", " ", BRSLib.Boton.OK, BRSLib.Icono.Error);
+            }
+        }
+
+        #endregion
+
+        #region Funciones para el control de permisos
+
+        /// <summary>
+        /// Función para configurar los permisos de una pantalla
+        /// </summary>
+        /// <param name="oMenu">La barra de menú de la pantalla</param>
+        /// <param name="oBotonera">La botonera de la pantalla</param>
+        /// <param name="nCodAplicacion">El código de aplicación activa</param>
+        /// <param name="nCodPrograma">Null para la ventana principal o el código de programa en caso de ser otra ventana</param>
+        /// <returns>Si el programa debe guardar mensajes en la auditoría</returns>
+        public static bool ConfigurarPermisos(object oMenu, object oBotonera, int nCodAplicacion, int? nCodPrograma = null)
+        {
+            if (nCodPrograma == null)
+                Logger?.LogFunction(Name, nameof(ConfigurarPermisos), $"Carga los permisos de la aplicación {nCodAplicacion}", Clave.PERMISOS);
+            else
+                Logger?.LogFunction(Name, nameof(ConfigurarPermisos), $"Carga los permisos de la aplicación {nCodAplicacion} y programa {nCodPrograma}", Clave.PERMISOS);
+            bool lAuditoria = false;
+
+            try
+            {
+                using (DataTable dt = CargarDTPermisos(nCodAplicacion, nCodPrograma))
+                {
+                    if (oMenu != null)
+                        ConfigurarPermisosMenu(dt, oMenu, nCodPrograma);
+                    if (oBotonera != null)
+                        ConfigurarPermisosBotonera(dt, oBotonera, nCodPrograma);
+                    if (nCodPrograma != null)
+                        lAuditoria = GetAuditoria(dt, nCodPrograma.Value);
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger?.LogExcepcion(ex);
+                BRSLib.MostrarMensaje(ex.Message + "\n\r" + Name + " : " + MethodBase.GetCurrentMethod().Name + "()", " ", Boton.OK, Icono.Error);
+            }
+
+            return lAuditoria;
+        }
+
+        /// <summary>
+        /// Función que devuelve un datatable relleno con los permisos de un usuario para una aplicación
+        /// </summary>
+        /// <param name="nCodAplicacion">El código de aplicación activa</param>
+        /// <param name="nCodPrograma">Null para la ventana principal o el código de programa en caso de ser otra ventana</param>
+        /// <returns>Un datatable relleno con los permisos</returns>
+        private static DataTable CargarDTPermisos(int nCodAplicacion, int? nCodPrograma = null)
+        {
+            try
+            {
+                string cSQL = nCodPrograma == null ? Perfiles.SQL_SelectAccesibleProgramaWhereAplicacion(nCodAplicacion, lUsarPerfilGrupo) : Perfiles.SQL_SelectPermisosProgramaWhereAplicacionPrograma(nCodAplicacion, nCodPrograma.Value, lUsarPerfilGrupo);
+                return BRSLibBD.RellenarDataTable(Perfiles.cConexion, cSQL);
+            }
+            catch (Exception)
+            {
+                Logger?.LogExcepcionInfo(Name, nameof(CargarDTPermisos));
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Función que configura los permisos del menú a partir de un datatable relleno con los permisos
+        /// </summary>
+        /// <param name="dt">El datatable rellenado con los permisos</param>
+        /// <param name="oMenu">La barra de menú que queremos configurar los permisos</param>
+        /// <param name="nCodPrograma">Null para la ventana principal o el código de programa en caso de ser otra ventana</param>
+        private static void ConfigurarPermisosMenu(DataTable dt, object oMenu, int? nCodPrograma = null)
+        {
+            try
+            {
+                if (oMenu is RadMenu radMenu)
+                { // Si el objeto es un menú
+                    foreach (RadMenuItem item in radMenu.Items.OfType<RadMenuItem>())
+                    { // Por cada elemento del menú
+                        if (item.Tag != null && !item.Tag.AsString().Vacio())
+                        { // Si tiene un tag establecemos el permiso que corresponde al tag
+                            if (nCodPrograma == null)
+                            { // Si el programa es el 0 es el principal y recuperamos la accesibilidad
+                                item.Enabled = GetAccesible(dt, item.Tag.AsInt32());
+                            }
+                            else
+                            { // Si no, establecemos el permiso de la opción de dicho programa
+                                item.Enabled = GetPermiso(dt, nCodPrograma.Value, item.Tag.AsString());
+                            }
+                        }
+                        if (item.Items.Count > 0)
+                        { // Si tiene hijos, recorremos sus permisos
+                            ConfigurarPermisosMenu(dt, item, nCodPrograma);
+                        }
+                    }
+                }
+                else if (oMenu is RadMenuItem radMenuItem)
+                { // Si el objeto es un menú item
+                    foreach (RadMenuItem item in radMenuItem.Items.OfType<RadMenuItem>())
+                    { // Por cada elemento del menú item
+                        if (item.Tag != null && !item.Tag.AsString().Vacio())
+                        { // Si tiene un tag establecemos el permiso que corresponde al tag
+                            if (nCodPrograma == null)
+                            { // Si el programa es el 0 es el principal y recuperamos la accesibilidad
+                                item.Enabled = GetAccesible(dt, item.Tag.AsInt32());
+                            }
+                            else
+                            { // Si no, establecemos el permiso de la opción de dicho programa
+                                item.Enabled = GetPermiso(dt, nCodPrograma.Value, item.Tag.AsString());
+                            }
+                        }
+                        if (item.Items.Count > 0)
+                        { // Si tiene hijos, recorremos sus permisos
+                            ConfigurarPermisosMenu(dt, item, nCodPrograma);
+                        }
+                    }
+                }
+            }
+            catch (Exception)
+            {
+                Logger?.LogExcepcionInfo(Name, nameof(ConfigurarPermisosMenu));
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Función que configura los permisos de la botonera a partir de un datatable relleno con los permisos
+        /// </summary>
+        /// <param name="dt">El datatable rellenado con los permisos</param>
+        /// <param name="oBotonera">La botonera que queremos con figurar los permisos</param>
+        /// <param name="nCodPrograma">Null para la ventana princiapl o el código de programa en caso de ser otra ventana</param>
+        private static void ConfigurarPermisosBotonera(DataTable dt, object oBotonera, int? nCodPrograma = null)
+        {
+            try
+            {
+                if (oBotonera is CommandBarStripElement commandBarStripElement)
+                { // Si el objeto es una botonera
+                    foreach (object item in commandBarStripElement.Items)
+                    { // Por cada objeto de la botonera
+                        if (item is CommandBarButton oCommandBarButton)
+                        { // Si es un botón
+                            if (oCommandBarButton.Tag != null)
+                            { // Si tiene un tag establecemos el permiso que corresponde al tag
+                                if (nCodPrograma == null)
+                                { // Si el programa es el 0 es el principal y recuperamos la accesibilidad
+                                    oCommandBarButton.Enabled = GetAccesible(dt, oCommandBarButton.Tag.AsInt32());
+                                }
+                                else
+                                { // Si no, establecemos el permiso de la opción de dicho programa
+                                    oCommandBarButton.Enabled = GetPermiso(dt, nCodPrograma.Value, oCommandBarButton.Tag.AsString());
+                                }
+                            }
+                        }
+                        else if (item is CommandBarDropDownButton oCommandBarDropDownButton)
+                        { // Si es un botón desplegable, recorremos sus permisos
+                            ConfigurarPermisosBotonera(dt, item, nCodPrograma);
+                        }
+                    }
+                }
+                else if (oBotonera is CommandBarDropDownButton commandBarDropDownButton)
+                { // Si el objeto es un botón desplegable
+                    foreach (RadItem item in commandBarDropDownButton.Items)
+                    { // Por cada objeto del botón desplegable
+                        if (item.Tag != null)
+                        { // Si tiene un tag establecemos el permiso que corresponde al tag
+                            if (nCodPrograma == null)
+                            { // Si el programa es el 0 es el principal y recuperamos la accesibilidad
+                                item.Enabled = GetAccesible(dt, item.Tag.AsInt32());
+                            }
+                            else
+                            { // Si no, establecemos el permiso de la opción de dicho programa
+                                item.Enabled = GetPermiso(dt, nCodPrograma.Value, item.Tag.AsString());
+                            }
+                        }
+                    }
+                }
+
+            }
+            catch (Exception)
+            {
+                Logger?.LogExcepcionInfo(Name, nameof(ConfigurarPermisosBotonera));
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Función que recorre un datatable relleno con los permisos de un usuario y aplicación y devuelve si el programa buscado es accesible o no
+        /// </summary>
+        /// <param name="dt">Un datatable relleno con los permisos</param>
+        /// <param name="nPrograma">El código de programa a buscar</param>
+        /// <returns>Si es accesible o no</returns>
+        private static bool GetAccesible(DataTable dt, int nPrograma)
+        {
+            DataRow[] dr = dt.Select($"{Perfiles.NPROGRAMA} = {nPrograma}");
+            return dr.Length > 0 ? dr[0][Perfiles.LACCESIBLE].AsBoolean() : false;
+        }
+
+        /// <summary>
+        /// Función que recorre un datatable relleno con los permisos de un usuario, aplicación y programa y devuelve si una opción está activada o no
+        /// </summary>
+        /// <param name="dt">Un datatable relleno con los permisos</param>
+        /// <param name="nPrograma">El código de programa a buscar</param>
+        /// <param name="cLOPC">La opción a activar o desactivar</param>
+        /// <returns>Si está activo o no</returns>
+        private static bool GetPermiso(DataTable dt, int nPrograma, string cLOPC)
+        {
+            DataRow[] dr = dt.Select($"{Perfiles.NPROGRAMA} = {nPrograma}");
+            return dr.Length > 0 ? dr[0][cLOPC].AsBoolean() : false;
+        }
+
+        /// <summary>
+        /// Función que recorre un datatable relleno con los permisos de un usuario, aplicación y programa y devuelve si debe guardar mensajes en auditoría o no
+        /// </summary>
+        /// <param name="dt">Un datatable relleno con los permisos</param>
+        /// <param name="nPrograma">El código de programa a buscar</param>
+        /// <returns>Si debe guardar mensajes en auditoría o no</returns>
+        private static bool GetAuditoria(DataTable dt, int nPrograma)
+        {
+            DataRow[] dr = dt.Select($"{Perfiles.NPROGRAMA} = {nPrograma}");
+            return dr.Length > 0 ? dr[0][Perfiles.LHISTORIAL].AsBoolean() : false;
+        }
+
+        #endregion
+
+        #region Eventos globales
+
+        #region DropDownOpening
+
+        /// <summary>
+        /// Evento al pulsar botón derecho sobre la botonera para evitar que aparezca su menú contextual
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        public static void CustomizeContextMenu_DropDownOpening(object sender, CancelEventArgs e)
+        {
+            e.Cancel = true;
+        }
+
+        #endregion
+
+        #endregion
+
+        #region Funciones generales
+
+
+
+        public static string GenerarFechaEncontrar(string sFecha)
+        {
+            string sResultado = "";
+
+            if (BRSLibValidadores.EsFechaCorrecta(sFecha, out string cFechaFormateada))
+                sResultado = cFechaFormateada;
+
+            return sResultado;
+        }
+
+        public static string GenerarFechaEncontrarAccess(string sFecha)
+        {
+            string sResultado = "";
+
+            if (BRSLibValidadores.EsFechaCorrecta(sFecha, out string cFechaFormateada))
+            {
+                sResultado = cFechaFormateada;
+                sResultado = Convert.ToDateTime(sResultado).ToString("#MM/dd/yyyy#");
+            }
+
+            return sResultado;
+        }
+
+        #endregion
+
+        #region Ventana de Mensajes
+
+        /// <summary>
+        /// Función para imprimir mensajes en pantalla
+        /// </summary>
+        /// <param name="Mensaje">Texto del mensaje</param>
+        /// <param name="Titulo">Texto del título, por defecto " "</param>
+        /// <param name="boton">Botones que aparecerán, por defecto "OK"</param>
+        /// <param name="icono">Icono que aparecerá, por defecto icono de "Information"</param>
+        /// <param name="botonDefecto">Botón por defecto seleccionado</param>
+        /// <returns></returns>
+        public static DialogResult MostrarMensaje(string Mensaje, string Titulo = " ", Boton boton = Boton.OK, Icono icono = Icono.Information, int botonDefecto = 0)
+        {
+            MessageBoxIcon icon;
+            MessageBoxButtons button;
+            MessageBoxDefaultButton defaultButton;
+            switch (icono)
+            {
+                case Icono.Information: icon = MessageBoxIcon.Information; break;
+                case Icono.Error: icon = MessageBoxIcon.Error; break;
+                case Icono.Warning: icon = MessageBoxIcon.Warning; break;
+                case Icono.Question: icon = MessageBoxIcon.Question; break;
+                default: icon = MessageBoxIcon.Information; break;
+            }
+
+            switch (boton)
+            {
+                case Boton.OK: button = MessageBoxButtons.OK; break;
+                case Boton.OKCancel: button = MessageBoxButtons.OKCancel; break;
+                case Boton.YesNoCancel: button = MessageBoxButtons.YesNoCancel; break;
+                case Boton.YesNo: button = MessageBoxButtons.YesNo; break;
+                case Boton.AbortRetryIgnore: button = MessageBoxButtons.AbortRetryIgnore; break;
+                default: button = MessageBoxButtons.OK; break;
+            }
+
+            switch (botonDefecto)
+            {
+                case 1: defaultButton = MessageBoxDefaultButton.Button1; break;
+                case 2: defaultButton = MessageBoxDefaultButton.Button2; break;
+                case 3: defaultButton = MessageBoxDefaultButton.Button3; break;
+                default:
+                    switch (boton)
+                    {
+                        case Boton.OKCancel: defaultButton = MessageBoxDefaultButton.Button2; break;
+                        case Boton.YesNoCancel: defaultButton = MessageBoxDefaultButton.Button3; break;
+                        case Boton.YesNo: defaultButton = MessageBoxDefaultButton.Button2; break;
+                        case Boton.AbortRetryIgnore: defaultButton = MessageBoxDefaultButton.Button3; break;
+                        default: defaultButton = MessageBoxDefaultButton.Button1; break;
+                    }
+                    break;
+            }
+
+            if (Titulo == null || Titulo.Trim() == "")
+            {
+                switch (icono)
+                {
+                    case Icono.Information: Titulo = "INFORMACIÓN"; break;
+                    case Icono.Error: Titulo = "ERROR"; break;
+                    case Icono.Warning: Titulo = "ADVERTENCIA"; break;
+                    case Icono.Question: Titulo = "CONFIRMACIÓN"; break;
+                    default: Titulo = "INFORMACIÓN"; break;
+                }
+
+                Titulo = BRSLib.cNombreApp + " - " + Titulo;
+            }
+            else
+            {
+                if (BRSLib.cNombreApp.ToUpper() == Titulo.Trim().ToUpper())
+                {
+                    Titulo = Titulo.Trim() + " - INFORMACIÓN";
+                }
+                else
+                    Titulo = BRSLib.cNombreApp + " - " + Titulo.Trim();
+            }
+
+            return MessageBox.Show(Mensaje, Titulo, button, icon, defaultButton);
+        }
+
+        public static DialogResult MostrarMensajeBorrarRegistro()
+        {
+            return MostrarMensaje(Cadenas.local_cMensajeBorrarRegistro, " ", Boton.OKCancel, Icono.Warning);
+        }
+
+        public static void MostrarMensajeRegistroBloqueado()
+        {
+            MostrarMensaje(Cadenas.RegistroBloqueadoException, Cadenas.MBoxRegistroBloqueadoTitle, Boton.OK, Icono.Warning);
+        }
+
+        public static void MostrarMensajeErrorBorrado(BorradoException ex)
+        {
+            MostrarMensaje(ex.Message, "", Boton.OK, Icono.Warning);
+        }
+
+        #endregion
+
+        #region Funciones para la gestión de la base de datos
+
+        /// <summary>
+        /// Función que comprueba si el usuario tiene acceso a los distintos módulos y en caso
+        /// de tenerlo le crea las conexiones necesarias
+        /// </summary>
+        public static void CrearConexionesAuxiliares()
+        {
+            NpgsqlConnection oConexionPostgres = new NpgsqlConnection(BRSLibBD.cConexionBRSERP);
+
+            try
+            {
+                string cSQL = "SELECT bmodgestion, bmodcontable, bmodtesoreria FROM permisosusuariogrupo WHERE ngrupo_centros_id = " + BRSLib.nGrupoCentros + " AND nusuario_id = " + BRSLib.nUsuario;
+                NpgsqlCommand oComandoPostgres = new NpgsqlCommand(cSQL, oConexionPostgres);
+                NpgsqlDataReader oDataReader;
+
+                oConexionPostgres.Open();
+
+                oDataReader = oComandoPostgres.ExecuteReader();
+                if (oDataReader.Read())
+                {
+                    moduloGestion = Convert.ToBoolean(oDataReader["bmodgestion"]);
+                    moduloTesoreria = Convert.ToBoolean(oDataReader["bmodtesoreria"]);
+                    moduloContabilidad = Convert.ToBoolean(oDataReader["bmodcontable"]);
+                }
+            }
+            catch (Exception ex)
+            {
+                BRSLib.MostrarMensaje(ex.Message + "\n\rBRSLib: CrearConexionesAuxiliares()", " ", Boton.OK, Icono.Error);
+            }
+            finally
+            {
+                if (oConexionPostgres.State == ConnectionState.Open)
+                    oConexionPostgres.Close();
+            }
+        }
+
+        #endregion
+
+        /// <summary>
+        /// Función que recupera el nombre personalizado de una columna
+        /// </summary>
+        /// <param name="cConexion">La cadena de conexión a la base de datos donde se encuentra la columna</param>
+        /// <param name="cNombreTabla">El nombre de la tabla a la que pertenece la columna</param>
+        /// <param name="cNombreColumna">El nombre de la columna a buscar</param>
+        /// <returns>El nombre personalizado de la columna si existe, si no existe devuelve el nombre original</returns>
+        public static string ObtenerCabeceraColumna(string cConexion, string cNombreTabla, string cNombreColumna)
+        {
+            string nombre = "";
+
+            NpgsqlConnection oConexion = new NpgsqlConnection(cConexion);
+            NpgsqlCommand oComando = new NpgsqlCommand(null, oConexion);
+            NpgsqlDataReader oDataReader;
+            string cSQL =
+                "SELECT com.description as comentario, a.attname as columna " +
+                "FROM " +
+                    "pg_attribute a " +
+                "JOIN " +
+                    "pg_class pgc ON pgc.oid = a.attrelid " +
+                "LEFT JOIN " +
+                    "pg_index i ON (pgc.oid = i.indrelid AND i.indkey[0] = a.attnum) " +
+                "LEFT JOIN " +
+                    "pg_description com ON (pgc.oid = com.objoid AND a.attnum = com.objsubid) " +
+                "LEFT JOIN " +
+                    "pg_attrdef def ON (a.attrelid = def.adrelid AND a.attnum = def.adnum) " +
+                "WHERE " +
+                    "a.attnum > 0 AND pgc.oid = a.attrelid AND pg_table_is_visible(pgc.oid) AND NOT a.attisdropped AND lower(pgc.relname) = lower(" + cNombreTabla.Quoted() + ") AND a.attname = (" + cNombreColumna.Quoted() + ") " +
+                "ORDER BY " +
+                    "a.attnum;";
+
+            oConexion.Open();
+
+            oComando.CommandText = cSQL;
+            oDataReader = oComando.ExecuteReader();
+
+            if (oDataReader.HasRows)
+            {
+                oDataReader.Read();
+                string aux = Convert.ToString(oDataReader["comentario"]);
+                if (string.IsNullOrWhiteSpace(aux))
+                { // Si la columna no tiene comentario
+                  // Escribimos el nombre normal de la coluna
+                    nombre = cNombreColumna;
+                }
+                else
+                { // Si la columna tiene comentario
+                  // Hacemos un split por el separador
+                    string[] split = aux.Split(new string[] { ";;" }, StringSplitOptions.RemoveEmptyEntries);
+                    for (int i = 0; i < split.Length; i++)
+                    { // Por cada miembro del split
+                        if (split[i].Split('=')[0] == "Label")
+                        { // Si haciendo un split por = la primera parte es igual a Label
+                          // Guardamos como nombre el contenido
+                            nombre = split[i].Split('=')[1];
+                        }
+                    }
+                    if (string.IsNullOrWhiteSpace(nombre))
+                    { // Si tras terminar todo, nombre está vacío
+                      // Guardamos el nombre normal de la columna
+                        nombre = cNombreColumna;
+                    }
+                }
+            }
+            else
+            {
+                nombre = cNombreColumna;
+            }
+            oDataReader.Close();
+            oConexion.Close();
+
+            return nombre;
+        }
+
+        /// <summary>
+        /// Función que controla si el usuario / grupo tiene permisos para entrar en un módulo o no.
+        /// </summary>
+        /// <param name="_nCodAplicacion"></param>
+        /// <param name="_nCodPrograma"></param>
+        public static void PermitirAccesoModulo(int _nCodAplicacion, int _nCodPrograma)
+        {
+            // Comprobar si el usuario tiene permiso para entrar en la aplicación.
+            string cSQL = "SELECT laccesible FROM perfiles WHERE naplicacion = " + _nCodAplicacion + " AND nprograma = " + _nCodPrograma;
+
+            if (BRSLib.lUsarPerfilGrupo) cSQL += " AND ltipo = 1 AND ncod_grp = " + Convert.ToString(BRSLib.nGrupoUsuario);
+            else cSQL += " AND ltipo = 0 AND nusuario = " + Convert.ToString(BRSLib.nUsuario);
+
+            int nPermiso = BRSLibBD.SelectScalarEntero(BRSLibBD.cConexionBRSERP, cSQL);
+
+            if (nPermiso == 0)
+            {
+                BRSLib.MostrarMensaje("No tiene permisos para acceder a este módulo.");
+                Application.Exit();
+            }
+        }
+
+        public static string MontarErroresValidacion(OrderedDictionary ErroresValidacion)
+        {
+            string cMensaje = "";
+            bool lResumen = false;
+            if (ErroresValidacion.Count > 4)
+                lResumen = true;
+            if (ErroresValidacion.Count > 0)
+            {
+                cMensaje += "Se detectaron los siguientes conflictos:";
+                for (int i = 0; i < ErroresValidacion.Count; i++)
+                {
+                    if (i < 3)
+                    {
+                        cMensaje += "\n - " + ErroresValidacion[i];
+                    }
+                    else
+                    {
+                        if (lResumen)
+                            cMensaje += "\n - " + (ErroresValidacion.Count - 3) + " conflictos más detectados";
+                        else
+                            cMensaje += "\n - " + ErroresValidacion[i];
+                        break;
+                    }
+                }
+            }
+            return cMensaje;
+        }
+
+        public static void MostrarMensajeErrorValidacion(OrderedDictionary _erroresValidacion, Control.ControlCollection _oControles = null)
+        {
+            string mensajeError = MontarErroresValidacion(_erroresValidacion);
+            BRSLib.MostrarMensaje(mensajeError, "Compruebe los datos insertados", BRSLib.Boton.OK, BRSLib.Icono.Warning);
+
+            bool romper = false;
+            if (_oControles != null)
+            {
+                foreach (Control oControl in _oControles.Cast<Control>().OrderBy(c => c.TabIndex))
+                {
+                    if (!romper)
+                    {
+                        if (oControl is RadGroupBox)
+                        {
+                            if (!romper)
+                            {
+                                foreach (Control oControl2 in (oControl as RadGroupBox).Controls.Cast<Control>().OrderBy(c => c.TabIndex))
+                                {
+                                    if (!romper)
+                                    {
+                                        if (!oControl2.Name.StartsWith("lbl") && _erroresValidacion.Contains(oControl2.Name.Substring(3)))
+                                        {
+                                            oControl2.Focus();
+                                            romper = true;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        else
+                        {
+                            if (!romper)
+                            {
+                                if (!oControl.Name.StartsWith("lbl") && _erroresValidacion.Contains(oControl.Name.Substring(3)))
+                                {
+                                    oControl.Focus();
+                                    romper = true;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        #region Funciones de control de la posición y el tamaño de las ventanas
+
+        /// <summary>
+        /// Función para ajustar el tamaño de una ventana
+        /// </summary>
+        /// <param name="_formulario">El formulario que queremos redimensionar</param>
+        /// <param name="_min">El tamaño mínimo para la ventana</param>
+        /// <param name="_max">El tamaño máximo para la ventana</param>
+        public static void FijarTamanoVentana(RadForm _formulario, Size? _min = null, Size? _max = null)
+        {
+            _formulario.MaximumSize = _formulario.MinimumSize = _formulario.Size;
+            if (_min != null) _formulario.MinimumSize = (Size)_min;
+            if (_max != null) _formulario.MaximumSize = (Size)_max;
+        }
+
+        /// <summary>
+        /// Función para guardar las propiedades de posición y tamaño de un formulario
+        /// </summary>
+        /// <param name="_Formulario"></param>
+        public static void GuardarEstadoFormulario(RadForm _Formulario)
+        {
+            if (nUsuario != -1)
+            {
+                try
+                {
+                    string configJson = BRSLib.cRutaXML + "\\" + BRSLib.nUsuario + "_config.json";
+
+                    Dictionary<string, Dictionary<string, string>> listaJson;
+                    if (File.Exists(configJson))
+                    { // Si el json existe cargamos su contenido
+                        listaJson = JsonConvert.DeserializeObject<Dictionary<string, Dictionary<string, string>>>(File.ReadAllText(configJson));
+                    }
+                    else
+                    { // Si no existe creamos una nueva lista
+                        listaJson = new Dictionary<string, Dictionary<string, string>>();
+                    }
+
+                    string formName = BRSLib.COD_APLICACIONACTIVA + "_" + _Formulario.Name;
+                    string formPrincipal = BRSLib.COD_APLICACIONACTIVA + "_" + "frmPrincipal";
+
+                    if (listaJson.ContainsKey(formName))
+                    { // Si el formulario existe en el json
+                        if (_Formulario.WindowState != FormWindowState.Maximized && _Formulario.WindowState != FormWindowState.Minimized)
+                        { // Si el formulario no está maximizado actualizamos su posición y tamaño
+                            listaJson[formName]["location"] = _Formulario.Location.X + ";" + _Formulario.Location.Y;
+                            listaJson[formName]["size"] = _Formulario.Size.Width + ";" + _Formulario.Size.Height;
+                        }
+
+                        if (_Formulario.Name == "frmPrincipal")
+                        { // Si el formulario es el principal, actualizamos si está maximizado
+                            listaJson[formName]["maximized"] = (_Formulario.WindowState == FormWindowState.Maximized).ToString();
+                        }
+                        else
+                        {
+                            if (listaJson.ContainsKey(formPrincipal))
+                            {
+                                listaJson[formPrincipal]["maximizemdi"] = (_Formulario.WindowState == FormWindowState.Maximized).ToString();
+                            }
+                            else
+                            {
+                                Dictionary<string, string> propiedadesPrincipal = new Dictionary<string, string>
+                                {
+                                    { "maximizemdi", (_Formulario.WindowState == FormWindowState.Maximized).ToString() }
+                                };
+                                listaJson.Add(formPrincipal, propiedadesPrincipal);
+                            }
+                        }
+                    }
+                    else
+                    { // Si el formulario no existe en el json
+
+                        // Creamos un nuevo formulario y le añadimos las propiedades
+                        Dictionary<string, string> propiedades = new Dictionary<string, string>();
+
+                        if (_Formulario.WindowState != FormWindowState.Maximized && _Formulario.WindowState != FormWindowState.Minimized)
+                        { // Si el formulario no está maximizado, añadimos su posición y tamaño
+                            propiedades.Add("location", _Formulario.Location.X + ";" + _Formulario.Location.Y);
+                            propiedades.Add("size", _Formulario.Size.Width + ";" + _Formulario.Size.Height);
+                        }
+
+                        if (_Formulario.Name == "frmPrincipal")
+                        { // Si el formulario es el principal, añadimos si está maximizado
+                            propiedades.Add("maximized", (_Formulario.WindowState == FormWindowState.Maximized).ToString());
+                        }
+                        else
+                        {
+                            if (listaJson.ContainsKey(formPrincipal))
+                            {
+                                listaJson[formPrincipal]["maximizemdi"] = (_Formulario.WindowState == FormWindowState.Maximized).ToString();
+                            }
+                            else
+                            {
+                                Dictionary<string, string> propiedadesPrincipal = new Dictionary<string, string>
+                                {
+                                    { "maximizemdi", (_Formulario.WindowState == FormWindowState.Maximized).ToString() }
+                                };
+                                listaJson.Add(formPrincipal, propiedadesPrincipal);
+                            }
+                        }
+
+                        // Añadimos el formulario al json
+                        listaJson.Add(formName, propiedades);
+                    }
+
+                    string json = JsonConvert.SerializeObject(listaJson, Newtonsoft.Json.Formatting.Indented);
+                    File.WriteAllText(configJson, json);
+                }
+                catch (Exception)
+                {
+                }
+            }
+        }
+
+
+        /// <summary>
+        /// Función para cargar las propiedades de posición y tamaño de un formulario
+        /// </summary>
+        /// <param name="_Formulario"></param>
+        public static void CargarEstadoFormulario(RadForm _Formulario)
+        {
+            try
+            {
+                string configJson = BRSLib.cRutaXML + "\\" + BRSLib.nUsuario + "_config.json";
+                if (File.Exists(configJson))
+                {
+                    Dictionary<string, Dictionary<string, string>> listaJson = JsonConvert.DeserializeObject<Dictionary<string, Dictionary<string, string>>>(File.ReadAllText(configJson));
+
+                    string formName = BRSLib.COD_APLICACIONACTIVA + "_" + _Formulario.Name;
+                    string formPrincipal = BRSLib.COD_APLICACIONACTIVA + "_" + "frmPrincipal";
+
+                    if (listaJson.ContainsKey(formName))
+                    {
+                        if (listaJson[formName].ContainsKey("location") && !string.IsNullOrWhiteSpace(listaJson[formName]["location"]))
+                        {
+                            Point cLocation = RecuperarPoint(listaJson[formName]["location"]);
+                            _Formulario.Location = cLocation;
+                        }
+                        if (listaJson[formName].ContainsKey("size") && !string.IsNullOrWhiteSpace(listaJson[formName]["size"]))
+                        {
+                            Size cSize = RecuperarSize(listaJson[formName]["size"]);
+                            _Formulario.Size = cSize;
+                        }
+
+                        if (_Formulario.Name == "frmPrincipal")
+                        {
+                            if (listaJson[formName].ContainsKey("maximized") && !string.IsNullOrWhiteSpace(listaJson[formName]["maximized"]))
+                            {
+                                if (listaJson[formName]["maximized"] == "True")
+                                    _Formulario.WindowState = FormWindowState.Maximized;
+                            }
+                        }
+                        else
+                        {
+                            if (listaJson[formPrincipal].ContainsKey("maximizemdi") && !string.IsNullOrWhiteSpace(listaJson[formPrincipal]["maximizemdi"]))
+                            {
+                                if (listaJson[formPrincipal]["maximizemdi"] == "True")
+                                    _Formulario.WindowState = FormWindowState.Maximized;
+                            }
+                        }
+
+                        int formX1 = _Formulario.Location.X;
+                        int formX2 = _Formulario.Location.X + _Formulario.Size.Width;
+                        int formY1 = _Formulario.Location.Y;
+                        int formY2 = _Formulario.Location.Y + _Formulario.Size.Height;
+
+                        if (_Formulario.IsMdiChild)
+                        { // Si es un formulario de tipo MDI
+                            Size mdiClientSize = GetMdiClientWindow(_Formulario.MdiParent).Size;
+
+                            if (formX2 <= 50 ||
+                                formX1 >= mdiClientSize.Width - 50 ||
+                                formY2 <= 50 ||
+                                formY1 >= mdiClientSize.Height - 50)
+                            {
+                                _Formulario.Location = new Point(mdiClientSize.Width / 2 - _Formulario.Size.Width / 2, mdiClientSize.Height / 2 - _Formulario.Size.Height / 2);
+                            }
+
+                            if (_Formulario.Size.Width > mdiClientSize.Width
+                                || _Formulario.Size.Height > mdiClientSize.Height)
+                            {
+                                _Formulario.Size = new Size(mdiClientSize.Width - 20, mdiClientSize.Height - 20);
+                                _Formulario.Location = new Point(mdiClientSize.Width / 2 - _Formulario.Size.Width / 2, mdiClientSize.Height / 2 - _Formulario.Size.Height / 2);
+                            }
+                        }
+                        else
+                        {
+                            Size areaPantallas = new Size(SystemInformation.VirtualScreen.Width, SystemInformation.VirtualScreen.Height);
+                        }
+                    }
+                }
+            }
+            catch (Exception)
+            {
+            }
+        }
+
+
+        private static Point RecuperarPoint(string point)
+        {
+            return new Point(Convert.ToInt32(point.Split(';')[0]), Convert.ToInt32(point.Split(';')[1]));
+        }
+
+
+        private static Size RecuperarSize(string size)
+        {
+            return new Size(Convert.ToInt32(size.Split(';')[0]), Convert.ToInt32(size.Split(';')[1]));
+        }
+
+
+        private static MdiClient GetMdiClientWindow(Form _Formulario)
+        {
+            foreach (Control ctl in _Formulario.Controls)
+            {
+                if (ctl is MdiClient) return ctl as MdiClient;
+            }
+            return null;
+        }
+
+        #endregion
+
+        #region Funciones de log que se ejecutan desde BRSLib y no desde BRSLog
+
+        /// <summary>
+        /// Función que escribe un mensaje en el archivo de depuración siempre que este esté activo
+        /// </summary>
+        /// <param name="_mensaje">El mensaje que queremos escribir</param>
+        /// <param name="_clase">A que clase pertenece el mensaje</param>
+        /// <param name="_funcion">A que función pertenece el mensaje</param>
+        /// <param name="_palabra">Palabra clave del mensaje</param>
+        /// <param name="_palabraPersonalizada">Palabra clave personalizada en caso de no estar en la lista</param>
+        /// <param name="_lineaVacia">Si queremos dejar una línea vacía antes o despues</param>
+        /// <param name="_ex">Mensaje de excepción si es un log de error</param>
+        /// <param name="_oComando">Comando de la consulta para analizar la base de datos donde se ejecuta</param>
+        public static void WriteLogDebug(string _mensaje, string _clase, string _funcion, BRSLog.PALABRA_CLAVE _palabra = BRSLog.PALABRA_CLAVE.LOG, string _palabraPersonalizada = "", BRSLog.LINEAVACIA _lineaVacia = BRSLog.LINEAVACIA.NO, Exception _ex = null, IDbCommand _oComando = null)
+        {
+            if (log_debug != null)
+            {
+                log_debug.WriteLineDebug(_mensaje, _clase, _funcion, _palabra, _palabraPersonalizada, _lineaVacia, _ex, _oComando);
+            }
+        }
+
+        public static void WriteLogDebug_Click(string _clase, string _funcion)
+        {
+            BRSLib.WriteLogDebug("", _clase, _funcion, BRSLog.PALABRA_CLAVE.CLICK, "", BRSLog.LINEAVACIA.ANTES);
+        }
+
+        public static void WriteLogDebug_Constructor(string _clase)
+        {
+            BRSLib.WriteLogDebug("", _clase, _clase, BRSLog.PALABRA_CLAVE.CONSTRUCTOR, "", BRSLog.LINEAVACIA.ANTES);
+        }
+
+        public static void WriteLogDebug_Load(string _clase, short? Modo = null)
+        {
+            string cModo = Modo == null ? "" : Convert.ToString(Modo);
+            BRSLib.WriteLogDebug(cModo, _clase, _clase + "_Load", BRSLog.PALABRA_CLAVE.ABRIR, "", BRSLog.LINEAVACIA.ANTES);
+        }
+
+        public static void WriteLogDebug_Activated(string _clase)
+        {
+            BRSLib.WriteLogDebug("", _clase, _clase + "_Activated", BRSLog.PALABRA_CLAVE.ACTIVAR, "", BRSLog.LINEAVACIA.ANTES);
+        }
+
+        public static void WriteLogDebug_Close(string _clase)
+        {
+            BRSLib.WriteLogDebug("", _clase, _clase + "_FormClosed", BRSLog.PALABRA_CLAVE.CERRAR, "", BRSLog.LINEAVACIA.DESPUES);
+        }
+
+        #endregion
+
+        #region Funciones para la gestión de la base de datos
+
+        /// <summary>
+        /// Función que devuelve un único valor de una consulta como un entero
+        /// </summary>
+        /// <param name="cSQL">La consulta que queremos realizar</param>
+        /// <param name="aoParametros">Un array con los parámetros de la consulta, si los tuviera</param>
+        /// <param name="cConexion">La cadena de conexión si la consulta no se encuentra en una transacción</param>
+        /// <param name="oComando">El comando en el caso de que la consulta se encuentre en una transacción</param>
+        /// <param name="log">Si queremos imprimir la consulta en el archivo de depuración</param>
+        /// <param name="anexarLog"></param>
+        /// <returns>El valor recuperado como un entero. Si el valor es nulo devuelve 0</returns>
+        public static int SelectScalarEntero(string cSQL, object[] aoParametros = null, string cConexion = null, NpgsqlCommand oComando = null, bool log = true, string anexarLog = "")
+        {
+            string resultadoString = SelectScalarCadena(cSQL, aoParametros, cConexion, oComando, "Entero", log, anexarLog);
+            int resultado;
+            if (string.IsNullOrWhiteSpace(resultadoString))
+                resultado = 0;
+            else
+                resultado = Convert.ToInt32(resultadoString);
+
+            return resultado;
+        }
+
+        /// <summary>
+        /// Función que devuelve un único valor de una consulta como un entero con posibilidad de ser nulo
+        /// </summary>
+        /// <param name="cSQL">La consulta que queremos realizar</param>
+        /// <param name="aoParametros">Un array con los parámetros de la consulta, si los tuviera</param>
+        /// <param name="cConexion">La cadena de conexión si la consulta no se encuentra en una transacción</param>
+        /// <param name="oComando">El comando en el caso de que la consulta se encuentre en una transacción</param>
+        /// <param name="log">Si queremos imprimir la consulta en el archivo de depuración</param>
+        /// <returns>El valor recuperado como un entero o un valor nulo</returns>
+        public static int? SelectScalarEnteroNulo(string cSQL, object[] aoParametros = null, string cConexion = null, NpgsqlCommand oComando = null, bool log = true)
+        {
+            string resultadoString = SelectScalarCadena(cSQL, aoParametros, cConexion, oComando, "EnteroNulo", log);
+            int? resultado;
+            if (string.IsNullOrWhiteSpace(resultadoString))
+                resultado = null;
+            else
+                resultado = Convert.ToInt32(resultadoString);
+
+            return resultado;
+        }
+
+
+        /// <summary>
+        /// Función que devuelve un único valor de una consulta como un decimal
+        /// </summary>
+        /// <param name="cSQL">La consulta que queremos realizar</param>
+        /// <param name="aParametros">Los parámetros de la consulta, si los tuviera</param>
+        /// <param name="cConexion">La cadena de conexión si la consulta no se encuentra en una transacción</param>
+        /// <param name="oComando">El comando en el caso de que la consulta se encuentre en una transacción</param>
+        /// <param name="log">Queremos que se registre el log o no</param>
+        /// <returns>El valor recuperado como un decimal. Si el valor es nulo devuelve 0</returns>
+        public static decimal SelectScalarDecimal(string cSQL, object[] aParametros = null, string cConexion = null, NpgsqlCommand oComando = null, bool log = true)
+        {
+            string resultadoString = SelectScalarCadena(cSQL, aParametros, cConexion, oComando, "Decimal", log);
+            decimal resultado;
+            if (string.IsNullOrWhiteSpace(resultadoString))
+                resultado = 0;
+            else
+                resultado = Convert.ToDecimal(resultadoString);
+
+            return resultado;
+        }
+
+        /// <summary>
+        /// Función que devuelve un único valor de una consulta como un decimal con posibilidad de ser nulo
+        /// </summary>
+        /// <param name="cSQL">La consulta que queremos realizar</param>
+        /// <param name="aParametros">Los parámetros de la consulta, si los tuviera</param>
+        /// <param name="cConexion">La cadena de conexión si la consulta no se encuentra en una transacción</param>
+        /// <param name="oComando">El comando en el caso de que la consulta se encuentre en una transacción</param>
+        /// <param name="log">Queremos que se registre el log o no</param>
+        /// <returns>El valor recuperado como un decimal o un valor nulo</returns>
+        public static decimal? SelectScalarDecimalNulo(string cSQL, object[] aParametros = null, string cConexion = null, NpgsqlCommand oComando = null, bool log = true)
+        {
+            string resultadoString = SelectScalarCadena(cSQL, aParametros, cConexion, oComando, "DecimalNulo", log);
+            decimal? resultado;
+            if (string.IsNullOrWhiteSpace(resultadoString))
+                resultado = null;
+            else
+                resultado = Convert.ToDecimal(resultadoString);
+
+            return resultado;
+        }
+
+        /// <summary>
+        /// Función que devuelve un único valor de una consulta como un boolean
+        /// </summary>
+        /// <param name="cSQL">La consulta que queremos realizar</param>
+        /// <param name="aParametros">Los parámetros de la consulta, si los tuviera</param>
+        /// <param name="cConexion">La cadena de conexión si la consulta no se encuentra en una transacción</param>
+        /// <param name="oComando">El comando en el caso de que la consulta se encuentre en una transacción</param>
+        /// <param name="log">Queremos que se registre en el log o no</param>
+        /// <returns>El valor recuperado como un boolean</returns>
+        public static bool SelectScalarBoolean(string cSQL, object[] aParametros = null, string cConexion = null, NpgsqlCommand oComando = null, bool log = true)
+        {
+            string resultadoString = SelectScalarCadena(cSQL, aParametros, cConexion, oComando, "Boolean", log);
+            bool resultado;
+            if (string.IsNullOrWhiteSpace(resultadoString))
+                resultado = false;
+            else
+                resultado = Convert.ToBoolean(resultadoString);
+
+            return resultado;
+        }
+
+        /// <summary>
+        /// Función que devuelve un único valor de una consulta como un boolean con posibilidad de ser nulo
+        /// </summary>
+        /// <param name="cSQL">La consulta que queremos realizar</param>
+        /// <param name="aParametros">Los parámetros de la consulta, si los tuviera</param>
+        /// <param name="cConexion">La cadena de conexión si la consulta no se encuentra en una transacción</param>
+        /// <param name="oComando">El comando en el caso de que la consulta se encuentre en una transacción</param>
+        /// <param name="log">Queremos que se registre en el log o no</param>
+        /// <returns>El valor recuperado como un boolean</returns>
+        public static bool? SelectScalarBooleanNulo(string cSQL, object[] aParametros = null, string cConexion = null, NpgsqlCommand oComando = null, bool log = true)
+        {
+            string resultadoString = SelectScalarCadena(cSQL, aParametros, cConexion, oComando, "BooleanNulo", log);
+            bool? resultado;
+            if (string.IsNullOrWhiteSpace(resultadoString))
+                resultado = null;
+            else
+                resultado = Convert.ToBoolean(resultadoString);
+
+            return resultado;
+        }
+
+        /// <summary>
+        /// Función que devuelve un único valor de una consulta como datetime
+        /// </summary>
+        /// <param name="cSQL">La consulta que queremos realizar</param>
+        /// <param name="aParametros">Los parámetros de la consulta, si los tuviera</param>
+        /// <param name="cConexion">La cadena de conexión si la consulta no se encuentra en una transacción</param>
+        /// <param name="oComando">El comando en el caso de que la consulta se encuentre en una transacción</param>
+        /// <param name="log">Queremos que se registre en el log o no</param>
+        /// <returns>El valor recuperado como datetime</returns>
+        public static DateTime SelectScalarDateTime(string cSQL, object[] aParametros = null, string cConexion = null, NpgsqlCommand oComando = null, bool log = true)
+        {
+            string resultadoString = SelectScalarCadena(cSQL, aParametros, cConexion, oComando, "DateTime", log);
+
+            return Convert.ToDateTime(resultadoString);
+        }
+
+        /// <summary>
+        /// Función que devuelve un único valor de una consulta como cadena
+        /// </summary>
+        /// <param name="cSQL">La consulta que queremos realizar</param>
+        /// <param name="aoParametros">Un array con los parámetros de la consulta, si los tuviera</param>
+        /// <param name="cConexion">La cadena de conexión si la consulta no se encuentra en una transacción</param>
+        /// <param name="oComando">El comando en el caso de que la consulta se encuentre en una transacción</param>
+        /// <param name="tipoDevuelto"></param>
+        /// <param name="log">Si queremos imprimir la consulta en el archivo de depuración</param>
+        /// <param name="anexarLog"></param>
+        /// <returns>El valor recuperado como cadena</returns>
+        public static string SelectScalarCadena(string cSQL, object[] aoParametros = null, string cConexion = null, NpgsqlCommand oComando = null, string tipoDevuelto = "Cadena", bool log = true, string anexarLog = "")
+        {
+            NpgsqlConnection oConexionPostgres = null;
+            NpgsqlCommand oComandoPostgres = null;
+            string cadena = "";
+
+            if (oComando != null)
+            {
+                oComandoPostgres = oComando;
+                oComandoPostgres.CommandText = cSQL;
+            }
+            else
+            {
+                oConexionPostgres = new NpgsqlConnection(cConexion);
+                oComandoPostgres = new NpgsqlCommand(cSQL, oConexionPostgres);
+            }
+
+            try
+            {
+                if (aoParametros != null)
+                {
+                    for (int i = 0; i < aoParametros.Length; i++)
+                    {
+                        oComandoPostgres.Parameters.Add(new NpgsqlParameter("param" + i, aoParametros[i]));
+                    }
+                }
+                if (oConexionPostgres != null) oConexionPostgres.Open();
+
+                if (log)
+                    BRSLib.WriteLogDebug(AnalizarNpgsqlCommand(oComandoPostgres) + (string.IsNullOrWhiteSpace(anexarLog) ? "" : " --> " + anexarLog), "BRSLib", System.Reflection.MethodBase.GetCurrentMethod().Name + tipoDevuelto, BRSLog.PALABRA_CLAVE.CONSULTA, "", BRSLog.LINEAVACIA.NO, null, oComandoPostgres);
+
+                cadena = Convert.ToString(oComandoPostgres.ExecuteScalar());
+            }
+            catch (Exception ex)
+            {
+                cadena = "";
+                BRSLib.WriteLogDebug("Error al buscar el valor de un campo", "BRSLib", System.Reflection.MethodBase.GetCurrentMethod().Name + tipoDevuelto, BRSLog.PALABRA_CLAVE.ERROR_EXCEPCION, "", BRSLog.LINEAVACIA.NO, ex);
+                BRSLib.MostrarMensaje(ex.Message + "\n\rBRSLib : SelectScalar" + tipoDevuelto + "()", " ", BRSLib.Boton.OK, BRSLib.Icono.Error);
+            }
+            finally
+            {
+                if (oConexionPostgres != null && oConexionPostgres.State == ConnectionState.Open)
+                    oConexionPostgres.Close();
+            }
+
+            return cadena;
+        }
+
+        /// <summary>
+        /// Función que devuelve un único valor de una consulta como objeto
+        /// </summary>
+        /// <param name="cSQL">La consulta que queremos realizar</param>
+        /// <param name="aParametros">Los parámetros de la consulta, si los tuviera</param>
+        /// <param name="cConexion">La cadena de conexión si la consulta no se encuentra en una transacción</param>
+        /// <param name="oComando">El comando en el caso de que la consulta se encuentre en una transacción</param>
+        /// <param name="log"></param>
+        /// <returns>El valor recuperado como objeto</returns>
+        public static object SelectScalar(string cSQL, object[] aParametros = null, string cConexion = null, NpgsqlCommand oComando = null, bool log = true)
+        {
+            NpgsqlConnection oConexionPostgres = null;
+            NpgsqlCommand oComandoPostgres = null;
+            object cadena;
+
+            if (oComando != null)
+            {
+                oComandoPostgres = oComando;
+                oComandoPostgres.CommandText = cSQL;
+            }
+            else
+            {
+                oConexionPostgres = new NpgsqlConnection(cConexion);
+                oComandoPostgres = new NpgsqlCommand(cSQL, oConexionPostgres);
+            }
+
+            try
+            {
+                if (aParametros != null)
+                {
+                    for (int i = 0; i < aParametros.Length; i++)
+                    {
+                        oComandoPostgres.Parameters.Add(new NpgsqlParameter("param" + i, aParametros[i]));
+                    }
+                }
+                if (oConexionPostgres != null) oConexionPostgres.Open();
+
+                BRSLib.WriteLogDebug(AnalizarNpgsqlCommand(oComandoPostgres), "BRSLib", System.Reflection.MethodBase.GetCurrentMethod().Name, BRSLog.PALABRA_CLAVE.CONSULTA, "", BRSLog.LINEAVACIA.NO, null, oComandoPostgres);
+
+                cadena = oComandoPostgres.ExecuteScalar();
+            }
+            catch (Exception ex)
+            {
+                cadena = null;
+                BRSLib.WriteLogDebug("Error al buscar el valor de un campo", "BRSLib", System.Reflection.MethodBase.GetCurrentMethod().Name, BRSLog.PALABRA_CLAVE.ERROR_EXCEPCION, "", BRSLog.LINEAVACIA.NO, ex);
+                BRSLib.MostrarMensaje(ex.Message + "\n\rBRSLib : SelectScalar()", " ", BRSLib.Boton.OK, BRSLib.Icono.Error);
+            }
+            finally
+            {
+                if (oConexionPostgres != null && oConexionPostgres.State == ConnectionState.Open)
+                    oConexionPostgres.Close();
+            }
+
+            return cadena;
+        }
+
+
+
+        public static string AnalizarNpgsqlCommand(NpgsqlCommand oComando)
+        {
+            string l = oComando.CommandText;
+            for (int i = 0; i < oComando.Parameters.Count; i++)
+            {
+                var regex = new Regex(":" + oComando.Parameters[i].ParameterName);
+                try
+                {
+                    string valor;
+                    if (oComando.Parameters[i].NpgsqlValue.GetType().UnderlyingSystemType.Name == "DBNull")
+                        valor = "null";
+                    else
+                        valor = "'" + oComando.Parameters[i].NpgsqlValue.ToString() + "'";
+                    l = regex.Replace(l, valor, 1);
+                }
+                catch (Exception) { }
+            }
+            return l;
+        }
+
+        /// <summary>
+        /// Función para lanzar una consulta que no devuelve resultado
+        /// </summary>
+        /// <param name="cSQL">La consulta que queremos realizar</param>
+        /// <param name="aParametros">Los parámetros de la consulta, si los tuviera</param>
+        /// <param name="cConexion">La cadena de conexión si la consulta no se encuentra en una transacción</param>
+        /// <param name="oComando">El comando en el caso de que la consulta se encuentre en una transacción</param>
+        /// <param name="lanzarExcepcion"></param>
+        /// <returns>El número de filas afectadas</returns>
+        public static int LanzarNonQuery(string cSQL, object[] aParametros = null, string cConexion = null, NpgsqlCommand oComando = null, bool lanzarExcepcion = false)
+        {
+            NpgsqlConnection oConexionPostgres = null;
+            NpgsqlCommand oComandoPostgres = null;
+            int filasAfectadas = -1;
+
+            if (oComando != null)
+            {
+                oComandoPostgres = oComando;
+                oComandoPostgres.CommandText = cSQL;
+            }
+            else
+            {
+                oConexionPostgres = new NpgsqlConnection(cConexion);
+                oComandoPostgres = new NpgsqlCommand(cSQL, oConexionPostgres);
+            }
+
+            try
+            {
+                if (aParametros != null)
+                {
+                    for (int i = 0; i < aParametros.Length; i++)
+                    {
+                        oComandoPostgres.Parameters.Add(new NpgsqlParameter("param" + i, aParametros[i]));
+                    }
+                }
+                if (oConexionPostgres != null) oConexionPostgres.Open();
+
+                BRSLog.PALABRA_CLAVE palabraClave;
+                switch (oComandoPostgres.CommandText.Substring(0, 6).ToUpper())
+                {
+                    case "SELECT": palabraClave = BRSLog.PALABRA_CLAVE.CONSULTA; break;
+                    case "INSERT": palabraClave = BRSLog.PALABRA_CLAVE.INSERTAR; break;
+                    case "UPDATE": palabraClave = BRSLog.PALABRA_CLAVE.ACTUALIZAR; break;
+                    case "DELETE": palabraClave = BRSLog.PALABRA_CLAVE.BORRAR; break;
+                    default: palabraClave = BRSLog.PALABRA_CLAVE.LOG; break;
+                }
+
+                BRSLib.WriteLogDebug(AnalizarNpgsqlCommand(oComandoPostgres), "BRSLib", "LanzarNonQuery", palabraClave, "", BRSLog.LINEAVACIA.NO, null, oComandoPostgres);
+                filasAfectadas = oComandoPostgres.ExecuteNonQuery();
+            }
+            catch (Exception ex)
+            {
+                BRSLib.WriteLogDebug("Error al lanzar una consulta", "BRSLib", "LanzarNonQuery", BRSLog.PALABRA_CLAVE.ERROR_EXCEPCION, "", BRSLog.LINEAVACIA.NO, ex);
+                if (lanzarExcepcion)
+                    throw ex;
+                else
+                    BRSLib.MostrarMensaje(ex.Message + "\n\rBRSLib: LanzarNonQuery()", " ", Boton.OK, Icono.Error);
+            }
+            finally
+            {
+                if (oConexionPostgres != null && oConexionPostgres.State == ConnectionState.Open)
+                    oConexionPostgres.Close();
+            }
+
+            return filasAfectadas;
+        }
+
+
+
+
+
+        /// <summary>
+        /// Función para seleccionar un registro de la base de datos
+        /// </summary>
+        /// <param name="cSQL">Consulta sql a lanzar en la base de datos</param>
+        /// <param name="aParametros">Array de objetos con los parámetros de la consulta</param>
+        /// <param name="cConexion">Array de objetos con los parámetros de la consulta</param>
+        /// <param name="oComando">Objeto comando en caso de querer realizar una consulta dentro de una transacción</param>
+        /// <param name="AnadirClaveAColumnas"></param>
+        /// <returns>Un objeto BRSRegistro con los datos de la consulta</returns>
+        public static BRSRegistro SeleccionarRegistro(string cSQL, object[] aParametros = null, string cConexion = null, NpgsqlCommand oComando = null, bool AnadirClaveAColumnas = true)
+        {
+            BRSRegistro registro = null;
+
+            NpgsqlConnection oConexionPostgres = null;
+            NpgsqlCommand oComandoPostgres = null;
+            NpgsqlDataReader oDataReader;
+
+            string tabla = null;
+            string[] acClavePrimaria = null;
+
+            if (AnadirClaveAColumnas)
+                cSQL = AnadirClaveAConsulta(cSQL, acClavePrimaria);
+
+            if (oComando != null)
+            { // Si trae un comando, lo usaremos para mantener las transacciones
+                oComandoPostgres = oComando;
+                oComandoPostgres.CommandText = cSQL;
+            }
+            else
+            { // Si no trae comando, creamos una conexión nueva
+                oConexionPostgres = new NpgsqlConnection(cConexion);
+                oComandoPostgres = new NpgsqlCommand(cSQL, oConexionPostgres);
+            }
+
+            tabla = ObtenerNombreTabla(cSQL);
+            if (!string.IsNullOrWhiteSpace(tabla))
+            { // Si recuperamos el nombre de la tabla usada en la consulta, buscamos su clave primaria
+                string conexion = oComando != null ? oComando.Connection.ConnectionString : cConexion;
+                acClavePrimaria = ObtenerClavePrimaria(tabla, conexion);
+            }
+
+            try
+            {
+                if (aParametros != null)
+                { // Si trae parámetros
+                    for (int i = 0; i < aParametros.Length; i++)
+                    { // Por cada parámetro
+                        Object aux;
+                        if (aParametros[i] is string)
+                        { // Si el parámetro es una cadena, si la cadena está vacía guardamos nulo si no guardamos la cadena
+                            aux = string.IsNullOrWhiteSpace(Convert.ToString(aParametros[i])) ? DBNull.Value : aParametros[i];
+                        }
+                        else
+                        { // Si el parámetro no es una cadena, si está nulo guardamos nulo, si no guardamos el parametro
+                            // Esto es lo mismo que lo de abajo: aux = aParametros[i] == null ? DBNull.Value : aParametros[i];
+                            aux = aParametros[i] ?? DBNull.Value;
+                        }
+                        oComandoPostgres.Parameters.Add(new NpgsqlParameter("param" + i, aux));
+                    }
+                }
+                if (oConexionPostgres != null)
+                { // Si traía conexión, la abrimos
+                    oConexionPostgres.Open();
+                }
+                BRSLib.WriteLogDebug(AnalizarNpgsqlCommand(oComandoPostgres), "BRSLib", System.Reflection.MethodBase.GetCurrentMethod().Name, BRSLog.PALABRA_CLAVE.CONSULTA, "", BRSLog.LINEAVACIA.NO, null, oComandoPostgres);
+
+                oDataReader = oComandoPostgres.ExecuteReader();
+                if (oDataReader.HasRows)
+                { // Si el datareader trae filas
+                    oDataReader.Read();
+                    registro = new BRSRegistro
+                    {
+                        Indice = 0
+                    };
+                    for (int i = 0; i < oDataReader.FieldCount; i++)
+                    { // Por cada campo en la consulta, insertamos un nuevo campo en el registro
+                        registro.insertKey(Convert.ToString(oDataReader.GetName(i)), oDataReader[i]);
+                    }
+                }
+                else
+                { // Si el datareader no trae filas
+                    registro = new BRSRegistro
+                    {
+                        Vacio = true,
+                        Indice = 0
+                    };
+                    for (int i = 0; i < oDataReader.FieldCount; i++)
+                    { // Por cada campo en la consulta, insertamos un nuevo campo en el registro
+                        registro.insertKey(Convert.ToString(oDataReader.GetName(i)), null);
+                    }
+                }
+
+                registro.NombreTabla = tabla;
+                registro.cConexion = oComandoPostgres.Connection.ConnectionString;
+                if (!string.IsNullOrWhiteSpace(registro.NombreTabla))
+                { // Si recuperamos el nombre de la tabla usada en la consulta, buscamos su clave primaria
+                    registro.ClavePrimaria = acClavePrimaria;
+                }
+            }
+            catch (NpgsqlException ex)
+            { // Si captura una excepción de Npgsql
+                if (ex.Code == Excepciones.CodErrorRegistroBloqueado)
+                { // Si el error es el producido por un registro bloqueado
+                    throw new RegistroBloqueadoException();
+                    //throw new Exception(Cadenas.RegistroBloqueadoException);
+                }
+                else
+                { // Si es cualquier otro error
+                    BRSLib.WriteLogDebug("Error al seleccionar un registro", "BRSLib", System.Reflection.MethodBase.GetCurrentMethod().Name, BRSLog.PALABRA_CLAVE.ERROR_EXCEPCION, "", BRSLog.LINEAVACIA.NO, ex);
+                    BRSLib.MostrarMensaje(ex.Message + "\n\rBRSLib :LoadModificar()", " ", BRSLib.Boton.OK, BRSLib.Icono.Error);
+                    oDataReader = null;
+                }
+            }
+            catch (Exception ex)
+            { // Si captura cualquier otro tipo de excepción
+                BRSLib.WriteLogDebug("Error al seleccionar un registro", "BRSLib", System.Reflection.MethodBase.GetCurrentMethod().Name, BRSLog.PALABRA_CLAVE.ERROR_EXCEPCION, "", BRSLog.LINEAVACIA.NO, ex);
+                BRSLib.MostrarMensaje(ex.Message + "\n\rBRSLib: SeleccionarRegistro()", " ", Boton.OK, Icono.Error);
+                oDataReader = null;
+            }
+
+            if (oDataReader != null)
+            { // Si el datareader no es nulo lo cerramos
+                oDataReader.Close();
+            }
+            if (oConexionPostgres != null && oConexionPostgres.State == ConnectionState.Open)
+            { // Si la conexión no es nula y está abierta la cerramos
+                oConexionPostgres.Close();
+            }
+
+            return registro;
+        }
+
+        /// <summary>
+        /// Función para seleccionar varios registros de la base de datos
+        /// </summary>
+        /// <param name="cSQL">Consulta sql a lanzar en la base de datos</param>
+        /// <param name="aParametros">Array de objetos con los parámetros de la consulta</param>
+        /// <param name="cConexion">Cadena de conexión si fuese necesaria</param>
+        /// <param name="oComando">Objeto comando en caso de querer realizar una consulta dentro de una transacción</param>
+        /// <returns>Un objeto BRSRegistro con los datos de la consulta por cada fila obtenida</returns>
+        public static IEnumerable<BRSRegistro> SeleccionarRegistros(string cSQL, object[] aParametros = null, string cConexion = null, NpgsqlCommand oComando = null)
+        {
+            NpgsqlConnection oConexionPostgres = null;
+            NpgsqlCommand oComandoPostgres = null;
+            NpgsqlDataReader oDataReader = null;
+
+            if (oComando != null)
+            { // Si trae un comando, lo usaremos para mantener las transacciones
+                oComandoPostgres = oComando;
+                oComandoPostgres.CommandText = cSQL;
+            }
+            else
+            { // Si no trae comando, creamos una conexión nueva
+                oConexionPostgres = new NpgsqlConnection(cConexion);
+                oComandoPostgres = new NpgsqlCommand(cSQL, oConexionPostgres);
+            }
+
+            try
+            {
+                if (aParametros != null)
+                { // Si trae parámetros
+                    for (int i = 0; i < aParametros.Length; i++)
+                    { // Por cada parámetro
+                        Object aux;
+                        if (aParametros[i] is string)
+                        { // Si el parámetro es una cadena, si la cadena está vacía guardamos nulo si no guardamos la cadena
+                            aux = string.IsNullOrWhiteSpace(Convert.ToString(aParametros[i])) ? DBNull.Value : aParametros[i];
+                        }
+                        else
+                        { // Si el parámetro no es una cadena, si está nulo guardamos nulo, si no guardamos el parámetro
+                            // Esto es lo mismo que lo de abajo: aux = aParametros[i] == null ? DBNull.Value : aParametros[i];
+                            aux = aParametros[i] ?? DBNull.Value;
+                        }
+                        oComandoPostgres.Parameters.Add(new NpgsqlParameter("param" + i, aux));
+                    }
+                }
+                if (oConexionPostgres != null)
+                { // Si traía conexión la abrimos
+                    oConexionPostgres.Open();
+                }
+                BRSLib.WriteLogDebug(AnalizarNpgsqlCommand(oComandoPostgres), "BRSLib", System.Reflection.MethodBase.GetCurrentMethod().Name, BRSLog.PALABRA_CLAVE.CONSULTA, "", BRSLog.LINEAVACIA.NO, null, oComandoPostgres);
+
+                oDataReader = oComandoPostgres.ExecuteReader();
+            }
+            catch (Exception ex)
+            {
+                oDataReader = null;
+                //BRSLib.MostrarMensaje(ex.Message + "\n\rBRSLib : SeleccionarRegistros()", " ", BRSLib.Boton.OK, BRSLib.Icono.Error);
+                BRSLib.WriteLogDebug("Error al seleccionar un registro", "BRSLib", System.Reflection.MethodBase.GetCurrentMethod().Name, BRSLog.PALABRA_CLAVE.ERROR_EXCEPCION, "", BRSLog.LINEAVACIA.NO, ex);
+                throw new Exception(ex.Message);
+            }
+
+            if (oDataReader != null)
+            { // Si el datareader no es nulo
+                int index = 0;
+                while (oDataReader.Read())
+                { // Mientras tenga registros que leer
+                    BRSRegistro registro = new BRSRegistro
+                    {
+                        Indice = index
+                    };
+                    for (int i = 0; i < oDataReader.FieldCount; i++)
+                    { // Por cada campo en la consulta, insertamos un nuevo campo en el registro
+                        registro.insertKey(Convert.ToString(oDataReader.GetName(i)), oDataReader[i]);
+                    }
+
+                    registro.NombreTabla = ObtenerNombreTabla(cSQL);
+                    if (!string.IsNullOrWhiteSpace(registro.NombreTabla))
+                    { // Si recuperamos el nombre de la tabla usada en la consulta, buscamos su clave primaria
+                        string conexion = oComando != null ? oComando.Connection.ConnectionString : cConexion;
+                        registro.ClavePrimaria = ObtenerClavePrimaria(registro.NombreTabla, conexion);
+                    }
+
+                    // Devolvemos el registro
+                    yield return registro;
+                    index++;
+                }
+            }
+            if (oDataReader != null)
+                oDataReader.Close();
+
+            if (oConexionPostgres != null && oConexionPostgres.State == ConnectionState.Open)
+            { // Si la conexión no es nula y está abierta la cerramos
+                oConexionPostgres.Close();
+            }
+        }
+
+        /// <summary>
+        /// Función para recuperar el nombre de la tabla usada en una consulta SQL siempre
+        /// que sea sólamente una tabla
+        /// </summary>
+        /// <param name="cSQL">La consulta SQL</param>
+        /// <returns>El nombre de la tabla o nulo si es más de una tabla</returns>
+        private static string ObtenerNombreTabla(string cSQL)
+        {
+            string cNombreTabla;
+            if (cSQL.ToUpper().Contains("JOIN"))
+            { // Si la consulta contiene la palabra JOIN significa que tiene más de una tabla y no devolvemos nada
+                cNombreTabla = null;
+            }
+            else
+            {
+                // Teniendo la siguiente consulta
+                // SELECT campo1, campo2, campo3 FROM tabla WHERE param1, param2
+                string[] cadenaSplit;
+                string cadena = cSQL.ToLower();
+                // Dividimos por el FROM y obtenemos dos cadenas
+                // SELECT campo1, campo2, campo3
+                // tabla WHERE param1, param2
+                cadenaSplit = cadena.Split(new string[] { "from" }, StringSplitOptions.RemoveEmptyEntries);
+                // Cogemos la segunda cadena y le hacemos un split por espacios
+                // tabla
+                // WHERE
+                // param1,
+                // param2,
+                cadenaSplit = cadenaSplit[1].Split(new string[] { " " }, StringSplitOptions.RemoveEmptyEntries);
+                // Cogemos el primer parámetro del split
+                // tabla
+                cNombreTabla = cadenaSplit[0];
+                if (cNombreTabla.Contains(","))
+                { // Si contiene una coma significa que se usa más de una tabla y no devolvemos nada
+                    cNombreTabla = null;
+                }
+                else
+                { // Si no contiene una coma es una única tabla, le hacemos un trim y la devolvemos
+                    cNombreTabla = cNombreTabla.Trim();
+                }
+            }
+
+            return cNombreTabla;
+        }
+
+        /// <summary>
+        /// Función para recuperar la clave primaria de una tabla
+        /// </summary>
+        /// <param name="cNombreTabla">El nombre de la tabla</param>
+        /// <param name="cConexion">La cadena de conexión a la base de datos donde pertenece la tabla</param>
+        /// <returns>Un array con los campos de la clave primaria</returns>
+        public static string[] ObtenerClavePrimaria(string cNombreTabla, string cConexion)
+        {
+            string[] clavePrimaria = null;
+
+            NpgsqlConnection oConexion = null;
+            NpgsqlCommand oComando = null;
+            NpgsqlDataReader oDataReader = null;
+            try
+            {
+                string cSQL;
+                object[] aoParametros;
+
+                cSQL = "SELECT constraint_name FROM information_schema.table_constraints WHERE table_name = :param0 AND constraint_type = 'PRIMARY KEY';";
+                aoParametros = new object[] { cNombreTabla };
+                string cNombreConstraint = BRSLib.SelectScalarCadena(cSQL, aoParametros, cConexion, null, "Cadena", false);
+
+                cSQL = "SELECT COUNT(column_name) FROM information_schema.key_column_usage WHERE table_name = :param0 AND constraint_name = :param1;";
+                aoParametros = new object[] { cNombreTabla, cNombreConstraint };
+                int numeroClaves = BRSLib.SelectScalarEntero(cSQL, aoParametros, cConexion, null, false);
+
+                clavePrimaria = new string[numeroClaves];
+                cSQL = "SELECT column_name FROM information_schema.key_column_usage WHERE table_name = :param0 AND constraint_name = :param1 ORDER BY ordinal_position;";
+                oConexion = new NpgsqlConnection(cConexion);
+                oComando = new NpgsqlCommand(cSQL, oConexion);
+                oComando.Parameters.Add(new NpgsqlParameter("param0", cNombreTabla));
+                oComando.Parameters.Add(new NpgsqlParameter("param1", cNombreConstraint));
+                oConexion.Open();
+                oDataReader = oComando.ExecuteReader();
+                if (oDataReader.HasRows)
+                { // Si recuperó las claves
+                    int i = 0;
+                    while (oDataReader.Read())
+                    {
+                        clavePrimaria[i] = Convert.ToString(oDataReader["column_name"]);
+                        i++;
+                    }
+                }
+                else
+                { // Si no recuperó las claves
+                    clavePrimaria = null;
+                }
+
+            }
+            catch (Exception ex)
+            {
+                BRSLib.MostrarMensaje(ex.Message + "\n\rBRSLib : ObtenerClavePrimaria()", " ", BRSLib.Boton.OK, BRSLib.Icono.Error);
+            }
+            finally
+            {
+                if (oDataReader != null)
+                { // Si el objeto datareader no es nulo lo cerramos
+                    oDataReader.Close();
+                }
+                if (oConexion != null && oConexion.State == ConnectionState.Open)
+                { // Si el objeto conexión no es nulo y la conexión está abierta, la cerramos
+                    oConexion.Close();
+                }
+            }
+
+            return clavePrimaria;
+        }
+
+        private static string AnadirClaveAConsulta(string cSQL, string[] acClavePrimaria)
+        {
+            string cSQLClave = cSQL; ;
+
+            if (acClavePrimaria != null)
+            { // Si la clave primaria no es nula, comprobamos si la consulta contiene la clave primaria
+                int indiceA, indiceB;
+                string cadenaCampos, cadenaCamposAux;
+                string[] camposSelect;
+
+                indiceA = cSQL.IndexOf("SELECT") + 6;
+                indiceB = cSQL.IndexOf("FROM") - 1;
+                cadenaCamposAux = cadenaCampos = cSQL.Substring(indiceA, indiceB - 6);
+
+                if (cadenaCampos.Trim() != "*")
+                { // Si no estamos buscando todos los campos
+                    camposSelect = cadenaCampos.Split(',');
+                    for (int i = 0; i < camposSelect.Length; i++)
+                        camposSelect[i] = camposSelect[i].Trim();
+
+                    bool claveEncontrada;
+                    foreach (string clave in acClavePrimaria)
+                    { // Por cada campo de la clave primaria
+                        claveEncontrada = false;
+                        foreach (string campo in camposSelect)
+                        { // Comprobamos si existe entre los campos del select
+                            if (campo == clave)
+                            {
+                                claveEncontrada = true;
+                                break;
+                            }
+                        }
+                        if (!claveEncontrada)
+                        { // Si la clave no se encontró entre los campos lo añadimos a la consulta
+                            cadenaCamposAux += ", " + clave;
+                        }
+                    }
+
+                    cSQLClave = cSQL.Replace(cadenaCampos, cadenaCamposAux + " ");
+                }
+            }
+
+            return cSQLClave;
+        }
+
+        /// <summary>
+        /// Función que busca cual es el siguiente código a insertar (sólo para campos numéricos)
+        /// </summary>
+        /// <param name="cNombreTabla"></param>
+        /// <param name="txtCodigo"></param>
+        /// <param name="cConexion"></param>
+        /// <param name="cWhere"></param>
+        /// <param name="_NumeroInicio"></param>
+        public static void SugerirCodigo(string cNombreTabla, RadTextBox txtCodigo, string cConexion, string cWhere = null, int _NumeroInicio = 0)
+        {
+            int nUltimoCodigo = BRSLibBD.UltimoCodigo(cConexion, cNombreTabla, txtCodigo.Name.Substring(3), cWhere);
+
+            if (nUltimoCodigo == 0)
+                nUltimoCodigo = _NumeroInicio + 1;
+            else
+                nUltimoCodigo++;
+
+            if (Convert.ToString(nUltimoCodigo).Length <= txtCodigo.MaxLength)
+                txtCodigo.Text = Convert.ToString(nUltimoCodigo);
+            else
+                BRSLib.MostrarMensaje(Cadenas.local_cMensajeCodigoFueraRango);
+        }
+
+        /// <summary>
+        /// Función que comprueba si el valor de un campo existe en la base de datos
+        /// </summary>
+        /// <param name="cConexion">La cadena de conexión con la base de datos</param>
+        /// <param name="nombreTabla">El nombre de la tabla en la que se buscará</param>
+        /// <param name="nombreCampo">El nombre del campo que se buscará</param>
+        /// <param name="campoId">El textbox con el campo que se buscará</param>
+        /// <param name="campoDescripcion">El textbox con la descripción del valor</param>
+        /// <param name="rango">Parámetros adicionales de la consulta</param>
+        /// <param name="limpiar">Si se desea limpiar los campos en caso de no encontrar el valor</param>
+        /// <param name="lsalir">Si salir está a falso, le damos el foco al componente</param>
+        /// <returns>Verdadero o falso</returns>
+        public static bool ComprobarValorExiste(string cConexion, string nombreTabla, string nombreCampo, RadTextBox campoId, RadTextBox campoDescripcion = null, string rango = null, bool limpiar = true, bool lsalir = false)
+        {
+            bool existe = false;
+
+            if (!string.IsNullOrWhiteSpace(campoId.Text))
+            {
+                string cSQL = "SELECT " + nombreCampo + " FROM " + nombreTabla + " WHERE " + nombreCampo + " = :param0";
+                if (rango != null)
+                    cSQL += " AND " + rango;
+                object[] aoParametros = { campoId.Text };
+                existe = string.IsNullOrWhiteSpace(BRSLib.SelectScalarCadena(cSQL, aoParametros, cConexion)) ? false : true;
+
+                if (!existe)
+                {
+                    if (limpiar)
+                    {
+                        campoId.Text = "";
+                        if (campoDescripcion != null) campoDescripcion.Text = "";
+                        if (!lsalir) campoId.Focus();
+                    }
+                }
+            }
+            else
+            {
+                existe = true;
+            }
+
+            return existe;
+        }
+
+        /// <summary>
+        /// Función que comprueba si un valor existe en la base de datos
+        /// </summary>
+        /// <param name="cConexion"></param>
+        /// <param name="nombreTabla"></param>
+        /// <param name="nombreCampo"></param>
+        /// <param name="valorCampo"></param>
+        /// <param name="cCondicion"></param>
+        /// <returns></returns>
+        public static bool ComprobarValorExiste(string cConexion, string nombreTabla, string nombreCampo, object valorCampo, string cCondicion = null)
+        {
+            bool existe = false;
+
+            string cSQL = "SELECT " + nombreCampo + " FROM " + nombreTabla + " WHERE " + nombreCampo + " = :param0";
+            if (cCondicion != null)
+                cSQL += " AND " + cCondicion;
+            object[] aoParametros = { valorCampo };
+            existe = string.IsNullOrWhiteSpace(BRSLib.SelectScalarCadena(cSQL, aoParametros, cConexion)) ? false : true;
+
+            return existe;
+        }
+
+        #endregion
+
+        public static string BuscarDescripcion(string cConexion, RadTextBox txtId, string select, string from, string where, string rangoExtra = null, RadTextBox txtDescripcion = null, short nModo = ModoPantalla.INSERTAR, string valorDefecto = "")
+        {
+            string cDescripcion = null;
+
+            if (nModo <= ModoPantalla.MODIFICAR)
+            { // Si no es sólo lectura en modo añadir o modificar, o queremos forzar la búsqueda
+                cDescripcion = !string.IsNullOrWhiteSpace(txtId.Text) ? BRSLibBD.ObtenerSQLPostgres(select, from, where + " = " + txtId.Text.Quoted(), rangoExtra, cConexion) : "";
+                if (txtDescripcion != null)
+                    txtDescripcion.Text = cDescripcion;
+                if (string.IsNullOrWhiteSpace(cDescripcion))
+                    txtId.Text = valorDefecto;
+            }
+            if (nModo == ModoPantalla.ENCONTRAR && txtDescripcion != null)
+                txtDescripcion.Text = "";
+
+            return cDescripcion;
+        }
+
+        public static string BuscarDescripcionAccess(string cConexion, RadTextBox txtId, string select, string from, string where, string rangoExtra = null, RadTextBox txtDescripcion = null, short nModo = ModoPantalla.INSERTAR, string valorDefecto = "")
+        {
+            string cDescripcion = null;
+
+            if (nModo <= ModoPantalla.MODIFICAR)
+            { // Si no es sólo lectura en modo añadir o modificar, o queremos forzar la búsqueda
+                cDescripcion = !string.IsNullOrWhiteSpace(txtId.Text) ? BRSLibBD.ObtenerSQLAccess(select, from, where + " = " + txtId.Text.Quoted(), rangoExtra, cConexion) : "";
+                if (txtDescripcion != null)
+                    txtDescripcion.Text = cDescripcion;
+                if (string.IsNullOrWhiteSpace(cDescripcion))
+                    txtId.Text = valorDefecto;
+            }
+            if (nModo == ModoPantalla.ENCONTRAR && txtDescripcion != null)
+                txtDescripcion.Text = "";
+
+            return cDescripcion;
+        }
+
+        /// <summary>
+        /// Función que realiza una regla de tres para calcular el porcentaje correspondiente de un número sobre un total
+        /// </summary>
+        /// <param name="n"></param>
+        /// <param name="total"></param>
+        /// <returns></returns>
+        public static int CalcularPorcentaje(int n, int total)
+        {
+            return (n * 100 / total);
+        }
+
+        // PENDIENTES revisar las llamadas a esta función para realizarlas.
+        public static void FuncionNoImplementada(string _clase = null, string _funcion = null)
+        {
+            string mensaje = "Función no implementada";
+            if (!string.IsNullOrWhiteSpace(_clase) && !string.IsNullOrWhiteSpace(_funcion))
+                mensaje += " - " + _clase + ": " + _funcion + "()";
+            else if (!string.IsNullOrWhiteSpace(_clase))
+                mensaje += " - " + _clase;
+            else if (!string.IsNullOrWhiteSpace(_funcion))
+                mensaje += " - " + _funcion + "()";
+            MostrarMensaje(mensaje, "Función no implementada", Boton.OK, Icono.Warning);
+        }
+
+        /// <summary>
+        /// Función que comprueba si un módulo se encuenta en ejecución
+        /// </summary>
+        /// <param name="_nombreModulo"></param>
+        /// <returns></returns>
+        public static bool ModuloEnEjecucion(string _nombreModulo)
+        {
+            bool lModuloEjecutado = false;
+
+            Process[] procesos = Process.GetProcesses();
+            foreach (Process proceso in procesos)
+            {
+                if (proceso.ProcessName.Equals(NombresModulos.BRSACT))
+                {
+                    lModuloEjecutado = true;
+                }
+            }
+
+            return lModuloEjecutado;
+        }
+
+        public static void CerrarProcesos(params string[] _procesosCerrar)
+        {
+            Process[] oProcesos;
+            foreach (string cProceso in _procesosCerrar)
+            {
+                oProcesos = Process.GetProcessesByName(cProceso);
+                foreach (Process oProceso in oProcesos)
+                    oProceso.Kill();
+            }
+        }
+
+        /// <summary>
+        /// Proceso que elimina masivamente los ficheros incluidos en un array en la carpeta
+        /// de Exportar_PDF
+        /// </summary>
+        /// <param name="ListaFicheros"></param>
+        public static void EliminarListaFicheros(List<string> ListaFicheros)
+        {
+            try
+            {
+                string path = @Application.StartupPath + "\\Exportar_PDF\\";
+                foreach (string cfichero in ListaFicheros)
+                {
+                    if (File.Exists(path + cfichero + ".pdf"))
+                        File.Delete(path + cfichero + ".pdf");
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger?.LogExcepcion(ex);
+            }
+        }
+
+        public static void CheckConfigFile(string rutaApp)
+        {
+            if (!File.Exists(rutaApp + "\\configuracion.xml"))
+            {
+                DialogResult dr = TextInputBox.Show("No se encontró el archivo de configuracion.xml.\nSe generará a continuación.\nPor favor, inserte la dirección ip o nombre del servidor:", "Archivo no encontrado", Mensajes.Boton.OKCancel, Mensajes.Icono.Warning, out string ip);
+                if (dr == DialogResult.OK)
+                {
+                    Configuracion configuracion = new Configuracion
+                    {
+                        AppSettings = new AppSettings
+                        {
+                            ServidorPostgres = ip,
+                            PuertoPostgres = "5432",
+                            Terminal = 1,
+                            Encodig = "UTF8",
+                        },
+                    };
+                    configuracion.Serializar(Application.StartupPath + "\\configuracion.xml");
+                }
+                else
+                {
+                    Environment.Exit(0);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Función que comprueba si un valor se encuentra entre dos rangos
+        /// </summary>
+        /// <param name="minimo">El valor mínimo</param>
+        /// <param name="valor">El valor a comprobar</param>
+        /// <param name="maximo">El valor máximo</param>
+        /// <param name="inclusive">Si deben contarse los extremos</param>
+        /// <returns></returns>
+        public static bool ValorEnteroEntreRangos(int minimo, int valor, int maximo, bool inclusive = true)
+        {
+            if (inclusive)
+                return minimo <= valor && valor <= maximo;
+            else
+                return minimo < valor && valor < maximo;
+        }
+
+        /// <summary>
+        /// Función que comprueba si un valor se encuentra entre dos rangos
+        /// </summary>
+        /// <param name="minimo">El valor mínimo</param>
+        /// <param name="valor">El valor a comprobar</param>
+        /// <param name="maximo">El valor máximo</param>
+        /// <param name="inclusive">Si deben contarse los extremos</param>
+        /// <returns></returns>
+        public static bool ValorShortEntreRangos(short minimo, short valor, short maximo, bool inclusive = true)
+        {
+            if (inclusive)
+                return minimo <= valor && valor <= maximo;
+            else
+                return minimo < valor && valor < maximo;
+        }
+
+        /// <summary>
+        /// Configuración variables globales de mensajes según el idioma
+        /// </summary>
+        /// <param name="nIdioma">código de idioma</param>
+        /// <exception cref="Exception"></exception>
+        public static void ConfigurarMensajesGlobales(int nIdioma)
+        {
+            Logger?.LogFunction(Name, nameof(ConfigurarMensajesGlobales), "Configurando mensajes globales");
+            try
+            {
+                string cSQL;
+                string cEtiqueta = null;
+
+                //Especificamos si lo tiene el titulo de la pantalla
+                cSQL = $"SELECT * FROM sys_mensajes WHERE ncod_idioma={Convert.ToString(nIdioma)}";
+
+                using (NpgsqlConnection oConexionPostgres = new NpgsqlConnection(BRSLibBD.cConexionBRSERP))
+                using (NpgsqlCommand oComandoPostgres = oConexionPostgres.CreateCommand())
+                {
+                    oConexionPostgres.Open();
+                    using (NpgsqlDataReader oDataReader = oComandoPostgres.ExecuteReader())
+                    {
+                        while (oDataReader.Read())
+                        {
+                            cEtiqueta = oDataReader["cetiqueta"].ToString();
+
+                            switch (cEtiqueta)
+                            {
+                                case "local_sAñadir": Cadenas.local_cAñadir = oDataReader["cdescripcion"].ToString(); break;
+                                case "local_sModificar": Cadenas.local_cModificar = oDataReader["cdescripcion"].ToString(); break;
+                                case "local_sVer": Cadenas.local_cVer = oDataReader["cdescripcion"].ToString(); break;
+                                case "local_sEncontrar": Cadenas.local_cEncontrar = oDataReader["cdescripcion"].ToString(); break;
+                                case "local_sRegistro": Cadenas.local_cRegistro = oDataReader["cdescripcion"].ToString(); break;
+                                case "local_sAfirmativo": Cadenas.local_cAfirmativo = oDataReader["cdescripcion"].ToString(); break;
+                                case "local_sNegativo": Cadenas.local_cNegativo = oDataReader["cdescripcion"].ToString(); break;
+                                case "local_sMensajeNoRegistro": Cadenas.local_cMensajeNoRegistro = oDataReader["cdescripcion"].ToString(); break;
+                                case "local_sMensajeBorrarRegistro": Cadenas.local_cMensajeBorrarRegistro = oDataReader["cdescripcion"].ToString(); break;
+                                case "local_sMensajeNoRegistroEncontrado": Cadenas.local_cMensajeNoRegistroEncontrado = oDataReader["cdescripcion"].ToString(); break;
+                                case "local_sMensajeCamposObligatorios": Cadenas.local_cMensajeCamposObligatorios = oDataReader["cdescripcion"].ToString(); break;
+                                case "local_sMensajeCodigoExiste": Cadenas.local_cMensajeCodigoExiste = oDataReader["cdescripcion"].ToString(); break;
+                                case "local_sMensajeCodigoFueraRango": Cadenas.local_cMensajeCodigoFueraRango = oDataReader["cdescripcion"].ToString(); break;
+                                case "local_sMensajeSalirPrograma": Cadenas.local_cMensajeSalirPrograma = oDataReader["cdescripcion"].ToString(); break;
+                                case "local_sMensajeNoGrid": Cadenas.local_cMensajeNoGrid = oDataReader["cdescripcion"].ToString(); break;
+                                case "local_sMensajeNoList": Cadenas.local_cMensajeNoList = oDataReader["cdescripcion"].ToString(); break;
+                                case "local_sMensajeBorrarConfig": Cadenas.local_cMensajeBorrarConfig = oDataReader["cdescripcion"].ToString(); break;
+                                case "local_sMensajeNoPermisos": Cadenas.local_cMensajeNoPermisos = oDataReader["cdescripcion"].ToString(); break;
+                                case "local_sNombreVentana_Codigo_F2F3": Cadenas.local_cNombreVentana_Codigo_F2F3 = oDataReader["cdescripcion"].ToString(); break;
+                                case "local_sNombreVentana_CodigoAlfa_F2F3": Cadenas.local_cNombreVentana_CodigoAlfa_F2F3 = oDataReader["cdescripcion"].ToString(); break;
+                                case "local_sNombreVentana_Nombre_F2F3": Cadenas.local_cNombreVentana_Nombre_F2F3 = oDataReader["cdescripcion"].ToString(); break;
+                                case "local_sCodigo_F2F3": Cadenas.local_cCodigo_F2F3 = oDataReader["cdescripcion"].ToString(); break;
+                                case "local_sNombre_F2F3": Cadenas.local_cNombre_F2F3 = oDataReader["cdescripcion"].ToString(); break;
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception)
+            {
+                Logger?.LogExcepcionInfo(Name, nameof(ConfigurarMensajesGlobales));
+                throw;
+            }
+        }
+
+        #region Funciones para trabajar con listas o diccionarios
+
+        /// <summary>
+        /// Función que añade un valor a una lista si dicha lista aún no lo contiene
+        /// </summary>
+        /// <param name="lista">La lista en la que queremos insertar el valor</param>
+        /// <param name="valor">El valor a insertar</param>
+        public static void AnadirALista(List<string> lista, string valor)
+        {
+            if (!lista.Contains(valor)) lista.Add(valor);
+        }
+
+        /// <summary>
+        /// Función que añade un valor a una lista si dicha lista aún no lo contiene
+        /// </summary>
+        /// <param name="lista">La lista en la que queremos insertar el valor</param>
+        /// <param name="valor">El valor a insertar</param>
+        public static void AnadirALista(List<int> lista, int valor)
+        {
+            if (!lista.Contains(valor)) lista.Add(valor);
+        }
+
+        /// <summary>
+        /// Función que añade un valor a una lista si dicha lista aún no lo contiene
+        /// </summary>
+        /// <param name="lista">La lista en la que queremos insertar el valor</param>
+        /// <param name="valor">El valor a insertar</param>
+        public static void AnadirALista(List<int?> lista, int? valor)
+        {
+            if (!lista.Contains(valor)) lista.Add(valor);
+        }
+
+        /// <summary>
+        /// Función que añade un valor a una colección observable si dicha colección aún no los contiene
+        /// </summary>
+        /// <param name="lista">La colección en la que queremos insertar el valor</param>
+        /// <param name="valor">El valor a insertar</param>
+        public static void AnadirALista(ObservableCollection<string> lista, string valor)
+        {
+            if (!lista.Contains(valor)) lista.Add(valor);
+        }
+
+        /// <summary>
+        /// Función que añade varios valores a una lista si dicha lista aún no los contiene
+        /// </summary>
+        /// <param name="lista">La lista en la que queremos insertar los valores</param>
+        /// <param name="valores">Un array con los valores a insertar</param>
+        public static void AnadirALista(List<string> lista, params string[] valores)
+        {
+            for (int i = 0; i < valores.Length; i++)
+            {
+                if (!lista.Contains(valores[i])) lista.Add(valores[i]);
+            }
+        }
+
+        /// <summary>
+        /// Función que añade varios valores a una lista si dicha lista aún no los contiene
+        /// </summary>
+        /// <param name="lista">La lista en la que queremos insertar los valores</param>
+        /// <param name="valores">Un array con los valores a insertar</param>
+        public static void AnadirALista(List<int> lista, int[] valores)
+        {
+            for (int i = 0; i < valores.Length; i++)
+            {
+                if (!lista.Contains(valores[i])) lista.Add(valores[i]);
+            }
+        }
+
+        /// <summary>
+        /// Función que añade varios valores a una colección observable si dicha colección aún no los contiene
+        /// </summary>
+        /// <param name="lista">La colección en la que queremos insertar los valores</param>
+        /// <param name="valores">Un array con los valores a insertar</param>
+        public static void AnadirALista(ObservableCollection<string> lista, params string[] valores)
+        {
+            for (int i = 0; i < valores.Length; i++)
+            {
+                if (!lista.Contains(valores[i])) lista.Add(valores[i]);
+            }
+        }
+
+        /// <summary>
+        /// Función que añade un valor a un diccionario si dicho diccionario aún no lo contiene
+        /// </summary>
+        /// <param name="diccionario">El diccionario en el que queremos insertar el valor</param>
+        /// <param name="clave">La clave del valor</param>
+        /// <param name="valor">El valor a insertar</param>
+        public static void AnadirADiccionarioStringBool(Dictionary<string, bool> diccionario, string clave, bool valor)
+        {
+            if (!diccionario.TryGetValue(clave, out bool item))
+            { // Si no existe esa clave
+              // La insertamos
+                diccionario.Add(clave, valor);
+            }
+        }
+
+        /// <summary>
+        /// Función que añade un valor a un diccionario si dicho diccionario aún no lo contiene
+        /// </summary>
+        /// <param name="diccionario">El diccionario en el que queremos insertar el valor</param>
+        /// <param name="clave">La clave del valor</param>
+        /// <param name="valor">El valor a insertar</param>
+        public static void AnadirADiccionarioStringString(Dictionary<string, string> diccionario, string clave, string valor)
+        {
+            if (!diccionario.TryGetValue(clave, out string item))
+            { // Si no existe esa clave
+              // La insertamos
+                diccionario.Add(clave, valor);
+            }
+        }
+
+        /// <summary>
+        /// Función que elimina un valor de una lista si dicha lista lo contiene
+        /// </summary>
+        /// <param name="lista">La lista de la que queremos eliminar el valor</param>
+        /// <param name="valor">El valor a eliminar</param>
+        public static void QuitarDeLista(List<string> lista, string valor)
+        {
+            if (lista.Contains(valor)) lista.Remove(valor);
+        }
+
+        /// <summary>
+        /// Función que elimina un valor de una lista si dicha lista lo contiene
+        /// </summary>
+        /// <param name="lista">La lista de la que queremos eliminar el valor</param>
+        /// <param name="valor">El valor a eliminar</param>
+        public static void QuitarDeLista(List<int> lista, int valor)
+        {
+            if (lista.Contains(valor)) lista.Remove(valor);
+        }
+
+        /// <summary>
+        /// Función que elimina un valor de una lista si dicha lista lo contiene
+        /// </summary>
+        /// <param name="lista">La lista de la que queremos eliminar el valor</param>
+        /// <param name="valor">El valor a eliminar</param>
+        public static void QuitarDeLista(List<int?> lista, int? valor)
+        {
+            if (lista.Contains(valor)) lista.Remove(valor);
+        }
+
+        /// <summary>
+        /// Función que elimina un valor de una colección observable si dicha colección lo contiene
+        /// </summary>
+        /// <param name="lista">La colección de la que queremos eliminar el valor</param>
+        /// <param name="valor">El valor a eliminar</param>
+        public static void QuitarDeLista(ObservableCollection<string> lista, string valor)
+        {
+            if (lista.Contains(valor)) lista.Remove(valor);
+        }
+
+        /// <summary>
+        /// Función que elimina varios valores de una lista si dicha lista los contiene
+        /// </summary>
+        /// <param name="lista">La lista de la que queremos eliminar los valores</param>
+        /// <param name="valores">Un array con los valores a eliminar</param>
+        public static void QuitarDeLista(List<string> lista, string[] valores)
+        {
+            for (int i = 0; i < valores.Length; i++)
+            {
+                if (lista.Contains(valores[i])) lista.Remove(valores[i]);
+            }
+        }
+
+        /// <summary>
+        /// Función que elimina varios valores de una lista si dicha lista los contiene
+        /// </summary>
+        /// <param name="lista">La lista de la que queremos eliminar los valores</param>
+        /// <param name="valores">Un array con los valores a eliminar</param>
+        public static void QuitarDeLista(List<int> lista, int[] valores)
+        {
+            for (int i = 0; i < valores.Length; i++)
+            {
+                if (lista.Contains(valores[i])) lista.Remove(valores[i]);
+            }
+        }
+
+        /// <summary>
+        /// Función que elimina varios valores de una colección observable si dicha colección los contiene
+        /// </summary>
+        /// <param name="lista">La colección de la que queremos eliminar los valores</param>
+        /// <param name="valores">Un array con los valores a eliminar</param>
+        public static void QuitarDeLista(ObservableCollection<string> lista, params string[] valores)
+        {
+            for (int i = 0; i < valores.Length; i++)
+            {
+                if (lista.Contains(valores[i])) lista.Remove(valores[i]);
+            }
+        }
+
+        /// <summary>
+        /// Función que elimina un valor de un diccionario si dicho diccionario lo contiene
+        /// </summary>
+        /// <param name="diccionario">El diccionario en el que queremos eliminar el valor</param>
+        /// <param name="clave">La clave a eliminar</param>
+        public static void QuitarDeDiccionario(Dictionary<object, object> diccionario, string clave)
+        {
+            if (diccionario.TryGetValue(clave, out object item))
+            {
+                diccionario.Remove(clave);
+            }
+        }
+
+        #endregion
+
+        /// <summary>
+        /// Evita letras en textbox; Números y caracteres de control están permitidos
+        /// Deben llamarse desde los eventos KeyUp, KeyDown del objeto.
+        /// </summary>
+        /// <param name="sender">objeto que llama a esta función</param>
+        /// <param name="e">tecla pulsada</param>
+        /// <param name="nModo">modo del formulario de vista registro que llama a esta función</param>
+        [Obsolete("La función está obsoleta. Usa en su lugar las funciones KeyPress de la clase BRSComponentes")]
+        public static void RestringirCaracteres(object sender, KeyEventArgs e, int nModo)
+        {
+            if (e.KeyCode != Keys.Back && e.KeyCode != Keys.Delete && e.KeyCode != Keys.Return && e.KeyCode != Keys.Left && e.KeyCode != Keys.Right)
+            {
+                if (nModo != ModoPantalla.ENCONTRAR) //si no estamos en ENCONTRAR
+                    if (!(e.KeyCode >= Keys.NumPad0 && e.KeyCode <= Keys.NumPad9) && !(e.KeyCode >= Keys.D0 && e.KeyCode <= Keys.D9))
+                        e.SuppressKeyPress = true;
+                if (!ValidarNumero((sender as RadTextBox).Text, nModo))
+                    e.SuppressKeyPress = true;
+                if (((e.KeyCode >= Keys.A && e.KeyCode <= Keys.Z)) || e.KeyCode == Keys.Space || e.KeyCode == Keys.Decimal || e.KeyCode == Keys.Oemcomma || (e.KeyCode == Keys.OemPeriod && e.Modifiers != Keys.Shift))
+                    e.SuppressKeyPress = true;
+                if ((e.Modifiers == Keys.Shift && !anValoresCaracteresEspeciales.Contains(e.KeyValue)) || (e.Modifiers == (Keys.Control | Keys.Alt) && e.KeyValue != 49))
+                    e.SuppressKeyPress = true;
+            }
+        }
+
+        [Obsolete("La función está obsoleta. Usa en su lugar la funcion BRSComponentes.CampoFecha_KeyPress")]
+        public static void RestringirCaracteresFecha(object sender, KeyEventArgs e, int nModo)
+        {
+            if (nModo != ModoPantalla.ENCONTRAR) //si no estamos en ENCONTRAR
+                if (e.KeyCode != Keys.Back && e.KeyCode != Keys.Delete && e.KeyCode != Keys.Return && e.KeyCode != Keys.Left && e.KeyCode != Keys.Right)
+                    if (!(e.KeyCode >= Keys.NumPad0 && e.KeyCode <= Keys.NumPad9) && !(e.KeyCode >= Keys.D0 && e.KeyCode <= Keys.D9) && e.KeyCode != Keys.Divide)
+                        e.SuppressKeyPress = true;
+            if (((e.Modifiers == Keys.Shift && e.KeyValue != 226) && !(e.Modifiers == Keys.Shift && e.KeyValue == 55)) || e.Alt || e.Control || (e.Modifiers == Keys.Shift && e.KeyValue == 190 && nModo != ModoPantalla.ENCONTRAR))
+                e.SuppressKeyPress = true;
+        }
+
+        private static bool ValidarNumero(string text, int modo)
+        {
+            bool valid = true;
+
+            Char[] compSeparators = { '<', '>', '|', ':', '=' };
+            String[] values;
+            if (modo == ModoPantalla.ENCONTRAR)
+                values = text.Split(compSeparators);
+            else
+            {
+                if (text.Contains('.')) text = text.Replace(".", "");
+                if (text.Contains(',')) text = text.Replace(",", "");
+                values = new String[1];
+                values[0] = text;
+            }
+            foreach (string part in values)
+            {
+                if (part.Length > 0 && !long.TryParse(part, out long i))
+                    valid = false;
+            }
+
+            return valid;
+        }
+
+        /// <summary>
+        /// Obtiene de la base de datos la cadena de conexión y el motor de base de datos del grupo de centros asociado al usuario
+        /// </summary>
+        /// <param name="nGrupoCentros">Código del grupo de centros</param>
+        /// <param name="cModulo">1 para Contabilidad, 2 para Tesorería, nulo para el resto</param>
+        public static void CargarDatosConexionGrupoCentros(int nGrupoCentros, string cModulo = null)
+        {
+            //Logger?.LogFunction(Name, nameof(CargarDatosConexionGrupoCentros), $"Cargando configuración del grupo de centros {nGrupoCentros}");
+            //try
+            //{
+            //    GruposCentros grupoCentros = GruposCentros.SeleccionarPorClavePrimaria(nGrupoCentros.AsInt16());
+            //    if (!grupoCentros.Vacio)
+            //    {
+            //        nGrupoCentrosNombre = grupoCentros.cnombre_grupo;
+            //        // Por defecto cogemos el ejercicio que tenga asignado el gurpo de centros. Si no tuviese asignado ejercicio le ponemos al actual
+            //        nEjercicio = grupoCentros.nejercicio == null ? DateTime.Today.Year : grupoCentros.nejercicio.Value;
+            //        cConexionGR = BRSLibBD.CadenaConexion("G" + nGrupoCentros.ToString("0000"));
+            //        eMotorBBDD = MotorBD.PG;
+            //        // Seleccionamos el centro obligatorio del usuario, si lo tuviese
+            //        PermisosUsuarioGrupo permisosUsuarioGrupo = PermisosUsuarioGrupo.SeleccionarPorClavePrimaria(nUsuario.AsInt16(), nGrupoCentros.AsInt16());
+            //        nCentroObligatorioUsuario = permisosUsuarioGrupo.ncentro == null ? null : Convert.ToString(permisosUsuarioGrupo.ncentro.Value);
+
+            //        nDiasLimiteAlmacen = grupoCentros.ndiaslimitealmacen.Value;
+            //        nDiasLimiteCompra = grupoCentros.ndiaslimitecompras.Value;
+            //        nDiasLimiteVenta = grupoCentros.ndiaslimiteventas.Value;
+
+            //        if (cModulo == "1")
+            //        {
+            //            UsuCfgCont usuCfgCont = UsuCfgCont.SeleccionarPorClavePrimaria(nUsuario);
+            //            if (!usuCfgCont.Vacio && usuCfgCont.ngrupo_centro.Value == nGrupoCentros && usuCfgCont.lactivo.Value)
+            //            {
+            //                nCentroContable = usuCfgCont.centrocontable.Value;
+            //                nEjercicio = usuCfgCont.nejercicio.Value;
+            //            }
+            //            else
+            //            { // Si no tiene la configuración hacemos la conexión con el ejercicio modelo, nunca debería entrar por aquí
+            //                nCentroContable = 1;
+            //                nEjercicio = 1;
+            //            }
+            //            cConexionGR = BRSLibBD.CadenaConexion(nGrupoCentros.ToString("0000") + nCentroContable.ToString("0000") + nEjercicio.ToString("0000"));
+            //        }
+            //        else if (cModulo == "2")
+            //        {
+            //            cConexionGR = BRSLibBD.CadenaConexion("T" + nGrupoCentros.ToString("0000"));
+            //        }
+            //    }
+            //}
+            //catch (Exception ex)
+            //{
+            //    Logger?.LogExcepcion(ex);
+            //    BRSLib.MostrarMensaje(ex.Message + "\n\r" + Name + " : " + nameof(CargarDatosConexionGrupoCentros) + "()", " ", Boton.OK, Icono.Error);
+            //}
+        }
+
+        public static void ExecuteSecure(Form formulario, Action a)
+        {
+            if (formulario.InvokeRequired)
+                formulario.BeginInvoke(a);
+            else
+                a();
+        }
+
+    }
+
+    public enum Resultado
+    {
+        Aceptado,
+        Cancelado,
+        Bloqueado,
+        Eliminado
+    };
+
+    /// <summary>
+    /// Clase de los modos de pantalla
+    /// </summary>
+    public class ModoPantalla
+    {
+        public const short AGRUPAR = 0;
+        public const short INSERTAR = 1;
+        public const short MODIFICAR = 2;
+        public const short VER = 3;
+        public const short ENCONTRAR = 4;
+    }
+
+    /// <summary>
+    /// Clase para los distintos tipos de sombreados en el proyecto.
+    /// </summary>
+    public class TipoSombreado
+    {
+        public const short SIN_SOMBREAR = 0;        // No se sombreará la línea
+        public const short PAUTADO = 1;             // Líneas sombreadas pautadas
+        public const short NEGRITA = 2;             // Líneas en negritas pautadas
+    }
+
+    public class NombresModulos
+    {
+        public const string BRSACT = "BRSAct";
+        public const string BRSERPREYES = "BRSERPReyes";
+        public const string BRSLIB = "BRSLib";
+    }
+
+    public class NombresProcesos
+    {
+        public const string BRSACT = "BRSAct";
+        public const string BRSERPREYES = "BRSERPReyes";
+        public const string BRSLIB = "BRSLib";
+    }
+
+    /// <summary>
+    /// Clase con la que gestionamos las teclas con las que funcionará el movimiento
+    /// de teclas con la rejilla.
+    /// </summary>
+    public class MovimientoRejilla
+    {
+        public const string UP = "Up";
+        public const string DOWN = "Down";
+    }
+
+}
