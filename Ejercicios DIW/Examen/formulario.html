@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+    <link rel="stylesheet" href="formulario.css">
+</head>
+
+<body>
+
+    <header>
+        <h1>Formulario de registro</h1>
+        <h4>Bienvenido a DIW</h4>
+    </header>
+
+    <div class="contenido">
+
+        <article class="nombre">
+            <p>Nombre: <input type="text" maxlength="15" name="" id="">
+            </p>
+        </article>
+        <article class="apellidos">
+            <p>Apellidos: <input type="text" maxlength="25" name="" id="">
+            </p>
+        </article>
+        <article class="direccion">
+            <p>Direccion: <input type="text" maxlength="30" name="" id="">
+            </p>
+        </article>
+        <article class="provincia">
+            <p>Provincia:
+                <select name="" id="">
+                    <option value="">Andalucia</option>
+                    <option value="">Madrid</option>
+                    <option value="">Murcia</option>
+                    <option value="">Barcelona</option>
+                </select>
+            </p>
+        </article>
+        <article class="codigoPost">
+            <p>CP: <input type="text" pattern="0[1-9][0-9]{3}|[1-4][0-9]{4}|5[0-2][0-9]{3}" name="" id="">
+            </p>
+        </article>
+        <article class="email">
+            <p>Email: <input type="email" name="" id="">
+            </p>
+        </article>
+        <article class="textarea">
+            <p>Textarea: <textarea name="" id="" cols="60" rows="10"></textarea>
+            </p>
+        </article>
+
+    </div>
+
+</body>
+
+</html>

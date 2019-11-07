@@ -8,93 +8,63 @@
 </head>
 <body>
 <?php
-
-
-    $i = 0;
-      $lineal = [];
-      do {
-        $n = rand(0, 100);
-        if (!in_array($n, $lineal)) {
-          $lineal[] = $n;
-          $i++;
-        }
-      } while ($i < 64);
-     
-      $i = 0;
-      for ($x = 0; $x < 4; $x++) {
-        for ($y = 0; $y <4; $y++) {
-          $numero[$x][$y] = $lineal[$i];
-          $i++;
-        }
-      }
-
-    // Pinta el tablero de ajedrez
-    echo '<table>';
-    for ($fila = 0; $fila < 8; $fila++) {
-      echo '<tr>';
-      for ($columna = 0; $columna < 8; $columna++) {
-        echo "<td>";
-
-        echo $numero[$fila][$columna];
-
-        echo "</td>";
-      }
-      echo "</tr>";
+$numeroFilas = $numerosColumnas = 5;
+$fila = $columna = 0;
+echo "<p> MATRIZ ORIGINAL </p>";
+for ($i = 0; $i < $numeroFilas; $i++) {
+  for ($k = 0; $k < $numerosColumnas; $k++) {
+    $array[$i][$k] = rand(0, 100);
+    // $array[$i][$k] = $k; // rellenamos con numero consecutivos, para facilitar desarrollo
+    echo $array[$i][$k] . " ";
+  }
+  echo "<br> ";
+}
+echo "<p> MATRIZ ROTADA </p>";
+$nuevoArray = $array;
+while ($fila < $numeroFilas and $columna < $numerosColumnas) {
+  //Primera fila
+  //Guardamos primer valor de la fila siguiente
+  $valorPrevio = $array[$fila + 1][$columna];
+  for ($i = $columna; $i < $numerosColumnas; $i++) {
+    $valorActual = $array[$fila][$i];
+    $nuevoArray[$fila][$i] = $valorPrevio;
+    $valorPrevio = $valorActual;
+  }
+  $fila++;
+  //Ultima Columna
+  for ($i = $fila; $i < $numeroFilas; $i++) {
+    $valorActual = $array[$i][$numerosColumnas - 1];
+    $nuevoArray[$i][$numerosColumnas - 1] = $valorPrevio;
+    $valorPrevio = $valorActual;
+  }
+  $numerosColumnas--;
+  //Ultima fila
+  if ($fila < $numeroFilas) {
+    for ($i = $numerosColumnas - 1; $i >= $columna; $i--) {
+      $valorActual = $array[$numeroFilas - 1][$i];
+      $nuevoArray[$numeroFilas - 1][$i] = $valorPrevio;
+      $valorPrevio = $valorActual;
     }
-    echo "</table>";
-
-    $contador1 = 1;
-    $contadorFila1=0;
-    $matrizB = null;
-
-
-      for ($j=0; $contador1 < sizeof($numero[$j]) ; ) { 
-        $matrizB[$j][$contador1] = $numero[$j][$contadorFila1];
-        $contador1++;
-        $contadorFila1++;
-      }
-
-      $contador1 = 0;
-      $contadorFila1=1;
-      for ($i=3; $contador1 < sizeof($numero[$i]) ; ) { 
-        $matrizB[$contadorFila1][$i] = $numero[$contador1][$i];
-        $contador1++;
-        $contadorFila1++;
-      }
-
-      $contadorFila1=2;
-      $contador1 = 3;
-      for ($i=3; $contador1 >=0 ;) { 
-        $matrizB[$i][$contadorFila1] = $numero[$i][$contador1];
-        $contador1--;
-        $contadorFila1--;
-      }
-
-      $contadorFila1=2;
-      $contador1=3;
-      for ($i=0; $contador1 >= 0 ; ) { 
-        $matrizB[$contadorFila1][$i] = $numero[$contador1][$i];
-        $contador1--;
-        $contadorFila1--;
-      }
-
-
-    // Pinta el tablero de ajedrez
-    echo '<table>';
-    for ($fila = 0; $fila < 4; $fila++) {
-      echo '<tr>';
-      for ($columna = 0; $columna < 4; $columna++) {
-        echo "<td>";
-
-        echo $matrizB[$fila][$columna];
-
-        echo "</td>";
-      }
-      echo "</tr>";
+  }
+  $numeroFilas--;
+  //Primera Columna
+  if ($columna < $numerosColumnas) {
+    for ($i = $numeroFilas - 1; $i >= $fila; $i--) {
+      $valorActual = $array[$i][$columna];
+      $nuevoArray[$i][$columna] = $valorPrevio;
+      $valorPrevio = $valorActual;
     }
-    echo "</table>";
-
-    ?>
+  }
+  $columna++;
+}
+//Mostramos nuevo array
+for ($i = 0; $i < count($array); $i++) {
+  for ($k = 0; $k < count($array); $k++) {
+    echo $nuevoArray[$i][$k] . " ";
+  }
+  echo "<br>";
+}
+?>
 
 </table>
   
