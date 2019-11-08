@@ -1,3 +1,34 @@
+
+h1{
+  text-align: center;
+}
+
 .botones {
   text-align: center;
+  margin: 0 0.5% 0.5% 0.5%;
+  width: 7%;
+  height: 50px;
+  font-size: 70%;
+  font-weight: bold;
+}
+
+.contenedor{
+ width: 1000px;
+ height: 900px;
+ margin: 0 auto;
+}
+
+#contenido{
+  position: relative;
+  left: 10%;
+}
+
+#mensaje{
+  position: relative;
+  left: 32%;
+}
+
+#reset{
+  position: relative;
+  left: 42%;
 }

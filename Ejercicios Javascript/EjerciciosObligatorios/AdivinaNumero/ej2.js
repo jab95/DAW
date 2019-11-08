@@ -3,16 +3,23 @@ let mensaje;
 let primeraVezPulsada = false;
 let aSidoMayor = false;
 let aSidoMenor = false;
+let btnReset=null;
 
 main = () => {
   let parrafoRefran = document.getElementById("contenido");
   mensaje = document.getElementById("mensaje");
-
+  btnReset = document.getElementById("reset");
+  
+  parrafoRefran.innerHTML = `<p>`;
+  btnReset.innerHTML="";
+  
   for (let i = 1; i <= 100; i++) {
     parrafoRefran.innerHTML += `<button class="botones" id="boton${i}" onclick="ComprobarNumero(this)">${i}</button>`;
+    if(i%10==0) parrafoRefran.innerHTML += `</p><p>`;
   }
 
   numAAdivinar = Math.round(Math.random() * (100 - 1) + parseInt(1));
+  mensaje.innerHTML="";
   //   numAAdivinar = 100;
 };
 
@@ -37,7 +44,8 @@ ComprobarNumero = e => {
           (parseInt(numeroPulsado) + 1);
       }
       for (let index = numeroPulsado; index >= 1; index--) {
-        document.getElementById("boton" + index).disabled = true;
+        let boton = document.getElementById("boton" + index);
+        boton.style.borderColor = "red"; 
       }
     } else {
       aSidoMenor = true;
@@ -58,11 +66,13 @@ ComprobarNumero = e => {
           (parseInt(numeroPulsado) - 1);
 
       for (let index = numeroPulsado; index <= 100; index++) {
-        document.getElementById("boton" + index).disabled = true;
-      }
+        let boton = document.getElementById("boton" + index);
+        boton.style.borderColor = "red";       }
     }
   } else {
-    mensaje.innerHTML = "Enhorabuena, has acertado el numero secreto!!";
+    e.style.borderColor = "yellow";
+    mensaje.innerHTML = "Enhorabuena, has acertado el numero secreto!!<br> ";
+    btnReset.innerHTML = "<button onclick='main()'>Volver a jugar</button>";
   }
 };
 
