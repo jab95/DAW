@@ -1,39 +1,79 @@
-let numAAdivinar = 0;
-let mensaje = null;
-let limiteDerecho = 100;
-let limiteIzquierdo = 1;
+let array = null;
+let mensaje;
+let primeraVezPulsada = false;
+let aSidoMayor = false;
+let aSidoMenor = false;
+let btnReset = null;
 
 main = () => {
-  document
-    .getElementById("btnComprobar")
-    .addEventListener("click", ComprobarNumero, false);
+  let parrafoRefran = document.getElementById("contenido");
   mensaje = document.getElementById("mensaje");
+  btnReset = document.getElementById("reset");
+
+  parrafoRefran.innerHTML = `<p>`;
+  btnReset.innerHTML = "";
+
+  for (let i = 1; i <= 100; i++) {
+    parrafoRefran.innerHTML += `<button class="botones" id="boton${i}" onclick="ComprobarNumero(this)">${i}</button>`;
+    if (i % 10 == 0) parrafoRefran.innerHTML += `</p><p>`;
+  }
+
   numAAdivinar = Math.round(Math.random() * (100 - 1) + parseInt(1));
+  mensaje.innerHTML = "";
+  //   numAAdivinar = 100;
 };
 
-ComprobarNumero = () => {
-  let inputNumero = document.getElementById("numero").value;
+ComprobarNumero = e => {
+  let numeroPulsado = e.innerHTML;
+  if (numeroPulsado != numAAdivinar) {
+    if (numeroPulsado < numAAdivinar) {
+      aSidoMayor = true;
+      numeroMenorAnterior = e.innerHTML;
 
-  if (inputNumero.length != 0) {
-    if (inputNumero <= 100 && inputNumero > 0) {
-      mensaje.innerHTML = "";
-      if (inputNumero != numAAdivinar) {
-        if (inputNumero < numAAdivinar)
-          mensaje.innerHTML =
-            "El numero secreto esta entre " +
-            (parseInt(inputNumero) + 1) +
-            " y 100";
-        else
-          mensaje.innerHTML =
-            "El numero secreto esta entre " +
-            (parseInt(inputNumero) - 1) +
-            " y 1";
+      if (!primeraVezPulsada && !aSidoMenor) {
+        mensaje.innerHTML =
+          "El numero secreto esta entre " +
+          (parseInt(numeroPulsado) + 1) +
+          " y 100";
+        if (aSidoMenor) primeraVezPulsada = true;
       } else {
-        mensaje.innerHTML = "Enhorabuena, has acertado el numero secreto!!";
+        mensaje.innerHTML =
+          "El numero secreto esta entre " +
+          (parseInt(numeroPulsado) + 1) +
+          " y " +
+          (parseInt(numeroMayorAnterior) - 1);
       }
-    } else mensaje.innerHTML = "El numero debe estar comprendido entre 1 y 100";
+      for (let index = numeroPulsado; index >= 1; index--) {
+        let boton = document.getElementById("boton" + index);
+        boton.style.borderColor = "red";
+      }
+    } else {
+      aSidoMenor = true;
+      numeroMayorAnterior = e.innerHTML;
+
+      if (!primeraVezPulsada && !aSidoMayor) {
+        mensaje.innerHTML =
+          "El numero secreto esta entre 1 y " + +(parseInt(numeroPulsado) - 1);
+        if (aSidoMayor) primeraVezPulsada = true;
+      } else
+        mensaje.innerHTML =
+          "El numero secreto esta entre " +
+          (parseInt(numeroMenorAnterior) + 1) +
+          " y " +
+          (parseInt(numeroPulsado) - 1);
+
+      for (let index = numeroPulsado; index <= 100; index++) {
+        let boton = document.getElementById("boton" + index);
+        boton.style.borderColor = "red";
+      }
+    }
   } else {
-    mensaje.innerHTML = "Debe estoducir un numero";
+    e.style.borderColor = "yellow";
+    e.style.background = "orange";
+
+    mensaje.innerHTML = "¡¡Enhorabuena, has acertado el numero secreto!!<br> ";
+    btnReset.innerHTML =
+      "<button id='btnReset' onclick='main()'>Volver a jugar</button>";
   }
 };
 

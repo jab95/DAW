@@ -5,13 +5,16 @@ let error4 = null;
 let contadorAcertados;
 let intentos = 0;
 let acierto;
+let btnReinicio = null;
+let parrafoAciertos = null;
 
 Corregir = e => {
   error1 = document.getElementById("error1");
   error2 = document.getElementById("error2");
   error3 = document.getElementById("error3");
   error4 = document.getElementById("error4");
-  let parrafoAciertos = document.getElementById("aciertos");
+  parrafoAciertos = document.getElementById("aciertos");
+  btnReinicio = document.getElementById("repetir");
   contadorAcertados = 0;
   acierto = 0;
 
@@ -27,7 +30,26 @@ Corregir = e => {
 
   if (acierto < 0) acierto = 0;
   parrafoAciertos.innerHTML =
-    acierto + "% de preguntas acertadas, llevas " + intentos;
+    intentos != 1
+      ? acierto + "% de preguntas acertadas, llevas " + intentos + " intentos"
+      : acierto + "% de preguntas acertadas, llevas " + intentos + " intento";
+
+  if (acierto == 100) {
+    parrafoAciertos.innerHTML =
+      intentos != 1
+        ? "Felicidades, has terminado el test con el " +
+          acierto +
+          "% acertado y " +
+          intentos +
+          " intentos."
+        : "Felicidades, has terminado el test con el " +
+          acierto +
+          "% acertado y " +
+          intentos +
+          " intento.";
+
+    btnReinicio.style.display = "inline";
+  }
 };
 
 CompruebaChB = () => {
@@ -73,4 +95,27 @@ CompruebaAcertado = (acertado, parrafoError) => {
     acierto += 25;
     parrafoError.innerHTML = "";
   }
+};
+
+Reiniciar = e => {
+  parrafoAciertos.innerHTML = "";
+  document.getElementById("corregir").disabled = false;
+  e.style.display = "none";
+
+  let elements = document.getElementById("select").options;
+  elements[0].selected = true;
+
+  let radios = document.getElementsByName("radio");
+  for (let index = 0; index < radios.length; index++) {
+    radios[index].checked = false;
+  }
+
+  let checkboxs = document.getElementsByName("cb");
+  for (let index = 0; index < checkboxs.length; index++) {
+    checkboxs[index].checked = false;
+  }
+
+  document.getElementById("suma").value = "";
+
+  intentos = 0;
 };
