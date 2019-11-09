@@ -1,0 +1,50 @@
+span {
+  text-decoration: underline black;
+}
+
+.contenido {
+  position: absolute;
+  width: 500px;
+  height: 100%;
+  top: 3%;
+  left: 41%;
+}
+
+#palabra {
+  font-size: 7em;
+}
+
+#reiniciar {
+  position: absolute;
+  top: 80%;
+  right: 45%;
+  width: 10%;
+  height: 40px;
+  border-radius: 5px;
+  background: coral;
+}
+
+#letrasUsadas {
+  position: absolute;
+  font-size: 2em;
+  width: 300px;
+  left: 10%;
+}
+
+h1,
+h3 {
+  text-align: center;
+}
+h2 {
+  position: absolute;
+  top: 70%;
+  right: 33%;
+}
+
+img {
+  position: absolute;
+  width: 300px;
+  height: 280px;
+  top: 30%;
+  right: 49%;
+}
