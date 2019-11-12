@@ -114,86 +114,74 @@ let json = `[
     }
 ]`;
 
-let arrayJSON= [];
-let pactometroColor=null;
-let total=null;
-let checkboxes=null;
+let arrayJSON = [];
+let pactometroColor = null;
+let total = null;
+let checkboxes = null;
 
-Main = ()=>{
+Main = () => {
+  convierteJSON();
 
-    convierteJSON();
+  arrayJSON.sort((a, b) => parseFloat(b.escanios) - parseFloat(a.escanios));
 
-    arrayJSON.sort((a, b) => parseFloat(b.escanios) - parseFloat(a.escanios));
+  document.getElementsByClassName("contenido")[0].innerHTML = CreaTabla();
 
-    document.getElementsByClassName("contenido")[0].innerHTML = CreaTabla();
-
-    checkboxes = document.getElementsByName("cb");
-    total = document.getElementById("total");
-    pactometroColor = document.getElementsByClassName("pactometroColor")[0];
-}
-
+  checkboxes = document.getElementsByName("cb");
+  total = document.getElementById("total");
+  pactometroColor = document.getElementsByClassName("pactometroColor")[0];
+};
 
 function convierteJSON() {
-    json = JSON.parse(json);
-  
-    //recibimos el JSON de la web en forma de string, ahora lo convertimos a array;
-  
-    arrayJSON = json.map(function(elemento) {
-      return {
-        partido : elemento.partido,
-        escanios : elemento.escanios,
-        votos : elemento.votos,
-        porcentaje : elemento.porcentaje,
-        color : elemento.color
-      };
-    });
+  json = JSON.parse(json);
+
+  //recibimos el JSON de la web en forma de string, ahora lo convertimos a array;
+
+  arrayJSON = json.map(function(elemento) {
+    return {
+      partido: elemento.partido,
+      escanios: elemento.escanios,
+      votos: elemento.votos,
+      porcentaje: elemento.porcentaje,
+      color: elemento.color
+    };
+  });
+}
+
+CreaTabla = () => {
+  tabla = '<table border="1">';
+
+  for (let index = 0; index < arrayJSON.length; index++) {
+    tabla += "<tr>";
+    tabla += `<td><input type="checkbox" name="cb" id="cb${index}" onclick="ClickCheckbox()"></td>`;
+    tabla += `<td style="background: ${arrayJSON[index].color};"></td>`;
+    tabla += `<td>${arrayJSON[index].partido}</td>`;
+    tabla += `<td>${arrayJSON[index].escanios}</td>`;
+    tabla += `<td>${arrayJSON[index].votos}</td>`;
+    tabla += `<td>${arrayJSON[index].porcentaje}</td>`;
+    tabla += "</tr>";
   }
 
+  tabla += "</tabla>";
 
-  CreaTabla = ()=>{
-      tabla = '<table border="1">';
+  return tabla;
+};
 
-      for (let index = 0; index < arrayJSON.length; index++) {
+ClickCheckbox = () => {
+  let sumaTotal = 0;
+  pactometroColor.innerHTML = "";
 
-        tabla+="<tr>";
-        tabla+=`<td><input type="checkbox" name="cb" id="cb${index}" onclick="ClickCheckbox()"></td>`;
-        tabla+=`<td style="background: ${arrayJSON[index].color};"></td>`;
-        tabla+=`<td>${arrayJSON[index].partido}</td>`;
-        tabla+=`<td>${arrayJSON[index].escanios}</td>`;
-        tabla+=`<td>${arrayJSON[index].votos}</td>`;
-        tabla+=`<td>${arrayJSON[index].porcentaje}</td>`;
-        tabla+="</tr>";
-        
-      }
-
-      tabla+="</tabla>";
-
-      return tabla;
+  for (let index = 0; index < arrayJSON.length; index++) {
+    if (checkboxes[index].checked == true) {
+      sumaTotal += arrayJSON[index].escanios;
+      pactometroColor.innerHTML += `<span style="width: ${arrayJSON[index].escanios}px; height: 50px;background: ${arrayJSON[index].color}"></span>`;
+    }
   }
 
-  
-  ClickCheckbox = ()=>{
-        let sumaTotal=0;
-        pactometroColor.innerHTML="";
+  sumaTotal >= 179
+    ? (total.style.color = "green")
+    : (total.style.color = "black");
 
-        for (let index = 0; index < arrayJSON.length; index++) {
-            if(checkboxes[index].checked == true){
-                sumaTotal +=arrayJSON[index].escanios;
-                pactometroColor.innerHTML+=`<div style="width: ${Math.round(arrayJSON[index].escanios)}px; height: 50px;background: ${arrayJSON[index].color}"></div>`
-            }
-        }
+  total.innerHTML = "Total: " + sumaTotal;
+};
 
-        if(sumaTotal>=179) total.style.color="green";
-        else total.style.color="black";
-       
-        total.innerHTML="Total: "+sumaTotal;
-
-  }
-
-  ObtenerPorcentajeDe100 = (porcentaje) =>{
-    let porcentajeDe100 = (porcentaje/350)*100;
-
-    return porcentajeDe100;
-  }
-
-addEventListener("load",Main);
+addEventListener("load", Main);
