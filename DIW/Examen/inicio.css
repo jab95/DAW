@@ -1,63 +1,66 @@
 .contenedor {
-    display: grid;
-    height: 100%;
-    width: 100%;
-    min-width: 40%;
-    grid-template-columns: 1fr 1fr;
-    grid-template-rows: 1fr 0.2fr 2.5fr 2.5fr 0.5fr;
-    background: blanchedalmond;
-    margin: 20px auto;
+  display: grid;
+  height: 100%;
+  width: 100%;
+  min-width: 40%;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 0.2fr 2.5fr 2.5fr 0.5fr;
+  background: blanchedalmond;
+  margin: 20px auto;
 }
 
 article img {
-    height: 80%;
-    width: 80%;
+  height: 80%;
+  width: 80%;
 }
 
 article {
-    justify-self: center;
-    align-self: center;
-    padding: 1%;
-    margin-left: 10%;
+  justify-self: center;
+  align-self: center;
+  padding: 1%;
+  margin-left: 10%;
 }
 
 header {
-    grid-column: 1/3;
-    grid-row: 1/2;
-    text-align: center;
-    background: burlywood;
-    border-bottom: 1px solid #666666;
-    padding: 1em;
+  grid-column: 1/3;
+  grid-row: 1/2;
+  text-align: center;
+  background: burlywood;
+  border-bottom: 1px solid #666666;
+  padding: 1em;
 }
 
 nav {
-    display: flex;
-    justify-content: space-around;
-    background: darkcyan;
-    grid-column: 1/3;
-    grid-row: 2/3;
-    width: 100%;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, 18%);
+  background: darkcyan;
+  justify-content: space-around;
+  grid-column: 1/3;
+  column-gap: 1%;
+  grid-row: 2/3;
+  width: 100%;
 }
 
 nav div {
-    background: cornflowerblue;
-    align-self: center;
-    text-align: center;
-    height: 80%;
-    align-items: center;
-    margin: 1% 1% 1% 1%;
+  background: cornflowerblue;
+  align-self: center;
+  text-align: center;
+  height: 80%;
+  width: 100%;
+  align-items: center;
+  margin: 1% 1% 1% 1%;
 }
-
 
 footer {
-    display: flex;
-    grid-column: 1/3;
-    grid-row: 5/6;
-    background: coral;
-    justify-content: space-around;
+  display: grid;
+  grid-column: 1/3;
+  grid-row: 5/6;
+  background: coral;
+  grid-template-columns: repeat(2, 50%);
+  justify-content: space-around;
+  justify-items: center;
 }
 
-.activa{
-    background: rgb(58, 97, 170);
-
+.activa {
+  background: rgb(58, 97, 170);
 }
