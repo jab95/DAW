@@ -43,10 +43,24 @@ const ABECEDARIO = [
 
 let sopaLetras = new Array(10);
 
+let interval = null;
 let contenido = null;
+let parrafoPalabras = null;
+let parrafoNuevo = "";
+let contadorAcertadas = 0;
+let reloj = null;
+let contadorHoras = 0;
+let contadorSegundos = 0;
+let contadorMinutos = 0;
+let ss = 0;
+let mm = 0;
+let hh = 0;
+let isPaused = false;
 
 Main = () => {
   contenido = document.getElementById("contenido");
+  parrafoPalabras = document.getElementById("palabras");
+  reloj = document.getElementById("reloj");
 
   ColocaPalabras();
 
@@ -64,6 +78,8 @@ Main = () => {
     }
     contenido.innerHTML += "<br>";
   }
+
+  ComienzaReloj();
 };
 
 ColocaPalabras = () => {
@@ -111,13 +127,19 @@ CompruebaPalabra = e => {
       else {
         segundaVezPulsado = e.value;
         if (primeraVezPulsado == 00) {
-          if (segundaVezPulsado == 50)
+          if (segundaVezPulsado == 50) {
             PintaLetras(primeraVezPulsado, segundaVezPulsado, "vertical");
+            parrafoNuevo = parrafoPalabras.innerHTML.replace("CATEAR", "X");
+            contadorAcertadas++;
+          }
         } else if (primeraVezPulsado == 50) {
           if (segundaVezPulsado == 00) {
             PintaLetras(primeraVezPulsado, segundaVezPulsado, "vertical");
+            parrafoNuevo = parrafoPalabras.innerHTML.replace("CATEAR", "X");
+            contadorAcertadas++;
           }
         }
+        parrafoPalabras.innerHTML = parrafoNuevo;
         primeraVezPulsado = -1;
         segundaVezPulsado = -1;
       }
@@ -128,12 +150,20 @@ CompruebaPalabra = e => {
       else {
         segundaVezPulsado = e.value;
         if (primeraVezPulsado == 36) {
-          if (segundaVezPulsado == 96)
+          if (segundaVezPulsado == 96) {
             PintaLetras(primeraVezPulsado, segundaVezPulsado, "vertical");
+            parrafoNuevo = parrafoPalabras.innerHTML.replace("NOTABLE", "X");
+            contadorAcertadas++;
+          }
         } else if (primeraVezPulsado == 96) {
-          if (segundaVezPulsado == 36)
+          if (segundaVezPulsado == 36) {
+            parrafoNuevo = parrafoPalabras.innerHTML.replace("NOTABLE", "X");
             PintaLetras(primeraVezPulsado, segundaVezPulsado, "vertical");
+            contadorAcertadas++;
+          }
         }
+
+        parrafoPalabras.innerHTML = parrafoNuevo;
         primeraVezPulsado = -1;
         segundaVezPulsado = -1;
       }
@@ -144,12 +174,19 @@ CompruebaPalabra = e => {
       else {
         segundaVezPulsado = e.value;
         if (primeraVezPulsado == 11) {
-          if (segundaVezPulsado == 77)
+          if (segundaVezPulsado == 77) {
             PintaLetras(primeraVezPulsado, segundaVezPulsado, "dia2");
+            parrafoNuevo = parrafoPalabras.innerHTML.replace("APROBAR", "X");
+            contadorAcertadas++;
+          }
         } else if (primeraVezPulsado == 77) {
-          if (segundaVezPulsado == 11)
+          if (segundaVezPulsado == 11) {
+            parrafoNuevo = parrafoPalabras.innerHTML.replace("APROBAR", "X");
             PintaLetras(primeraVezPulsado, segundaVezPulsado, "dia2");
+            contadorAcertadas++;
+          }
         }
+        parrafoPalabras.innerHTML = parrafoNuevo;
         primeraVezPulsado = -1;
         segundaVezPulsado = -1;
       }
@@ -160,6 +197,14 @@ CompruebaPalabra = e => {
       segundaVezPulsado = -1;
       break;
   }
+
+  if (contadorAcertadas == 3) {
+    alert("Has acertado todas las palabras, has ganado!");
+    isPaused = true;
+    clearInterval(interval);
+    reloj.innerHTML =
+      "Tu tiempo en acabar la partida ha sido de " + reloj.innerHTML;
+  }
 };
 
 PintaLetras = (primera, segunda, orientacion) => {
@@ -169,6 +214,7 @@ PintaLetras = (primera, segunda, orientacion) => {
     case "dia2":
       if (primera > segunda) {
         for (let j = primera; j >= segunda; ) {
+          if (j == 0) j = "00";
           document.getElementById("btn" + j).style.background = "red";
           j = parseInt(j) - 11;
         }
@@ -198,4 +244,34 @@ PintaLetras = (primera, segunda, orientacion) => {
   }
 };
 
-addEventListener("load", Main);
+ComienzaReloj = () => {
+  interval = setInterval(() => {
+    if (!isPaused) {
+      contadorSegundos++;
+      if (contadorSegundos > 59) {
+        contadorMinutos++;
+        contadorSegundos = 0;
+      }
+      if (contadorMinutos > 59) {
+        contadorHoras++;
+        contadorMinutos = 0;
+      }
+      if (contadorHoras > 24) {
+        contadorHoras = 0;
+      }
+
+      ss = contadorSegundos;
+      mm = contadorMinutos;
+      hh = contadorHoras;
+
+      if (ss < 10) ss = "0" + ss;
+      if (mm < 10) mm = "0" + mm;
+      if (hh < 10) hh = "0" + hh;
+
+      reloj.innerHTML = hh + ":" + mm + ":" + ss;
+    }
+  }, 1000);
+};
+
+// addEventListener("load", Main);
+Main();

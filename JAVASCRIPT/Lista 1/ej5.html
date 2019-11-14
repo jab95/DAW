@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <title>Document</title>
+  </head>
+  <body>
+    <p id="contenido"></p>
+
+    <script>
+      let palabra = prompt("Escriba una cadena");
+      let contenido = document.getElementById("contenido");
+
+      let array = palabra.split(" ");
+
+      contenido.innerHTML += array.length + "<br>";
+      contenido.innerHTML += array[0] + "<br>";
+      contenido.innerHTML += array[array.length - 1] + "<br>";
+
+      for (let index = 0; index < array.length; index++) {
+        contenido.innerHTML +=
+          array[index]
+            .split("")
+            .reverse()
+            .join("") + " , ";
+      }
+      contenido.innerHTML += "<br>";
+      array.sort();
+
+      for (let index = 0; index < array.length; index++) {
+        contenido.innerHTML += array[index] + " ,";
+      }
+      contenido.innerHTML += "<br>";
+
+      array.sort((a, b) => b - a);
+      array.reverse();
+
+      for (let index = 0; index < array.length; index++) {
+        contenido.innerHTML += array[index] + " ,";
+      }
+    </script>
+  </body>
+</html>

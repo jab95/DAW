@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <title>Document</title>
+  </head>
+
+  <body>
+    Introduce un número: <input type="number" name="numero" id="numero" />
+    <button id="enviar" onclick="Comprobar()">Enviar</button>
+    <p id="mostrar"></p>
+    <script>
+      var Comprobar = function() {
+        var numero = parseInt(document.getElementById("numero").value);
+        var mostrar = document.getElementById("mostrar");
+        numero % 2 == 0
+          ? (mostrar.innerHTML = "Es par")
+          : (mostrar.innerHTML = "Es impar");
+      };
+    </script>
+  </body>
+</html>

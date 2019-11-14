@@ -1,0 +1,31 @@
+<!-- Función numérica que recibe dos números enteros y devuelve  la resta del mayor menos el menor.  -->
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <title>Ejercicio 7</title>
+  </head>
+
+  <body>
+    Introduce un número:
+    <input type="number" name="numero1" id="numero1" /> Introduce otro número:
+    <input type="number" name="numero2" id="numero2" />
+    <button
+      id="enviar"
+      onclick='restarNumeros(document.getElementById("numero1").value, document.getElementById("numero2").value)'
+    >
+      Enviar
+    </button>
+    <p id="mostrar"></p>
+    <script>
+      const restarNumeros = (numero1, numero2) => {
+        let mostrar = document.getElementById("mostrar");
+        numero1 > numero2
+          ? (mostrar.innerHTML = numero1 / numero2)
+          : (mostrar.innerHTML = numero2 / numero1);
+      };
+    </script>
+  </body>
+</html>

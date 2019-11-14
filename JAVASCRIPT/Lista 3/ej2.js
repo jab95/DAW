@@ -4,7 +4,6 @@ let interval = null;
 let botonIniciar = null;
 let usados = new Array(refran.length);
 let numerosDados = 0;
-let repe = true;
 let enlaceARecargar =
   '<a href="ej2.html">La partida a terminado, da click aqui para recargar</a>';
 
@@ -37,32 +36,18 @@ ManipularContador = e => {
 
 function aleatorio(min, max) {
   if (usados.length != max - min) {
-    while (repe != false && interval != null) {
+    do {
       var num = Math.floor(Math.random() * (max - min + 1)) + min;
-      var repe = repetido(num);
 
       if (numerosDados == araryRefran.length) {
         clearInterval(interval);
         interval = null;
-        repe = false;
         document.getElementById("botones").innerHTML = enlaceARecargar;
       }
-    }
+    } while (usados.includes(num) && interval != null);
     numerosDados++;
 
     usados.push(num);
     return num;
-  } else {
-    return null;
-  }
-}
-
-function repetido(num) {
-  var repe = false;
-  for (i = 0; i < usados.length; i++) {
-    if (num == usados[i]) {
-      repe = true;
-    }
-  }
-  return repe;
+  } else return null;
 }

@@ -1,0 +1,27 @@
+<!-- Objeto Math.-Calcular el área de un círculo tras solicitar el radio desde un cuadro de diálogo. -->
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <title>Ejercicio 2</title>
+  </head>
+
+  <body>
+    <h1>Calculo area de un circulo</h1>
+    Introduce el radio:
+    <input type="number" name="radio" id="radio" step="0.01" required />
+    <button id="calcular" onclick="calcularArea()">Calcular</button>
+    <p id="mostrar"></p>
+
+    <script>
+      let mostrar = document.getElementById("mostrar");
+      const calcularArea = () => {
+        let radio = document.getElementById("radio").value;
+        mostrar.innerHTML = `El area es: ${Math.PI * Math.pow(radio, 2)}`;
+      };
+    </script>
+  </body>
+</html>

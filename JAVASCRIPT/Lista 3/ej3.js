@@ -85,30 +85,17 @@ VerPalabra = e => {
 
 function aleatorio(min, max) {
   if (usados.length != max - min) {
-    while (repe != false) {
+    do {
       var num = Math.floor(Math.random() * (max - min + 1)) + min;
-      var repe = repetido(num);
 
       if (numerosDados == palabras.length) {
         repe = false;
         finalizado = true;
       }
-    }
+    } while (usados.includes(num));
     numerosDados++;
 
     usados.push(num);
     return num;
-  } else {
-    return null;
-  }
-}
-
-function repetido(num) {
-  var repe = false;
-  for (i = 0; i < usados.length; i++) {
-    if (num == usados[i]) {
-      repe = true;
-    }
-  }
-  return repe;
+  } else return null;
 }

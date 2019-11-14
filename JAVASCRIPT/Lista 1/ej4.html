@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <title>Document</title>
+    <script>
+      CompruebaCadena = cadena => {
+        if (/^[A-Z]+$/.test(cadena)) {
+          //SOLO CARACTERES MASYUCULAS Y AL MENOS TIENE QUE TENER 1 (+)
+          alert("la cadena esta en mayuscula");
+        } else if (/^[a-z]+$/.test(cadena)) {
+          //SOLO CARACTERES MINUSCULOS Y AL MENOS DEBE DE TENER 1 (+)
+          alert("la cadena esta en minuscula");
+        } else if (/^(?=.*[A-Z])(?=.*[a-z])\w+$/.test(cadena)) {
+          //AL MENOS UNA MAYUSCULA EN CUALQUIER LADO DE LA CADENA, AL MENOS UNA MINUSCULA EN CUALQUIER LADO DE LA CADENA
+          alert("la cadena contiene mayusculas y minusculas");
+        }
+      };
+    </script>
+  </head>
+  <body></body>
+</html>

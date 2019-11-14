@@ -1,0 +1,69 @@
+<!-- Objeto Array.-C
+  rear una página que presente los elementos de un array numérico (inicialmente vacío) y botones con las opciones siguientes:
+  -Insertar valor al final del array
+  -Insertar al principio del array
+  -Borrar primer elemento
+  -Borrar último elemento
+  -Ordenar ascendentemente
+  -Ordenar descendentemente -->
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <title>Ejercicio 5</title>
+  </head>
+
+  <body>
+    <button id="insertarAlFinal" onclick="insertarAlFinal()">
+      Insertar al final
+    </button>
+    <button id="insertarAlPrincipio" onclick="insertarAlPrincipio()">
+      Insertar al principio
+    </button>
+    <button id="borrarPrimerElemento" onclick="borrarPrimerElemento()">
+      Borrar primer elemento
+    </button>
+    <button id="borrarUltimoElemento" onclick="borrarUltimoElemento()">
+      Borrar último elemento
+    </button>
+    <button id="ordenarAscendentemente" onclick="ordenarAscendentemente()">
+      Ordenar ascendentemente
+    </button>
+    <button id="ordenarDescendentemente" onclick="ordenarDescendentemente()">
+      Ordenar descendentemente
+    </button>
+    <p id="mostrar"></p>
+    <script>
+      let array = [];
+      let mostrar = document.getElementById("mostrar");
+      const insertarAlFinal = () => {
+        array.push(Math.round(Math.random() * 1000));
+        mostrar.innerHTML = array.join(" - ");
+      };
+      const insertarAlPrincipio = () => {
+        array.unshift(Math.round(Math.random() * 1000));
+        mostrar.innerHTML = array.join(" - ");
+      };
+      const borrarPrimerElemento = () => {
+        array.shift();
+        mostrar.innerHTML = array.join(" - ");
+      };
+      const borrarUltimoElemento = () => {
+        array.pop();
+        mostrar.innerHTML = array.join(" - ");
+      };
+      const ordenarAscendentemente = () => {
+        array.sort();
+        mostrar.innerHTML = array.join(" - ");
+      };
+      const ordenarDescendentemente = () => {
+        array.sort();
+        array.reverse();
+        mostrar.innerHTML = array.join(" - ");
+      };
+    </script>
+  </body>
+</html>

@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <title>Document</title>
+  </head>
+  <body>
+    Introduzca frase para comprobar:
+    <input type="text" name="frase" id="frase" />
+    <button id="comprobar" onclick="Comprobar()">Comprobar</button>
+    <div id="mostrar"></div>
+    <script>
+      //La idea es convertir a un array la frase y aprovechar los métodos del array (como reverse) para comprobar si es palíndromo
+      var Comprobar = function() {
+        var mostrar = document.getElementById("mostrar");
+        var frase = document.getElementById("frase").value;
+        //Obtenemos la frase sin espacios y en minúsculas, todo como una secuencia de letras. Ej=> "Hola que tal" -> "holaquetal"
+        var fraseSinEspacio = frase
+          .toLowerCase()
+          .split(" ")
+          .join("");
+        var arrayFrase = fraseSinEspacio.split("");
+        arrayFrase.join("") == arrayFrase.reverse().join("")
+          ? (mostrar.innerHTML = "Es palíndromo")
+          : (mostrar.innerHTML = "No es palíndromo");
+      };
+    </script>
+  </body>
+</html>

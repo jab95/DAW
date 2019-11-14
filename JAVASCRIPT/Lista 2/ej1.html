@@ -1,0 +1,23 @@
+<!-- Objeto Date.-Calcular  el  tiempo  restante  en milisegundos entre  la  fecha  actual y  las 12  de  la noche del 31 de Diciembre del mismo año. -->
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <title>Ejercicio 1</title>
+  </head>
+
+  <body>
+    <h1>Milisegundos</h1>
+    <p id="mostrar"></p>
+    <script>
+      let date = new Date();
+      let fechaActual = date.getTime();
+      let fechaFinal = new Date(`December 31, ${date.getFullYear()} 00:00:00`);
+      let mostrar = document.getElementById("mostrar");
+      mostrar.innerHTML = `Quedan ${fechaFinal -
+        fechaActual} milisegundos hasta el 31 de Diciembre de este año`;
+    </script>
+  </body>
+</html>

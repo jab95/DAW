@@ -1,0 +1,32 @@
+<!-- Función booleana que recibe un número entero positivo y determina si es primo.  -->
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <title>Ejercicio 6</title>
+  </head>
+
+  <body>
+    <h1>Es Primo?</h1>
+    Introduzca un número: <input type="number" name="numero" id="numero" />
+    <button
+      id="Enviar"
+      onclick='esPrimo(document.getElementById("numero").value)'
+    >
+      Es primo?
+    </button>
+    <p id="mostrar"></p>
+    <script>
+      const esPrimo = numero => {
+        let mostrar = document.getElementById("mostrar");
+        let primo = true;
+        for (let index = 2; index <= numero / 2; index++) {
+          if (numero % index == 0) primo = false;
+        }
+        mostrar.innerHTML = primo ? "Es primo" : "No es primo";
+      };
+    </script>
+  </body>
+</html>

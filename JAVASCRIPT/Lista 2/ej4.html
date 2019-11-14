@@ -1,0 +1,28 @@
+<!-- Objeto String.-Solicitar una cadena de texto desde teclado, presentar el número de caracteres que contiene y presentar la propia cadena en cursiva y en tachado. -->
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <title>Ejercicio 4</title>
+  </head>
+
+  <body>
+    <h1>Cadena</h1>
+    Introduzca una cadena: <input type="text" name="cadena" id="cadena" />
+    <button id="Enviar" onclick="procesarTexto()">Enviar</button>
+    <p id="mostrar"></p>
+    <script>
+      let mostrar = document.getElementById("mostrar");
+      const procesarTexto = () => {
+        let cadena = document.getElementById("cadena").value;
+        mostrar.innerHTML = "";
+        mostrar.innerHTML += cadena.length;
+        mostrar.innerHTML += `<br><i>${cadena}</i><br>`;
+        mostrar.innerHTML += `<del>${cadena}</del>`;
+      };
+    </script>
+  </body>
+</html>

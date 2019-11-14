@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <title>DNI</title>
+    <!-- JAVASCRIPT -->
+    <script>
+      var stringLetrasDNI = "TRWAGMYFPDXBNJZSQVHLCKE";
+      var letrasOrdenadasDNI = stringLetrasDNI.split("").sort();
+      function Comprobar() {
+        var dni = document.getElementById("dni").value;
+        var letra = document.getElementById("letra").value;
+        if (letra === stringLetrasDNI.charAt(dni % 23)) {
+          alert("Correcto");
+        } else {
+          alert("Incorrecto");
+        }
+      }
+    </script>
+  </head>
+
+  <body>
+    <h1>Comprobar DNI</h1>
+    <p>Número de DNI</p>
+    <input type="number" id="dni" />
+    <p>Letra</p>
+    <select id="letra">
+      <script>
+        for (var i = 0; i < letrasOrdenadasDNI.length; i++) {
+          document.write(
+            `<option value="${letrasOrdenadasDNI[i]}">${letrasOrdenadasDNI[i]}</option>`
+          );
+        }
+      </script> </select
+    ><br />
+    <button id="comprobar" onclick="Comprobar()">Comprobar</button>
+  </body>
+</html>
