@@ -3,64 +3,9 @@ let alfabetoElegido = 0;
 let selectAlfabetos = null;
 let textoADescifrar = null;
 let rotado = null;
-let ALFABETOESPAÑOL = [
-  "A",
-  "B",
-  "C",
-  "D",
-  "E",
-  "F",
-  "G",
-  "H",
-  "I",
-  "J",
-  "K",
-  "L",
-  "M",
-  "N",
-  "Ñ",
-  "O",
-  "P",
-  "Q",
-  "R",
-  "S",
-  "T",
-  "U",
-  "V",
-  "W",
-  "X",
-  "Y",
-  "Z"
-];
+let ALFABETOESPAÑOL = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "Ñ", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"];
 
-let ALFABETOINGLES = [
-  "A",
-  "B",
-  "C",
-  "D",
-  "E",
-  "F",
-  "G",
-  "H",
-  "I",
-  "J",
-  "K",
-  "L",
-  "M",
-  "N",
-  "O",
-  "P",
-  "Q",
-  "R",
-  "S",
-  "T",
-  "U",
-  "V",
-  "W",
-  "X",
-  "Y",
-  "Z"
-];
+let ALFABETOINGLES = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"];
 
 Main = () => {
   selectAlfabetos = document.getElementById("selectAlfabetos");
@@ -120,7 +65,7 @@ Descifrar = () => {
   document.getElementById("resultado").innerHTML = arrayNuevo.join("");
 };
 
-String.prototype.eliminarAcentosTipoGraficos = function() {
+String.prototype.eliminarAcentosTipoGraficos = function () {
   return this.normalize("NFD")
     .replace(
       /([^n\u0300-\u036f]|n(?!\u0303(?![\u0300-\u036f])))[\u0300-\u036f]+/gi,
