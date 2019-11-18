@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Ejemplo 4</title>
+
+    <script>
+        let oa = new XMLHttpRequest();
+        oa.onreadystatechange = () => {
+            if (oa.readyState == 4 && oa.status == 200) {
+                let documentoXMl = oa.responseXML;
+                let cds = documentoXMl.getElementsByTagName("TITLE");
+                for (let index = 0; index < cds.length; index++) {
+                    console.log(cds[index].firstChild.nodeValue);
+                }
+
+
+            }
+        }
+
+        oa.open("GET", "datos.xml", true);
+        oa.send();
+    </script>
+</head>
+
+<body>
+
+</body>
+
+</html>

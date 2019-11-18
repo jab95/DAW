@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Ejemplo 2</title>
+    <script>
+        
+
+        const Main = ()=>{
+
+            //petición AJAX
+            let xhr = new XMLHttpRequest();
+
+            xhr.onreadystatechange = ()=>{
+                if(xhr.status==200 && xhr.readyState==4){
+                    console.log(xhr.responseText);
+                    let idiomas = JSON.parse(xhr.responseText);
+                    console.log(idiomas);
+
+                    for (let index = 0; index < idiomas.length; index++) {
+                        document.getElementById("idioma").innerHTML +=`<option value="${index}">${idiomas[index].idioma}</option>">`
+                        
+                    }
+                }
+            }
+
+            xhr.open("GET","datos.json",true);
+            xhr.send();
+
+        }
+
+        addEventListener("load",Main);
+    
+    </script>
+</head>
+<body>
+    <select name="" id="idioma">
+
+    </select>
+    
+</body>
+</html>

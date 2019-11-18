@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<title>Examen Final Junio 2019 DWEC - Ejercicio 1 -</title>
+<meta charset="utf-8"/>
+<script>
+console.log("á".toUpperCase())
+String.prototype.convierte = function(){
+    let cadena = this.toUpperCase();
+    let chars={
+		"Á":"A", "É":"E", "Í":"I", "Ó":"O", "Ú":"U",
+		"À":"A", "È":"E", "Ì":"I", "Ò":"O", "Ù":"U", "Ü":"U"}
+	let expr=/[ÁÀÉÈÍÌÓÒÚÙÜ]/ig;
+    return cadena.replace(expr,function(i){return chars[i]});
+}
+
+var idiomas = [{idioma:"Castellano", letras: "ABCDEFGHIJKLMNÑOPQRSTUVWXYZ"},
+			   {idioma:"Inglés", letras: "ABCDEFGHIJKLMNOPQRSTUVWXYZ"}];
+
+var letras = idiomas[0].letras;
+
+window.onload = function(){
+	// Cargo los idiomas 
+	var salida = "";
+	for (var i=0;i<idiomas.length;i++){
+		salida += `<option value='${idiomas[i].letras}'>${idiomas[i].idioma}</option>`;
+	}
+	document.getElementById("alfabeto").innerHTML = salida;
+	document.getElementById("rotado").max = letras.length - 1; 
+}
+
+function Descifrar(){
+	var texto = document.getElementById("aDescifrar").value.convierte().split("");
+	var rotado = document.getElementById("rotado").value;
+	salida = "";
+	for (var i=0;i<texto.length;i++){
+		var indiceLetra = letras.indexOf(texto[i]);
+		var nuevaLetra = texto[i];
+		if (indiceLetra != -1){
+			indiceLetra -= rotado;
+			if (indiceLetra < 0)
+				indiceLetra += letras.length; 
+			nuevaLetra = letras.charAt(indiceLetra);
+		}
+		salida += nuevaLetra;
+	}
+	document.getElementById("resultado").innerHTML = salida;	
+}
+
+function ModificaAlfabeto(letrasNueva){
+	letras = letrasNueva;
+	document.getElementById("rotado").max = (letras.length - 1).toString() ; 
+	document.getElementById("rotado").value = "0"; 
+}
+</script>
+
+</head>
+<body>
+<h1>Cifrado César</h1>
+<h2>- Descifrar -</h2>
+<p>
+<label>Alfabeto</label>
+<select id="alfabeto" onchange="ModificaAlfabeto(this.value)">
+</select>
+</p>
+<p>
+<label>Texto a descifrar</label> 
+<textarea id="aDescifrar" rows="3" cols="60"></textarea>
+</p>
+<p>
+Nivel de Rotado <input type="number" id="rotado" min="0" value="0">
+</p>
+<p>
+<input type="button" value="Descifrar" onclick="Descifrar()" />
+</p>
+<div id="resultado" style='color:red'></div>
+</body>
+</html>

@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+
+    <script>
+    
+    let CargaPHP = ()=>{
+        let x = new XMLHttpRequest();
+        x.onreadystatechange = ()=>{
+            if(x.status == 200 && x.readyState==4)
+            document.getElementById("salida").innerHTML = x.responseText;
+        }
+
+        x.open("GET","datos.php?n="+document.getElementById("numero").value,true);
+        x.send();
+
+    }
+
+
+    </script>
+
+</head>
+<body>
+
+    <input type="number" name="n" id="numero" value="0">
+    <button onclick="CargaPHP()">Carga PHP</button>
+    <div id="salida"></div>
+    
+</body>
+</html>

@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Evaluación 1 - Ejercicio 1</title>
+    <script src="provincias.js"></script>
+    <style>
+    span {
+        color:red;
+    }
+    </style>
+    <script>
+        window.onload = function(){
+            document.getElementById("acepto").addEventListener("click",function(){
+                document.getElementById("submit").disabled = !this.checked;
+            });
+        }
+        function Validar() {
+            var spans = document.getElementsByTagName("span");
+            for (let i=0;i<spans.length;i++){
+                spans[i].innerHTML = "";
+            }
+            // Validar correo
+            // Validar contraseña
+            if (!/^(?=.*\d)(?=.*_)[A-ZÑ]\w{4,11}$/.test(document.getElementById("pass").value)){
+                document.getElementById("errorPass").innerHTML = "La contraseña es incorrecta";
+                return false;
+            }
+            // Que una provincia esté elegida
+            if (document.getElementById("provincia").value == -1){
+                document.getElementById("errorProvincia").innerHTML = "Debe elegir una provincia";
+                return false;
+            }
+            // Validar fecha
+            var d = document.getElementById("dia").value;
+            var m = document.getElementById("mes").value;
+            var a = document.getElementById("anio").value;
+            console.log(a+"-"+m+"-"+d);
+            var f = new Date(`${a}-${m}-${d}`);
+            console.log(f.getMonth())
+            if (f.getMonth()+1!=m){
+                document.getElementById("errorFecha").innerHTML = "La fecha es incorrecta";
+                return false;
+            }
+            return true;
+        }
+    </script>
+</head>
+<body>
+    <h1>Registro de usuario</h1>
+    <form action="graba_registro.php" method="post" onsubmit="return Validar()">
+        <p>
+            Correo electrónico: <input type="text" name="email" id="email" />
+            <span id="errorEmail"></span>
+        </p>
+        <p>
+            Contraseña <input type="password" name="pass" id="pass" />
+            <span id="errorPass"></span>
+        </p>
+        <p>
+            Provincia <select name="provincia" id="provincia">
+                <option value="-1">-- Elegir provincia --</option>
+                <script>
+                provincias = JSON.parse(provincias);
+                provincias.sort();
+                for(let i=0; i<provincias.length;i++){
+                    document.write(`<option value="${provincias[i]}">${provincias[i]}</option>`);
+                }
+                </script>
+            </select>
+            <span id="errorProvincia"></span>
+        </p>
+        <p>
+            Fecha de Nacimiento
+        Día <select name="dia" id="dia">
+            <script>
+            for (let i=1;i<=31;i++){
+                let diaCorrecto = i<10?'0'+i:i;
+                document.write(`<option value="${diaCorrecto}">${i}</option>`);
+            }
+            </script>
+        </select>
+        Mes <select name="mes" id="mes">
+            <script>
+            let meses = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
+            for (let i=0;i<12;i++){
+                let mesCorrecto = i+1<10?'0'+(i+1):i+1;
+                document.write(`<option value="${mesCorrecto}"">${meses[i]}</option>`);
+            }
+            </script>
+            </select>
+        Año <select name="anio" id="anio">
+            <script>
+            let actual = new Date().getFullYear();
+            for (let i=actual;i>=1900;i--){
+                    document.write(`<option value="${i}"">${i}</option>`);
+            }
+            </script>
+            </select>
+            <span id="errorFecha"></span>
+        </p>
+        <p><input type="checkbox" id="acepto"> Acepto las condiciones de uso</p>
+        <p><input type="submit" id="submit" value="Grabar registro" disabled></p>
+    </form>
+</body>
+</html>

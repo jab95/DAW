@@ -1,0 +1,10 @@
+Alfabeto    ROT     Texto cifrado                                   Texto Original    
+--------    ---     -------------                                   --------------
+Castellano  ROT1    CVFÑPT EJBT                                     BUENOS DIAS
+Castellano  ROT7    LZWLYV XBL HWYVILOZ !                           ESPERO QUE APROBEIS !
+Inglés      ROT25   SN AD NQ MNS SN AD, SGZS HR SGD PTDRSHNM        TO BE OR NOT TO BE, THAT IS THE QUESTION     
+
+
+Castellano  ROT4    WM OIIW IWXI XIBXS GSVVIGXEPIQXI IQ VSX4 IW UYI LE WEOMHS TIVJIGXS, IQLSVEFYIQE !    
+
+    Este último lo descubrís vosotros ;-)
