@@ -1,0 +1,51 @@
+[{
+        "nombre": "jose ayala bernal",
+        "fechanac": "1995-11-30",
+        "notas": [{
+
+                "modulo": "fol",
+                "convalida": true
+            },
+            {
+                "modulo": "prg",
+                "convalida": false,
+                "nota": 6
+            }
+        ]
+
+    },
+
+    {
+        "nombre": "josefa bernal ayala",
+        "fechanac": "1996-11-30",
+        "notas": [{
+
+                "modulo": "fol",
+                "convalida": false,
+                "nota": 9
+            },
+            {
+                "modulo": "prg",
+                "convalida": true
+            }
+        ]
+    },
+
+    {
+        "nombre": "josefina ayala bernal",
+        "fechanac": "1997-11-30",
+        "notas": [{
+
+                "modulo": "fol",
+                "convalida": false,
+                "nota": 7
+            },
+            {
+                "modulo": "prg",
+                "convalida": false,
+                "nota": 8
+            }
+        ]
+    }
+
+]

@@ -1,0 +1,73 @@
+configuracion panel control
+
+	- cambiar el editor para abrir las configs
+	- cambiar navegador por defecto
+	- autoinicio de los modulos de xampp por orden del panel de control o por proceso al arrancar el S.O
+	- se sabe si esta arrancado por servicio si el cuadrado al lado del nombre del modulo esta encendido
+	- cambiar los puertos de cada modulo(tiene prioridad el archivo de config de cada modulo)
+
+1) configuracion apache
+
+	- tiene 2 ficheros de configuracion por defecto(aunque aparecen 3) httpd.conf(fundamental) - httpd-ssl.conf
+		el 3º es la relacion de apache con xampp
+	- los 4 primeros parrafos dicen sobre el direccionamiento relativo y absoluto de las carpetas
+	- las barras invertidas son para decidir las rutas de los ficheros, si se empieza con una barra, sera la carpeta raiz
+	Modulo serverroot
+
+	- el archivo httpd.conf contiene varios modulos, por ejemplo un modulo es el de serverroot, hasta que empieza mutex, siempre que se 
+	empieza con espacio blanco y una almohadilla vacia, es un modulo nuevo
+
+	Modulo listen
+
+	- el modulo de listen es para el puerto que se va a escuchar, si se especifica diferente en el panel de control, este tendra prioridad
+		si se cambia, para abrir la pagina del servidor, tendra que poner al final de la url :puerto si no, por defecto coge el :80 
+
+	Modulo DSO(load module)
+
+	- para cargar los modulos extras.
+	- loadmodule foo_module modules/mod_foo.so	ejecuta la seccion/procedimiento foo_module del paquete/libreria mod_foo.so en modules
+	- el modulo ssl le dice a apache como manipular conexiones seguras
+
+	<IfModule "modulo">
+	- Si se carga el modulo "modulo" entrara en este if para hacer lo que se ponga
+	</IfModule>
+
+2) Servidor principal de Apache
+
+	Apache: servidor -> Principal
+			 -> Virtuales <VirtualHost>
+
+	- ServerAdmin para que los mensajes sobre el servidor se envien al correo indicado
+	- ServerName para indicar el nombre del servidor a poner en el navegador, se puede cambiar por 127.0.0.1:80, que tambien es de localhost
+	- DocumentRoot -> Donde se colocaran los documentos 
+	- En la etiqueta <Directory /> se establece los permisos que el usuario tendra sobre la carpeta que se indique, en este caso / que es raiz,
+		se debe de crear una nueva etiqueta Directory por cada carpeta que se quiera	
+		- AllowOverride <- dentro de la etiqueta Directory, para que el usuario se pueda mover a traves de esta carpeta y sus hijas
+		- Require all granted/denied  	
+	- <IfModule dir_module> 
+		- DirectoryIndex para indicar que se cargue directamente el archivo con el nombre que esta aqui indicado
+
+	- Archivo .htacces <- para indicar requerimientos a la aplicacion que tengamos hecha, indicando el archivo htaccess en la raiz del programa,
+			      para darle seguridad a la aplicacion, para darle permisos de ejecucion solo a ciertas IP's, toda esta configuracion va a nivel
+			      aplicacion y no a nivel servidor, hay generadores de htaccess para hacerlo directamente toda la configuracion.
+			      Funciona para el directorio donde lo pongas y sus subdirectorios
+	- Archivo .htpasswd <- contiene una relacion de usuarios y contraseñas
+	
+	<Files ".ht*">
+		Require all denied <- Para negar cualquier peticion que se haga en cualquier archivo que comienze con .ht
+	</Files>
+	
+	- ErrorLog para saber donde se localiza el fichero de log de errores
+	- LogLevel <- dependiendo del nivel que se le de, apareceran los mensajes en el log, del indicado para alante, por orden 
+			debug, info, notice, warn, error, crit, alert, emerg.
+		
+	- CustomizableErrors <- Para cuando se produzca un error se pueden hacer 3 cosas:
+		- poner un error por pantalla
+		- enviar a una pagina diferente, localizada en el equipo local
+		- enviar a una pagina externa, como por ejemplo google
+		  ejemplo -> ErrorDocument 404 /paginaError404.html
+			     ErrorDocument 404 http://www.google.com
+
+		errores importantes -> 301,308,404,429,500,502,503
+			los errores tipo 4xx son errores de cliente, ya que somos nosotros los que pedimos un recurso que no se encuentra 
+			los errores tipo 5xx son de tipo servidor

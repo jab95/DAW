@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Sprite Ejemplo</title>
+    <style>
+        #localidad1,
+        #localidad2,
+        #localidad3,
+        #localidad4 {
+            padding-left: 50px;
+            line-height: 32px;
+            background-image: url('css_sprites.png');
+            background-repeat: no-repeat;
+        }
+        
+        .bg-weather_clear {
+            background-position: -10px -10px;
+        }
+        
+        .bg-weather_few_clouds {
+            background-position: -10px -62px;
+        }
+        
+        .bg-weather_overcast {
+            background-position: -10px -114px;
+        }
+        
+        .bg-weather_showers_scattered {
+            background-position: -10px -166px;
+        }
+    </style>
+</head>
+
+<body>
+    <h3>Previsiones meteorológicas</h3>
+    <p id="localidad1" class="bg-weather_clear">Localidad 1: soleado, máx: 35º, mín: 23º</p>
+    <p id="localidad2" class="bg-weather_few_clouds">Localidad 2: nublado, máx: 25º, mín: 13º</p>
+    <p id="localidad3" class="bg-weather_overcast">Localidad 3: muy nublado, máx: 22º, mín: 10º</p>
+    <p id="localidad4" class="bg-weather_showers_scattered">Localidad 4: tormentas, máx: 23º, mín: 11º</p>
+
+</body>
+
+</html>

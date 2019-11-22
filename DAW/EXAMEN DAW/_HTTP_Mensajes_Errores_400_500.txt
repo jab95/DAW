@@ -1,0 +1,5 @@
+
+Códigos de estado HTTP
+======================
+
+http://es.wikipedia.org/wiki/Anexo:C%C3%B3digos_de_estado_HTTP

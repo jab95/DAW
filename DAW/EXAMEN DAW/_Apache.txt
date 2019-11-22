@@ -1,0 +1,192 @@
+.htaccess
+
+Un fichero .htaccess (hypertext access), también conocido como archivo de configuración distribuida, es un fichero especial, popularizado por el Servidor HTTP Apache que permite definir diferentes directivas de configuración para cada directorio (con sus respectivos subdirectorios) sin necesidad de editar el archivo de configuración principal de Apache.
+
+
+
+                 http://www.vermiip.es/htpasswd/
+
+
+
+http://www.desarrolloweb.com/manuales/41/
+Por Carlos Luis Cuenca
+
+
+1.- Arquitectura del servidor Apache 
+====================================
+
+Descripción de la arquitectura en módulos del Apache. Explicación y enumeración de las funcionalidades asociadas a cada módulo.
+
+El servidor Apache es un software que esta estructurado en módulos. La configuración de cada módulo se hace mediante la configuración de las directivas que están contenidas dentro del módulo. Los módulos del Apache se pueden clasificar en tres categorías: 
+
+a) Módulos Base: Módulo con las funciones básicas del Apache 
+
+b) Módulos Multiproceso: son los responsables de la unión con los puertos de la máquina, acepando las peticiones y enviando a los hijos a atender a las peticiones 
+
+c) Módulos Adicionales: Cualquier otro módulo que le añada una funcionalidad al servidor. 
+
+
+Las funcionalidades más elementales se encuentran en el módulo base, siendo necesario un módulo multiproceso para manejar las peticiones. Se han diseñado varios módulos multiproceso para cada uno de los sistemas operativos sobre los que se ejecuta el Apache, optimizando el rendimiento y rapidez del código. 
+ El resto de funcionalidades del servidor se consiguen por medio de módulos adicionales que se pueden cargar. Para añadir un conjunto de utilidades al servidor, simplemente hay que añadirle un módulo, de forma que no es necesario volver a instalar el software. 
+
+Módulos Base y Módulos Multiproceso:
+
+core: Funciones básicas del Apache que están siempre disponibles.
+
+mpm_common: Colección de directivas que se implementan en más de un módulo multiproceso. 
+
+beos: Módulo de multiproceso optimizado para BeOS. 
+
+leader: Variable experimental de MPM.
+
+mpm_netware: Módulo de multiproceso que implementa un servidor web optimizado para Novell NetWare. 
+
+mpmt_os2: MPM híbrido, multiproceso y multihilo para OS/2 .
+
+perchild: Módulo multiproceso que permite a los procesos demonio servir las peticiones que se asignan a distintos id de usuario.
+
+prefork: Implementa un servidor sin hilos.
+
+threadpool: Variante experimental del módulo estándar de MPM .
+
+mpm_winnt: Módulo multiproceso optimizado para Windows NT. 
+
+worker: Módulo multiproceso que implementa un híbrido multihilos y multiprocesos de servidor Web.
+
+Módulos adicionales:
+
+mod_access: proporciona control de acceso basándose en el nombre del host del cliente, su dirección IP u otras características de la petición del cliente.
+
+mod_actions: este módulo se utiliza para ejecutar Scripts CGI, basándose en el tipo de medio o el método de petición.
+
+mod_alias: proporcionado para mapear diferentes partes del sistema de ficheros del servidor en el árbol de documentos del servidor, y para redirección de URL's.
+
+mod_asis: envío de ficheros que tienen sus propias cabeceras http.
+
+mod_auth: autentificación de usuario utilizando ficheros de texto.
+
+mod_auth_anon: permite a usuarios anónimos acceder a áreas autentificadas.
+
+mod_auth_dbm: proporciona autentificación utilizando ficheros DBM.
+
+mod_auth_digest: autentificación de usuario utilizando MD5.
+
+mod_auth_ldap: permite la utilización un directorio LDAP para almacenar la base de datos de autentificación.
+
+mod_autoindex: muestra los contenidos de un directorio automáticamente, parecido al comando ls de Unix.
+
+mod_cache: Cache de contenidos indexados por URI's.
+
+mod_cern_meta: Semántica de etiquetas meta del CERN.
+
+mod_cgi: Ejecución de Scritps CGI.
+
+mod_cgid: ejecución de Scripts CGI utilizando un demonio CGI externo.
+
+mod_charset_lite: para la especificación del juego de caracteres de las traducciones.
+
+mod_deflate: comprime el contenido antes de ser enviado al cliente.
+
+mod_dir: Proporcionado para redirecciones y para servir los ficheros de listado de directorios.
+
+mod_disk_cache: Cache para almacenar contenidos identificados por URI.
+
+mod_echo: Un servidor simple de echo para ilustrar los módulos del protocolo.
+
+mod_env: modificación del entorno que se envia a los scripts CGI y las páginas SSI.
+
+mod_expires: Generación de las cabeceras http Expires, de acuerdo de los criterios especificados por el usuario.
+
+mod_ext_filter: pasa el cuerpo de la respuesta a través de un programa antes de enviársela al cliente.
+
+mod_file_cache: cachea una lista estática de ficheros en memoria.
+
+mod_headers: personalización de las peticiones HTTP y las cabeceras de las respuestas.
+
+mod_imap: proceso de imágenes en el lado del servidor.
+
+mod_include: Documentos HTML generados por el servidor (Server Side Includes).
+
+mod_info: proporciona una visión comprensiva de la configuración del servidor.
+
+mod_isapi: Extensiones ISAPI en Apache para Windows.
+
+mod_ldap: pool de conexiones LDAP y cacheo de resultados para la utilización de otros módulos LDAP.
+
+mod_log_config: registro de las peticiones hechas al servidor.
+
+mod_logio: registro del número de bytes recibidos y enviados en cada respuesta.
+
+mod_mem_cache: Cache de contenidos identificados por URI.
+
+mod_mime: asocia las extensiones de peticiones de los ficheros con el comportamiento del fichero (manejadores y filtros) y contenido (tipos mime, idioma, juego de caracteres y codificación).
+
+mod_mime_magic: determina el tipo MIME de un fichero mirando unos pocos bytes del contenido.
+
+mod_negotiation: se proporciona para la negociación del contenido.
+
+mod_proxy: servidor HTTP/1.1 proxy/gateway.
+
+mod_proxy_connect: extensión de mod_proxy para la gestión de las peticiones CONNECT.
+
+mod_proxy_ftp: soporte FTP para mod_proxy.
+
+mod_proxy_http: soporte HTTP para el módulo mod_proxy.
+
+mod_rewrite: proporciona un motor de reescritura basado en reglas que rescribe las peticiones de URL's al vuelo.
+
+mod_setenvif: permite la configuración de las variables de entorno basándose en las características de la petición.
+
+mod_so: carga del código ejecutable y los módulos en al iniciar o reiniciar el servidor.
+
+mod_speling: intenta corregir las URL mal puestas por los usuarios, ignorando las mayúsculas y permitiendo hasta una falta.
+
+mod_ssl: criptografía avanzada utilizando los protocolos Secure Sockets Layer y Transport Layer Security.
+
+mod_status: proporciona información en la actividad y rendimiento del servidor.
+
+mod_suexec: permite a los scripts CGI ejecutarse con un nombre y grupo específico.
+
+mod_unique_id: proporciona variables de entorno y un identificador único para cada petición.
+
+mod_userdir: directorios específicos para usuarios.
+
+mod_usertrack: registro de actividad de un usuario en el sitio.
+
+mod_vhost_alias: Proporcionado para configurar muchos servidores virtuales dinámicamente. 
+
+
+
+2.- Instalación de Apache en Windows
+====================================
+
+Relatamos el proceso de descarga e instalación del servidor Apache en sistemas Windows.
+
+El proceso para instalar Apache en Windows es muy sencillo. En adelante, es posible que la configuración del servidor pueda complicarse un poco, sin embargo, si deseamos utilizarlo con las funciones habituales, no hemos de tener mayores problemas en ningún momento. 
+
+ Descarga de Apache 
+
+ El servidor web Apache se puede descargar en la página de la Fundación Apache, en apache.org. En la URL http://httpd.apache.org/ tienen una sección en particular para el servidor HTTP (Protocolo de transmisión utilizado en la web), en la que tendremos que buscar el enlace para descarga. 
+
+ Una vez en la página de descarga debemos buscar la última versión estable o la versión que recomendada. El servidor está disponible para sistemas Unix o Windows, por lo que nos ofrecerán diversas opciones de descarga, incluso para obtener el código fuente del programa. Si deseamos instalarlo en un sistema Windows, necesitamos obtener el archivo Win-32 Binary, que es un instalador Windows. 
+
+Instalación 
+
+ Una vez descargado, debemos instalarlo en nuestro sistema, ejecutando el archivo obtenido. Daremos paso a un asistente que nos guiará en el proceso de instalación del servidor. Durante el proceso nos preguntará el nombre del dominio y del servidor, que podemos rellenar con "localhost". Nos pedirá también una dirección de correo, que podemos rellenar con cualquiera que deseemos. También nos pregunta si deseamos que el servidor responda en el puerto 80 para todos los usuarios o si deseamos que sólo se active para el usuario actual en el puerto 8080, cuando se inicie manualmente. Lo normal es que lo activemos para todos los usuarios. 
+
+ Con estos datos queda configurado el Apache inicialmente. En cualquier momento podemos editarlos a nuestro gusto o necesidades. Para ello deberemos editar el fichero httpd.conf, que se encuentra en el directorio de instalación de Apache, que hemos indicado durante el proceso de instalación, más concretamente, en el subdirectorio conf. En adelante en este manual podremos aprender las configuraciones más habituales. 
+
+
+Nota: Debemos ir con cuidado de no tener otro servidor configurado para trabajar en el puerto 80 (por ejemplo el servidor IIS que viene en las versiones profesionales o servidor de Windows). En caso de tener en marcha otro servidor web durante la instalación, puede fallar y mostrarnos un mensaje de error que indique esto precisamente, es decir, que no podemos tener dos servidores a la vez escuchando en el puerto 80. 
+
+ Para solucionar el problema basta con que paremos el IIS o el otro servidor que esté funcionando. El IIS lo podemos parar accediendo a Panel de control - Herramientas administrativas - Servicios de Internet Information Server. La pantalla que sale es la consola de administración del sistema. Aquí debemos desplegar el árbol de la izquierda, pulsando sobre el signo "+", hasta que encontremos el "Sitio web predeterminado". Nos ponemos encima de él y apretamos el botón de STOP que está situado en la barra de herramientas de la consola de administración. También podemos encontrar una opción para detener el servicio pulsando con el botón derecho en el "Sitio web predeterminado".  
+
+ Una vez instalado, el Apache se pone en funcionamiento. Para controlar el Apache podemos encontrar en el botón de inicio, sección programas, un nuevo grupo llamado "Apache HTTP Server", con iconos para detener el servidor, ponerlo en marcha, editar el archivo de configuración httpd.conf o para ver los logs de acceso. También podemos ver en la barra de tareas un nuevo icono que indica que el Apache está funcionando y que ofrece opciones para controlarlo si pulsamos sobre él. 
+
+Ver si está funcionando 
+
+ Para comprobar que el servidor está activo y funciona correctamente podemos abrir un explorador y probar a acceder a la URL http://localhost, que es nuestro propio servidor. Si todo ha ido bien observaremos el mensaje de bienvenida del servidor con algo como "Funciono! ¡El servidor Apache ha sido instalado en este equipo!". 
+
+
+
+

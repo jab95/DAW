@@ -1,0 +1,58 @@
+#recuadro1{
+    left:30px;
+    position:relative;
+    border-radius: 20px;  
+    background-color:#ddd;
+    width:200px;
+    height:100px;
+    padding:4px;
+/*     
+    animation-name: animacion1;
+    animation-duration: 4s;
+     */
+
+
+     animation-name: animacion1;
+     animation-duration: 4s;
+     animation-iteration-count: infinite;
+     animation-direction: alternate;
+     animation-timing-function: ease;
+     animation-delay: 2s;
+  }
+
+  @keyframes animacion1 {
+    from {
+      left:30px;
+      background-color:#ddd;
+    }
+    to {
+      left:300px; 
+      background-color:#ff0;
+    }
+  }
+
+/* 
+@keyframes animacion1 {
+    0%{
+      left:30px;
+      top:30px;
+    }
+    25%{
+      left:300px; 
+      top:30px;
+    }
+    50%{
+      left:300px;
+      top:200px;   
+    }
+    75%{
+      left:30px;
+      top:200px;
+    }
+    100%{
+      left:30px;
+      top:30px;
+    }
+  }
+   */
+  

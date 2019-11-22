@@ -1,0 +1,93 @@
+{
+    "nombre": "IES ROMERO VARGAS",
+    "codigo": "11007922",
+    "grupos": [
+        {
+            "nombre": "ASIR1",
+            "numalumnos": 30,
+            "profesores": [
+                {
+                    "nombre": "Juana"
+                },
+                {
+                    "nombre": "Paco"
+                },
+                {
+                    "nombre": "Ango"
+                },
+                {
+                    "nombre": "Jose Antonio"
+                },
+                {
+                    "nombre": "David"
+                }
+            ]
+        },
+        {
+            "nombre": "ASIR2",
+            "numalumnos": 18,
+            "profesores": [
+                {
+                    "nombre": "Juana"
+                },
+                {
+                    "nombre": "Paco"
+                },
+                {
+                    "nombre": "Luis"
+                },
+                {
+                    "nombre": "Jose Antonio"
+                },
+                {
+                    "nombre": "David"
+                }
+            ]
+        },
+        {
+            "nombre": "DAW1",
+            "numalumnos": 20,
+            "profesores": [
+                {
+                    "nombre": "Juana"
+                },
+                {
+                    "nombre": "Paco"
+                },
+                {
+                    "nombre": "Ango"
+                },
+                {
+                    "nombre": "Luis"
+                },
+                {
+                    "nombre": "Manolo"
+                },
+                {
+                    "nombre": "Fernando Perez"
+                }
+            ]
+        },
+        {
+            "nombre": "DAW2",
+            "numalumnos": 22,
+            "profesores": [
+                {
+                    "nombre": "Juana"
+                },
+                {
+                    "nombre": "Paco"
+                },
+                {
+                    "nombre": "Manolo"
+                },
+                {
+                    "nombre": "Fernando Perez"
+                },
+                {
+                    "nombre": "Fernando Vargas"
+                }
+            ]
+        }
+    ]
+}

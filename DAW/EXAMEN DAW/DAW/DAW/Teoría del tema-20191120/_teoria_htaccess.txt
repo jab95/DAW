@@ -1,0 +1,38 @@
+--------------------
+.htaccess
+--------------------
+
+https://www.hostinger.es/tutoriales/que-es-el-archivo-htaccess/
+
+
+Más completo:
+
+https://help.one.com/hc/es/articles/115005586169--Qu%C3%A9-es-htaccess-
+
+https://help.one.com/hc/es/articles/115005594125
+
+https://help.one.com/hc/es/articles/115005586189
+
+https://help.one.com/hc/es/articles/115005586209
+
+
+Páginas para generar el contenido de .htaccess
+----------------------------------------------
+
+https://www.htaccessredirect.net/
+
+Mejor:
+https://hostingfacts.com/htaccess-generator/
+
+----------------------------
+
+
+Community-contributed list of referrer spammers:
+-----------------------------------------------
+Algunos bots que rondan la web, ya sea por SPAM o por información, pueden hacer que tu página este siempre con carga extra. La relación actualizada está en:
+
+https://github.com/matomo-org/referrer-spam-blacklist/blob/master/spammers.txt
+
+¡OJO! Ten cuidado con el símbolo de \ que va antes del .com en el código, este siempre debe estar presente en este caso.
+
+----------- FIN -----------------
