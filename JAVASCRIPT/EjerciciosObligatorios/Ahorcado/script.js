@@ -1,4 +1,3 @@
-let palabras = ["hola", "como", "estas"];
 let palabra = 0;
 let palabraElegida = "";
 let resultado = "";
@@ -8,23 +7,41 @@ let contadorFallados;
 let imagen = null;
 let parrafoResultado = null;
 let terminado;
+let palabras = [];
 
 Main = () => {
-  palabra = Math.floor(Math.random() * (palabras.length - 0)) + 0;
-  parrafo = document.getElementById("palabra");
-  palabraElegida = palabras[palabra];
-  imagen = document.getElementsByTagName("img")[0];
-  parrafoResultado = document.getElementsByTagName("h2")[0];
-  terminado = false;
-  contadorFallados = 1;
-  letras = [];
 
-  for (let index = 0; index < palabraElegida.length; index++) {
-    parrafo.innerHTML += `<span>&nbsp;</span>`;
-    parrafo.innerHTML += `&nbsp;`;
+  let xhr = new XMLHttpRequest();
+  xhr.onreadystatechange = () => {
+
+    if (xhr.readyState == 4) {
+      if (xhr.status == 200) {
+
+        palabras = JSON.parse(xhr.responseText);
+
+        indicePalabra = Math.floor(Math.random() * (palabras.length - 0)) + 0;
+        parrafo = document.getElementById("palabra");
+        palabraElegida = palabras[indicePalabra].palabra;
+        imagen = document.getElementsByTagName("img")[0];
+        parrafoResultado = document.getElementsByTagName("h2")[0];
+        terminado = false;
+        contadorFallados = 1;
+        letras = [];
+
+        for (let index = 0; index < palabraElegida.length; index++) {
+          parrafo.innerHTML += `<span>&nbsp;</span>`;
+          parrafo.innerHTML += `&nbsp;`;
+        }
+
+        window.addEventListener("keyup", PulsaLetra);
+
+      }
+    }
   }
 
-  window.addEventListener("keyup", PulsaLetra);
+  xhr.open("GET", "palabras.json?nocache=" + Math.random(), true);
+  xhr.send();
+
 };
 
 PulsaLetra = e => {

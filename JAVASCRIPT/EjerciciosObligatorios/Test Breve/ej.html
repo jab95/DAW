@@ -1,75 +1,72 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
-    <title>Document</title>
-    <script src="ej.js" type="text/javascript"></script>
-    <link rel="stylesheet" href="ej.css" />
-  </head>
 
-  <body>
-    <div class="contenedor">
-      <div class="contenido">
-        <h1>¿Cuánto sabes de Javascript?</h1>
-        <p id="pregunta1">
-          1 - ¿Cómo se ponen los comentarios en Javascript?
-          <span style="color: red;" id="error1"></span>
-        </p>
-        <p id="respuestas1">
-          <input type="checkbox" name="cb" id="cb1" /> //
-          <input type="checkbox" name="cb" id="cb2" /> #
-          <input type="checkbox" name="cb" id="cb3" /> /**/
-        </p>
-        <p id="pregunta2">
-          2 - ¿Cómo se hace referencia a un elemento HTML por su atributo
-          'Name'?
-          <span style="color: red;" id="error2"></span>
-        </p>
-        <p id="respuestas2">
-          <input type="radio" name="radio" value="1" id="r1" />
-          getElementByClass(""); <br />
-          <input type="radio" name="radio" value="2" id="r2" />
-          getElementById("");<br />
-          <input type="radio" name="radio" value="3" id="r3" />
-          getElementByTagName("");<br />
-          <input type="radio" name="radio" value="4" id="r2" />
-          getElementByName("");<br />
-        </p>
-        <p id="pregunta3">
-          3 - En JavaScript, ¿cuál es la forma correcta de escribir la cadena
-          "Hola mundo" en una página web?
-          <span style="color: red;" id="error3"></span>
-        </p>
-        <p id="respuestas3">
-          <select name="select" id="select">
-            <option value="0">-- Elegir --</option>
-            <option value="1">window.write("Hola mundo")</option>
-            <option value="2">document.print("Hola mundo")</option>
-            <option value="3">document.write("Hola mundo")</option>
-          </select>
-        </p>
-        <p id="pregunta4">
-          4 - ¿Cuánto es el resultado de: 3+2+''7''?
-          <span style="color: red;" id="error4"></span>
-        </p>
-        <p id="respuestas4">
-          <input type="text" name="pregunta4" id="suma" />
-        </p>
-        <button id="corregir" class="boton" onclick="Corregir(this)">
-          Corregir
-        </button>
-        <p id="aciertos"></p>
-        <button
-          id="repetir"
-          class="boton"
-          onclick="Reiniciar(this)"
-          style="display: none;"
-        >
-          Repetir Test
-        </button>
-      </div>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+  <title>Document</title>
+  <script src="ej.js" type="text/javascript"></script>
+  <link rel="stylesheet" href="ej.css" />
+</head>
+
+<body>
+  <div class="contenedor">
+    <div class="contenido">
+      <h1>¿Cuánto sabes de Javascript?</h1>
+      <p id="pregunta1">
+        1 - ¿Cómo se ponen los comentarios en Javascript?
+        <span style="color: red;" id="error1"></span>
+      </p>
+      <p id="respuestas1">
+        <input type="checkbox" name="cb" id="cb1" /> //
+        <input type="checkbox" name="cb" id="cb2" /> #
+        <input type="checkbox" name="cb" id="cb3" /> /**/
+      </p>
+      <p id="pregunta2">
+        2 - ¿Cómo se hace referencia a un elemento HTML por su atributo
+        'Name'?
+        <span style="color: red;" id="error2"></span>
+      </p>
+      <p id="respuestas2">
+        <input type="radio" name="radio" value="1" id="r1" />
+        getElementByClass(""); <br />
+        <input type="radio" name="radio" value="2" id="r2" />
+        getElementById("");<br />
+        <input type="radio" name="radio" value="3" id="r3" />
+        getElementByTagName("");<br />
+        <input type="radio" name="radio" value="4" id="r2" />
+        getElementByName("");<br />
+      </p>
+      <p id="pregunta3">
+        3 - En JavaScript, ¿cuál es la forma correcta de escribir la cadena
+        "Hola mundo" en una página web?
+        <span style="color: red;" id="error3"></span>
+      </p>
+      <p id="respuestas3">
+        <select name="select" id="select">
+          <option value="0">-- Elegir --</option>
+          <option value="1">window.write("Hola mundo")</option>
+          <option value="2">document.print("Hola mundo")</option>
+          <option value="3">document.write("Hola mundo")</option>
+        </select>
+      </p>
+      <p id="pregunta4">
+        4 - ¿Cuánto es el resultado de: 3+2+''7''?
+        <span style="color: red;" id="error4"></span>
+      </p>
+      <p id="respuestas4">
+        <input type="text" name="pregunta4" id="suma" />
+      </p>
+      <button id="corregir" class="boton" onclick="Corregir(this)">
+        Corregir
+      </button>
+      <p id="aciertos"></p>
+      <button id="repetir" class="boton" onclick="Reiniciar(this)" style="display: none;">
+        Repetir Test
+      </button>
     </div>
-  </body>
+  </div>
+</body>
+
 </html>
