@@ -1,11 +1,13 @@
-const ALFABETOS = ["Castellano", "Inglés"];
 let alfabetoElegido = 0;
 let selectAlfabetos = null;
 let textoADescifrar = null;
 let rotado = null;
-let ALFABETOESPAÑOL = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "Ñ", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"];
 
-let ALFABETOINGLES = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"];
+
+const ALFABETOS = [
+  { "idioma": "castellano", "letras": "ABCDEFGHIJKLMNÑOPQRSTUVWXYZ" },
+  { "idioma": "ingles", "letras": "ABCDEFGHIJKLMNOPQRSTUVWXYZ" }]
+
 
 Main = () => {
   selectAlfabetos = document.getElementById("selectAlfabetos");
@@ -19,7 +21,7 @@ Main = () => {
 
 RellenarAlfabetos = () => {
   for (let index = 0; index < ALFABETOS.length; index++) {
-    selectAlfabetos.innerHTML += `<option value="${index}">${ALFABETOS[index]}</option>`;
+    selectAlfabetos.innerHTML += `<option value="${index}">${ALFABETOS[index].idioma}</option>`;
   }
 };
 
@@ -31,33 +33,16 @@ Descifrar = () => {
   let textoNuevo = textoADescifrar.value.eliminarAcentosTipoGraficos();
 
   for (let index = 0; index < textoNuevo.length; index++) {
-    if (alfabetoElegido == 0) {
-      for (let j = 0; j < ALFABETOESPAÑOL.length; j++) {
-        if (textoNuevo[index] == ALFABETOESPAÑOL[j]) {
-          let indiceRotado = j - valorRotacion;
+    for (let j = 0; j < ALFABETOS[alfabetoElegido].letras.length; j++) {
+      if (textoNuevo[index] == ALFABETOS[alfabetoElegido].letras[j]) {
+        let indiceRotado = j - valorRotacion;
 
-          if (indiceRotado < 0) indiceRotado = 27 + indiceRotado;
+        if (indiceRotado < 0) indiceRotado = ALFABETOS[alfabetoElegido].letras.length + indiceRotado;
 
-          arrayNuevo[index] = ALFABETOESPAÑOL[indiceRotado];
-          break;
-        } else if (textoNuevo[index] == " ") {
-          arrayNuevo[index] = " ";
-        }
-      }
-    } else {
-      for (let j = 0; j < ALFABETOINGLES.length; j++) {
-        if (textoNuevo[index] == ALFABETOINGLES[j]) {
-          if (valorRotacion > 24) valorRotacion = 25 - 24;
-
-          let indiceRotado = j + valorRotacion;
-
-          if (indiceRotado > 25) indiceRotado = indiceRotado - 26;
-
-          arrayNuevo[index] = ALFABETOINGLES[indiceRotado];
-          break;
-        } else if (textoNuevo[index] == " ") {
-          arrayNuevo[index] = " ";
-        }
+        arrayNuevo[index] = ALFABETOS[alfabetoElegido].letras[indiceRotado];
+        break;
+      } else if (textoNuevo[index] == " ") {
+        arrayNuevo[index] = " ";
       }
     }
   }
