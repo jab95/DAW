@@ -16,7 +16,7 @@ span {
 
 #reiniciar {
   position: absolute;
-  top: 80%;
+  top: 87%;
   right: 45%;
   width: 10%;
   height: 40px;
@@ -37,7 +37,7 @@ h3 {
 }
 h2 {
   position: absolute;
-  top: 70%;
+  top: 77%;
   right: 33%;
 }
 
@@ -45,6 +45,6 @@ img {
   position: absolute;
   width: 300px;
   height: 280px;
-  top: 30%;
+  top: 37%;
   right: 49%;
 }

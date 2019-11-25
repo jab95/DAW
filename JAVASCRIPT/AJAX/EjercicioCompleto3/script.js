@@ -1,8 +1,10 @@
 
 let instituto;
+let tablaHTML;
 
 const Main = () => {
 
+    tablaHTML = document.getElementById("tabla");
 
     let xhr = new XMLHttpRequest();
     xhr.onreadystatechange = () => {
@@ -42,7 +44,28 @@ const MuestraTotalAlumnos = () => {
 
 const MuestraTabla = () => {
 
+    let tabla = `<table border="1"><tr><th>Grupo</th><th>Profesores</th></tr>`;
+    let gruposJuana = 0;
+    let grupos = new Array();
+
+    for (let index = 0; index < instituto.grupos.length; index++) {
+
+        tabla += `<tr><td>${instituto.grupos[index].nombre}</td><td>${instituto.grupos[index].profesores}</td></tr>`;
+
+        if (instituto.grupos[index].profesores.includes("Juana")) {
+            gruposJuana++;
+            grupos.push(instituto.grupos[index].nombre);
+        }
+    }
+
+    tabla += `</table>`;
+    tablaHTML.innerHTML = tabla;
+
+    document.getElementById("grupos-juana").innerHTML += `${gruposJuana} y los grupos son ${grupos}`;
+
+
 }
+
 
 
 addEventListener("load", Main);

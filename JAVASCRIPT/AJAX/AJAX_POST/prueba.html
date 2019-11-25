@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Prueba</title>
+
+    <script>
+        Enviar = () => {
+            var xhr = new XMLHttpRequest();
+
+            xhr.onreadystatechange = () => {
+                console.log(xhr.responseText);
+            }
+
+            xhr.open("POST", "prueba.php");
+            xhr.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+            xhr.send("nombre=" + document.getElementById("nombre").value + "&pass=" + document.getElementById("pass").value);
+        }
+    </script>
+</head>
+
+<body>
+
+    Nombre <input type="text" name="nombre" id="nombre">
+    Contraseña <input type="password" name="pass" id="pass">
+    <button onclick="Enviar()">Enviar</button>
+</body>
+
+</html>

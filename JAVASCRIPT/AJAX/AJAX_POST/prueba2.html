@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Prueba</title>
+
+    <link rel="stylesheet" href="prueba2.css">
+    <script>
+        Enviar = () => {
+            var xhr = new XMLHttpRequest();
+            let formulario = document.getElementById("form");
+
+
+            xhr.upload.addEventListener("progress", (e) => {
+                console.log(e);
+                document.getElementById("porcentaje").style.width = Math.round(e.loaded / e.total * 100);
+            });
+
+            xhr.addEventListener("load", () => {
+                if (xhr.responseText != "ERROR")
+                    document.getElementById("imagen").src = xhr.responseText;
+                console.log(xhr.responseText);
+
+            });
+
+            xhr.open("POST", "prueba.php?nocache=" + Math.round());
+            xhr.send(new FormData(formulario));
+        }
+    </script>
+</head>
+
+<body>
+
+    <!-- PARA PASAR VARIABLES A TRAVÉS DE AJAX, NO SE PONE POST AQUI NI ACTION -->
+    <form id="form" onsubmit="return false">
+        Nombre <input type="text" name="nombre" id="nombre">
+        Contraseña <input type="password" name="pass" id="pass">
+        Fotografia <input type="file" name="foto" id="foto">
+
+        <button onclick="Enviar()">Enviar</button>
+    </form>
+
+    Progreso -> <div id="porcentaje"></div>
+    <img id="imagen"></img>
+
+</body>
+
+</html>

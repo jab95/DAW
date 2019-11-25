@@ -6,87 +6,45 @@
             "nombre": "ASIR1",
             "numalumnos": 30,
             "profesores": [
-                {
-                    "nombre": "Juana"
-                },
-                {
-                    "nombre": "Paco"
-                },
-                {
-                    "nombre": "Ango"
-                },
-                {
-                    "nombre": "Jose Antonio"
-                },
-                {
-                    "nombre": "David"
-                }
+                "Juana",
+                "Paco",
+                "Ango",
+                "Jose Antonio",
+                "David"
             ]
         },
         {
             "nombre": "ASIR2",
             "numalumnos": 18,
             "profesores": [
-                {
-                    "nombre": "Juana"
-                },
-                {
-                    "nombre": "Paco"
-                },
-                {
-                    "nombre": "Luis"
-                },
-                {
-                    "nombre": "Jose Antonio"
-                },
-                {
-                    "nombre": "David"
-                }
+                "Juana",
+                "Paco",
+                "Luis",
+                "Jose Antonio",
+                "David"
             ]
         },
         {
             "nombre": "DAW1",
             "numalumnos": 20,
             "profesores": [
-                {
-                    "nombre": "Juana"
-                },
-                {
-                    "nombre": "Paco"
-                },
-                {
-                    "nombre": "Ango"
-                },
-                {
-                    "nombre": "Luis"
-                },
-                {
-                    "nombre": "Manolo"
-                },
-                {
-                    "nombre": "Fernando Perez"
-                }
+                "Juana",
+                "Paco",
+                "Ango",
+                "Luis",
+                "Manolo",
+                "Fernando Perez"
             ]
         },
         {
             "nombre": "DAW2",
             "numalumnos": 22,
             "profesores": [
-                {
-                    "nombre": "Juana"
-                },
-                {
-                    "nombre": "Paco"
-                },
-                {
-                    "nombre": "Manolo"
-                },
-                {
-                    "nombre": "Fernando Perez"
-                },
-                {
-                    "nombre": "Fernando Vargas"
-                }
+                "Juana",
+                "Paco",
+                "Fernando Vargas",
+                "Manolo",
+                "Fernando Perez"
             ]
         }
     ]
