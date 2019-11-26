@@ -29,7 +29,7 @@
                     <a class="nav-link" href="#"> Familias</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="#">Productos</a>
+                    <a class="nav-link" href="producto.php">Productos</a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" href="#"> Stock</a>
@@ -43,31 +43,152 @@
 
         ?>
 
-
         <form action="producto.php" method="post">
 
-            <?php
-
-                ?>
-
             <center>
-                <button type="submit" name="insertar" class="btn btn-primary">Insertar</button>
+                <button type="submit" name="insertar" class="btn btn-primary mt-5">Insertar</button>
             </center>
 
             <center>
-                <a name="editar" id="" class="btn btn-primary mt-5" href="producto.php" role="button">EDITAR</a>
+            <button type="submit" name="editar" class="btn btn-primary mt-5">Editar</button>
             </center>
 
             <center>
-                <a name="leer" id="" class="btn btn-primary mt-5" href="producto.php" role="button">LEER</a>
+            <button type="submit" name="leer" class="btn btn-primary mt-5">Leer</button>
             </center>
 
         <?php
-        }
+        }else{
+
+            $opciones = array(PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES utf8");
+            $dwes = new PDO('mysql:host=localhost;dbname=dwes', 'dwes', 'abc123', $opciones);                            $resultado = $dwes->query("SELECT * FROM producto");
+    
+
+            if(isset($_POST['insertar'])){
+
+        ?>
+            <div class="container-fluid ">
+
+                <div class="row  justify-content-center mt-5 fila-inicio">
+                        <div class="col-lg-3 col-inicio">
+                            <p>Código: <input type="text" name="codigo" id=""></p>
+                        </div>
+                            <div class="col-lg-3 col-inicio">
+                            <p>Nombre: <input type="text" name="nombre" id=""></p>
+                        </div>
+                            <div class="col-lg-3 col-inicio">
+
+                            <p>Nombre corto: <input type="text" name="nombre-corto" id=""></p>
+                        </div>
+                </div>
+                <div class="row  justify-content-center mt-5 fila-inicio">
+                        <div class="col-lg-3 col-inicio">
+                            <p>Descripción: <input type="text" name="descripcion" id=""></p>
+                        </div>
+                            <div class="col-lg-3 col-inicio">
+                            <p>PVP: <input type="text" name="pvp" id=""></p>
+                        </div>
+                        <div class="col-lg-3 col-inicio">
+                            <p>Familia: <input type="text" name="familia" id=""></p>
+                        </div>
+                </div>
+
+
+            <center><button name="aceptar" class="btn btn-primary mt-3">Insertar</button></center>
+           </div>
+
+        <?php 
+            }else if(isset($_POST['leer'])){
         ?>
 
-        </form>
+                <div class="row">
+                <div class="col-sm-12">
+                <h2>Tabla dinamica facultad autodidacta</h2>
+                    <table class="table table-hover table-condensed table-bordered">
+                        <tr>
+                            <td>Cod</td>
+                            <td>Nombre</td>
+                            <td>Nombre_corto</td>
+                            <td>Descripción</td>
+                            <td>PVP</td>
+                            <td>Familia</td>
+                        </tr>
+            
+                        <?php 
+                     
+                            while ($registro = $resultado->fetch(PDO::FETCH_OBJ)) {
+                        ?>
+                            <tr>
+                                <td><?php print $registro->cod?></td>
+                                <td><?php print $registro->nombre?></td>
+                                <td><?php print $registro->nombre_corto?></td>
+                                <td><?php print $registro->descripcion?></td>
+                                <td><?php print $registro->PVP?></td>
+                                <td><?php print $registro->familia?></td>
+                            </tr>
+                        <?php 
+
+                             }
+                         ?>
+                    </table>
+                </div>
+            </div>
+
+
+            <?php
+               
+            }else if(isset($_POST['editar'])){
+            ?>
+                <div class="container-fluid ">
+
+                <div class="row  justify-content-center mt-5 fila-inicio">
+                        <div class="col-lg-3 col-inicio">
+                            <p>Código: 
+                                <select name="cod" id="">
+                                        <?php 
+                                   
+                                            while ($registro = $resultado->fetch(PDO::FETCH_OBJ)) {
+                                        ?>
+                                            <option value="<?php $registro->cod ?>"><?php print $registro->cod?></option>
+                                           
+                                        <?php 
+                                               }
+                                        ?>
+                                </select> 
+                            </p>
+                        </div>
+                            <div class="col-lg-3 col-inicio">
+                            <p>Nombre: <input type="text" name="nombre" id=""></p>
+                        </div>
+                            <div class="col-lg-3 col-inicio">
+
+                            <p>Nombre corto: <input type="text" name="nombre-corto" id=""></p>
+                        </div>
+                </div>
+                <div class="row  justify-content-center mt-5 fila-inicio">
+                        <div class="col-lg-3 col-inicio">
+                            <p>Descripción: <input type="text" name="descripcion" id=""></p>
+                        </div>
+                            <div class="col-lg-3 col-inicio">
+                            <p>PVP: <input type="text" name="pvp" id=""></p>
+                        </div>
+                        <div class="col-lg-3 col-inicio">
+                            <p>Familia: <input type="text" name="familia" id=""></p>
+                        </div>
+                </div>
+
+
+                <center><button name="aceptar" class="btn btn-primary mt-3">Insertar</button></center>
+                </div>
+            <?php
+            }
+    }
+    ?>
+    </form>
 
 </body>
 
 </html>
+
+
+

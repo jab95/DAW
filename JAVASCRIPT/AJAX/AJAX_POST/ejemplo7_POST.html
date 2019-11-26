@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Ejercicio 7 - AJAX POST</title>
+    <script>
+    var Enviar = () => {
+        var xhr = new XMLHttpRequest();
+        //Controlo el porcentaje de subida
+        xhr.upload.addEventListener("progress",(evento) => {
+            // console.log(evento);
+            document.getElementById("porcentaje").innerHTML = Math.round(evento.loaded / evento.total * 100);
+            document.getElementById("barra").style.width = Math.round(evento.loaded / evento.total * 100)+"%";
+        });
+
+        //controlo la finalización de la petición
+        xhr.addEventListener("load", () => {
+            document.getElementById("porcentaje").innerHTML = "Proceso terminado";
+            if(xhr.responseText != "ERROR") {
+                console.log(xhr.responseText); //me enviará un texto con lo que haya en el php
+                document.getElementById("imagen").src = xhr.responseText;
+            } else {
+                
+                alert("La imagen no tiene formato válido");
+            }   
+
+        });
+
+        //envío petición
+        xhr.open("POST", "ejemplo7_POST.php", true);
+
+        let formulario = document.getElementById("formulario");
+
+        xhr.send(new FormData(formulario));
+    };
+    
+    
+    </script>
+</head>
+<body>
+    <!-- COMO LO ESTAMOS HACIENDO POR AJAX NO PONEMOS NI EL MÉTODO NI EL BOTÓN TIPO SUBMIT
+    ADEMÁS, EN ESTE CASO ES OBLIGATORIO INCLUIR EN CADA CAMPO EL ATRIBUTO NAME PORQUE SINO NO LE ENVÍA LA INFORMACIÓN CORRECTA -->
+    <form id="formulario" action="" onsubmit="return false;">    <!-- lo de action="" y el onsubmit es para que no lo envíe porque me quita el console log -->
+        <p>Nombre <input type="text" name="nombre"></p>
+        <p>Contraseña <input type="password" name="password"></p>
+        <p>Fotografía <input type="file" name="foto"></p>
+        <button id="enviar" onclick="Enviar()">Enviar</button>
+    </form>
+    <div id="barra" style="background-color: red; height:20px; width: 0%"><span id="porcentaje"></span></div>
+    
+    <img id="imagen">
+    
+</body>
+</html>
