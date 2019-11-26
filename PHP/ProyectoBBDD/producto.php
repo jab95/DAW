@@ -39,7 +39,8 @@
         </div>
     </nav>
     <?php
-    if (!isset($_POST['insertar']) && !isset($_POST['editar']) && !isset($_POST['leer'])) {
+    if (!isset($_POST['insertar']) && !isset($_POST['editar']) && !isset($_POST['leer'])
+            && !isset($_POST['actualizar']) && !isset($_POST['eliminar'])) {
 
         ?>
 
@@ -61,8 +62,9 @@
         }else{
 
             $opciones = array(PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES utf8");
-            $dwes = new PDO('mysql:host=localhost;dbname=dwes', 'dwes', 'abc123', $opciones);                            $resultado = $dwes->query("SELECT * FROM producto");
-    
+            $dwes = new PDO('mysql:host=localhost;dbname=dwes', 'dwes', 'abc123', $opciones);                            
+            $resultado = $dwes->query("SELECT * FROM producto");
+
 
             if(isset($_POST['insertar'])){
 
@@ -99,6 +101,9 @@
 
         <?php 
             }else if(isset($_POST['leer'])){
+
+                $resultado = $dwes->query("SELECT * FROM producto");
+
         ?>
 
                 <div class="row">
@@ -138,56 +143,170 @@
             <?php
                
             }else if(isset($_POST['editar'])){
+
+                if(!isset($_POST['eliminar']) && !isset($_POST['actualizar'])){
+
+                    $resultado = $dwes->query("SELECT cod FROM producto");
+
             ?>
                 <div class="container-fluid ">
 
-                <div class="row  justify-content-center mt-5 fila-inicio">
-                        <div class="col-lg-3 col-inicio">
-                            <p>Código: 
-                                <select name="cod" id="">
-                                        <?php 
-                                   
-                                            while ($registro = $resultado->fetch(PDO::FETCH_OBJ)) {
-                                        ?>
-                                            <option value="<?php $registro->cod ?>"><?php print $registro->cod?></option>
-                                           
-                                        <?php 
-                                               }
-                                        ?>
-                                </select> 
-                            </p>
-                        </div>
+                 <form action="producto.php" method="post">
+                    <div class="row  justify-content-center  mt-5 fila-inicio">
+                            <div class="col-lg-3 col-inicio align-self-end">
+                                <p >Código: 
+                                    <select name="cod"  id="">
+                                            <?php 
+                                    
+                                                while ($registro = $resultado->fetch(PDO::FETCH_OBJ)) {
+                                            ?>
+                                                <option value="<?php print $registro->cod ?>"><?php print $registro->cod?></option>
+                                            
+                                            <?php 
+                                                }
+                                            ?>
+                                    </select> 
+                                </p>
+                            </div>
+                                <div class="col-lg-3 col-inicio">
+                                <center> <input type="submit" value="Eliminar" name="eliminar" class="btn btn-primary mt-3"></center>
+                            </div>
                             <div class="col-lg-3 col-inicio">
-                            <p>Nombre: <input type="text" name="nombre" id=""></p>
-                        </div>
-                            <div class="col-lg-3 col-inicio">
-
-                            <p>Nombre corto: <input type="text" name="nombre-corto" id=""></p>
-                        </div>
-                </div>
-                <div class="row  justify-content-center mt-5 fila-inicio">
-                        <div class="col-lg-3 col-inicio">
-                            <p>Descripción: <input type="text" name="descripcion" id=""></p>
-                        </div>
-                            <div class="col-lg-3 col-inicio">
-                            <p>PVP: <input type="text" name="pvp" id=""></p>
-                        </div>
-                        <div class="col-lg-3 col-inicio">
-                            <p>Familia: <input type="text" name="familia" id=""></p>
-                        </div>
-                </div>
-
-
-                <center><button name="aceptar" class="btn btn-primary mt-3">Insertar</button></center>
+                                <center> <input type="submit" value="Actualizar" name="actualizar" class="btn btn-primary mt-3"></center>
+                            </div>
+                            <input type="hidden" name="editar">
+                            
+                    </div>
+                 </form>
                 </div>
             <?php
+                }else if(isset($_POST['eliminar'])){
+
+                    $codAEditar = $_POST['cod'];
+                    $ok = true;
+                    $dwes->beginTransaction();
+                    if($dwes->exec('DELETE * FROM producto where producto.cod="'.$codAEditar.'"') == 0) $ok = false;
+                    if ($ok){ 
+                        $dwes->commit();
+                        print '<script type="text/javascript">
+                        alert("Registro eliminado con exito");
+                        window.location.href="producto.php";
+                        </script>';   
+                    }  // Si todo fue bien confirma los cambios
+                    else{ 
+                        $dwes->rollback();   //  y si no, los revierte
+                        print '<script type="text/javascript">
+                        alert("El registro no se pudo eliminar, compruebe que no tenga claves foraneas");
+                        window.location.href="producto.php";
+                        </script>';    }
+                   
+                                   
+                }else if(isset($_POST['actualizar'])){
+
+                    if(!isset($_POST['actualizado'])){
+
+                        $codAEditar = $_POST['cod'];
+                        $resultado = $dwes->query('SELECT * FROM producto where producto.cod="'.$codAEditar.'"');
+                        $resultadoFamilias = $dwes->query('SELECT * FROM familia');
+                        $registro = $resultado->fetch(PDO::FETCH_OBJ);
+                        ?>
+
+                                <form action="producto.php" method="post">
+                                        <div class="container-fluid ">
+
+                                    <div class="row  justify-content-center mt-5 fila-inicio">
+                                            <div class="col-lg-3 col-inicio">
+                                                <p>Codigo: <input type="text" name="cod" value="<?php print $codAEditar ?>" id="" disabled></p>
+                                                <!-- NO SE PUEDEN PASAR CAMPOS DESABILITADOS EN EL FORM -->
+                                            </div>
+                                                <div class="col-lg-3 col-inicio">
+                                                <p>Nombre: <input type="text" name="nombre" id="" value="<?php print $registro->nombre ?>" ></p>
+                                            </div>
+                                                <div class="col-lg-3 col-inicio">
+
+                                                <p>Nombre corto: <input type="text" name="nombre_corto" id="" value="<?php print $registro->nombre_corto ?>"></p>
+                                            </div>
+                                    </div>
+                                    <div class="row  justify-content-center mt-5 fila-inicio">
+                                            <div class="col-lg-3 col-inicio">
+                                                <p>Descripción: <input type="text" name="descripcion" id="" value="<?php print $registro->descripcion ?>"></p>
+                                            </div>
+                                                <div class="col-lg-3 col-inicio">
+                                                <p>PVP: <input type="text" name="pvp" id="" value="<?php print $registro->PVP ?>"></p>
+                                            </div>
+                                            <div class="col-lg-3 col-inicio">
+                                                <p>Familia: <select name="familia" id="">
+                                                                <?php 
+                                                        
+                                                                    while ($registro2 = $resultadoFamilias->fetch(PDO::FETCH_OBJ)) {
+                                                                        var_dump($registro2->familia == $registro->familia);
+                                                                        if($registro2->cod == $registro->familia){
+
+                                                                ?>
+                                                                            <option value="<?php print $registro2->cod ?>" selected><?php print $registro2->nombre?></option>
+                                                                
+                                                                <?php
+                                                                        }else{ 
+                                                                ?>
+                                                                            <option value="<?php print $registro2->cod ?>"><?php print $registro2->nombre?></option>
+
+                                                                <?php
+                                                                        }
+                                                                    }
+                                                                ?>
+                                                        </select> </p>
+                                            </div>
+                                    </div>
+                                    <div class="row  justify-content-center mt-5 fila-inicio">
+                                            <div class="col-lg-3 col-inicio">
+                                            <center> <input type="submit" value="Actualizar" name="actualizado" class="btn btn-primary mt-3"></center>
+                                            </div>
+                                            
+                                    </div>
+                                    <input type="hidden" name="editar">
+                                    <input type="hidden" name="actualizar">
+                                    <input type="hidden" value="<?php print $codAEditar ?>" name="cod2">
+
+                                </form>
+            <?php
+                    }else{
+
+                        $cod = $_POST['cod2'];
+                        $nombre = $_POST['nombre'];
+                        $nombre_corto = $_POST['nombre_corto'];
+                        $descripcion = $_POST['descripcion'];
+                        $pvp = $_POST['pvp'];
+                        $familia = $_POST['familia'];
+
+                        $ok = true;
+                        $dwes->beginTransaction();
+                        if($dwes->exec('UPDATE producto set nombre="'.$nombre.'", nombre_corto="'.$nombre_corto.'" , 
+                        descripcion="'.$descripcion.'", pvp="'.$pvp.'" , familia ="'.$familia.'"
+                         where cod="'.$cod.'"') == 0) $ok = false;
+                      
+                         if ($ok){ 
+                            $dwes->commit();
+                            print '<script type="text/javascript">
+                            alert("Registro actualizado con exito");
+                            window.location.href="producto.php";
+                            </script>';   
+                        }  // Si todo fue bien confirma los cambios
+                        else{ 
+                            $dwes->rollback();   //  y si no, los revierte
+                            print '<script type="text/javascript">
+                            alert("El registro no se pudo actualizar");
+                            window.location.href="producto.php";
+                            </script>';
+                        }
+
+                     }
             }
+        }
     }
-    ?>
+            ?>
     </form>
 
 </body>
-
 </html>
 
 
