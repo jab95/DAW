@@ -1,0 +1,37 @@
+.contenedor{
+    width: 1024px;
+    background: gray;
+    display: grid;
+    grid-template-areas: "head head head head"
+                        "iz centro centro centro"
+                        "pie pie pie pie";
+}
+.cabeza{
+    background: tomato;
+    height: 100px;
+    grid-area: head;
+}
+.izquierda{
+    background: gold;
+    height: 200px;
+    grid-area: iz;
+
+}
+.centro{
+    background: deepskyblue;
+    height: 200px;
+    grid-area: centro;
+}
+.pie{
+    background: lightgreen;
+    height: 100px;
+    grid-area: pie;
+}
+
+@media all and (max-width: 660px) {
+    .contenedor{
+        grid-template-areas: "head head head head"
+                            "iz iz iz iz"
+                            "centro centro centro centro"
+                            "pie pie pie pie";
+    }}
