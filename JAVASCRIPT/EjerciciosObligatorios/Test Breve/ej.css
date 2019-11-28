@@ -4,7 +4,7 @@ body {
 .contenedor {
   position: absolute;
   width: 70%;
-  height: 650px;
+  height: fit-content;
   margin: 0 auto;
   background-image: url(imgFondo.png);
   background-repeat: no-repeat;
@@ -17,14 +17,18 @@ body {
   position: relative;
   top: 12%;
   left: 10%;
+  margin-top: 4rem;
 }
 
 .boton {
-  width: 10%;
+  width: fit-content;
   height: 37px;
   background: palegoldenrod;
   font-weight: bold;
   border-radius: 5px;
+}
+.boton:last-child{
+  margin-bottom: 3rem;
 }
 
 input,
