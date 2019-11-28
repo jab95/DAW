@@ -1,3 +1,2 @@
 <?php  
-    print "hola, me has enviado ".$_GET["n"]; 
-?>
+    print "hola, me has enviado ".$_GET["n"];
