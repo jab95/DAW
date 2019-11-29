@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+
+    <script>
+        const Main = () => {
+            document.getElementById("autonomia").addEventListener("change", Provincias);
+            document.getElementById("provincia").addEventListener("change", Municipios);
+            document.getElementById("municipio").addEventListener("change", TratarMunicipio);
+
+            var x = new XMLHttpRequest();
+
+            x.onreadystatechange = () => {
+                if (x.readyState == 4) {
+                    if (x.status == 200) {
+                        CargaAutonomias(JSON.parse(x.responseText));
+                    }
+                }
+            }
+
+            x.open("GET", "http://172.30.12.10/jsmysql/autonomias.php", true);
+            x.send();
+
+        }
+
+        const CargaAutonomias = (autonomias) => {
+
+            for (let index = 0; index < autonomias.length; index++) {
+                document.getElementById("autonomia").innerHTML += `<option value="${autonomias[index].id}">${autonomias[index].autonomia}</option>`
+
+            }
+        }
+        const Provincias = (e) => {
+            if (e.target.value != -1) {
+                var x = new XMLHttpRequest();
+
+                x.onreadystatechange = () => {
+                    if (x.readyState == 4) {
+                        if (x.status == 200) {
+                            CargaProvincias(JSON.parse(x.responseText));
+                        }
+                    }
+                }
+
+                x.open("GET", "http://172.30.12.10/jsmysql/provincias.php?autonomia=" + e.target.value, true);
+                x.send();
+            } else {
+                document.getElementById("provincia").innerHTML = `<option id="-1">--ELegir--</option>`
+            }
+        }
+
+        const Municipios = (e) => {
+            if (e.target.value != -1) {
+                var x = new XMLHttpRequest();
+
+                x.onreadystatechange = () => {
+                    if (x.readyState == 4) {
+                        if (x.status == 200) {
+                            CargaMunicipios(JSON.parse(x.responseText));
+                        }
+                    }
+                }
+
+                x.open("GET", "http://172.30.12.10/jsmysql/municipios.php?provincia=" + e.target.value, true);
+                x.send();
+            } else {
+                document.getElementById("provincia").innerHTML = `<option id="-1">--ELegir--</option>`
+            }
+        }
+
+        const CargaProvincias = (provincias) => {
+            document.getElementById("provincia").innerHTML = "";
+
+            for (let index = 0; index < provincias.length; index++) {
+                document.getElementById("provincia").innerHTML += `<option value="${provincias[index].id}">${provincias[index].provincia}</option>`
+
+            }
+        }
+        const CargaMunicipios = (municipios) => {
+            document.getElementById("municipio").innerHTML = "";
+
+            for (let index = 0; index < municipios.length; index++) {
+                document.getElementById("municipio").innerHTML += `<option value="${municipios[index].id}">${municipios[index].municipio}</option>`
+
+            }
+        }
+
+        const TratarMunicipio = (e) => {
+            let municipio = e.target.options[e.target.selectedIndex].text;
+            window.open("https://es.wikipedia.org/wiki/" + municipio);
+        }
+
+        addEventListener("load", Main);
+
+    </script>
+
+</head>
+
+<body>
+
+    <h1>Municipios de España</h1>
+    Autonomía
+    <select name="" id="autonomia">
+        <option value="-1">--Elegir--</option>
+    </select>
+    <br>
+    Provincia <select name="" id="provincia">
+        <option value="-1">--Elegir--</option>
+    </select>
+    Municipios <select name="" id="municipio">
+        <option value="-1">--Elegir--</option>
+    </select>
+</body>
+
+</html>
