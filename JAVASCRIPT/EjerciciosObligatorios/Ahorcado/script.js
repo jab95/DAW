@@ -8,6 +8,9 @@ let imagen = null;
 let parrafoResultado = null;
 let terminado;
 let palabras = [];
+let categoria;
+let palabrasCategoria = [];
+
 
 Main = () => {
 
@@ -18,10 +21,13 @@ Main = () => {
       if (xhr.status == 200) {
 
         palabras = JSON.parse(xhr.responseText);
+        categoria = document.getElementById("cat").value;
 
-        indicePalabra = Math.floor(Math.random() * (palabras.length - 0)) + 0;
+        document.getElementById("categoria").innerHTML = "Categoria elegida: " + palabras[categoria].nombre;
+
+        indicePalabra = Math.floor(Math.random() * (palabras[categoria].palabras.length - 0)) + 0;
         parrafo = document.getElementById("palabra");
-        palabraElegida = palabras[indicePalabra].palabra;
+        palabraElegida = palabras[categoria].palabras[indicePalabra];
         imagen = document.getElementsByTagName("img")[0];
         parrafoResultado = document.getElementsByTagName("h2")[0];
         terminado = false;
@@ -33,7 +39,7 @@ Main = () => {
           parrafo.innerHTML += `&nbsp;`;
         }
 
-        window.addEventListener("keypress", PulsaLetra);
+        window.addEventListener("keyup", PulsaLetra);
 
       }
     }
@@ -44,8 +50,12 @@ Main = () => {
 
 };
 
+
+
 PulsaLetra = e => {
-  if (e.keyCode >= 97 && e.keyCode <= 122) {
+
+  console.log(e);
+  if (e.keyCode >= 65 && e.keyCode <= 90) {
 
     let letraPulsada = e.key;
 
@@ -77,12 +87,14 @@ PulsaLetra = e => {
         imagen.src = `img6Ahor.png`;
         terminado = true;
         document.getElementById("reiniciar").style.display = "inline";
+        document.getElementById("reiniciarMenu").style.display = "inline";
       }
 
       if (!letras.includes("&nbsp;")) {
         parrafoResultado.innerHTML = "HAS ACERTADO LA PALABRA, FELICIDADES!!";
         terminado = true;
         document.getElementById("reiniciar").style.display = "inline";
+        document.getElementById("reiniciarMenu").style.display = "inline";
       }
     }
   } else
@@ -90,12 +102,20 @@ PulsaLetra = e => {
 };
 
 ReiniciarJuego = e => {
-  imagen.src = "img1Ahor.png";
-  document.getElementById("letrasUsadas").innerHTML = "Letras usadas<br>";
-  e.style.display = "none";
-  parrafoResultado.innerHTML = "";
-  parrafo.innerHTML = "";
-  Main();
+  if (e.id == "reiniciarMenu")
+    location.href = "index.php";
+  else {
+    imagen.src = "img1Ahor.png";
+    document.getElementById("letrasUsadas").innerHTML = "Letras usadas<br>";
+    e.style.display = "none";
+    parrafoResultado.innerHTML = "";
+    parrafo.innerHTML = "";
+    document.getElementById("reiniciarMenu").style.display = "none";
+    Main();
+  }
+
 };
+
+
 
 addEventListener("load", Main);

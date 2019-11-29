@@ -1,3 +1,13 @@
+*{
+  font-family: 'Odibee Sans', cursive;
+
+}
+
+p{
+  font-size: 1.3rem;
+
+}
+
 h1 {
   text-align: center;
 }
@@ -16,6 +26,8 @@ h1 {
   width: 1000px;
   height: 900px;
   margin: 0 auto;
+  background:navajowhite;
+  padding: 0;
 }
 
 #contenido {
@@ -25,15 +37,10 @@ h1 {
 
 #mensaje {
   position: relative;
-  left: 29%;
   font-weight: bold;
-  font-size: 1.5em;
+  font-size: 1.8em;
 }
 
-#reset {
-  position: relative;
-  left: 45%;
-}
 
 #btnReset {
   background: bisque;
@@ -41,6 +48,6 @@ h1 {
   border-style: solid;
   border-color: coral;
   font-weight: bold;
-  width: 12%;
+  width: fit-content;
   height: 35px;
 }

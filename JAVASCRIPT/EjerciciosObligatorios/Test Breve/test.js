@@ -107,8 +107,27 @@ CompruebaChB = () => {
     let cb3 = document.getElementById("cb3");
     let acertado = true;
 
-    if (!cb1.checked || cb2.checked || !cb3.checked) acertado = false;
-    CompruebaAcertado(acertado, error1);
+    if (cb1.checked && cb3.checked && !cb2.checked) {
+        acertado = true;
+        acierto += 25;
+    } else if (cb2.checked && cb1.checked && cb3.checked) {
+        acierto += 12.5;
+        acertado = false;
+    } else if ((cb1.checked || cb3.checked) && !cb2.checked) {
+        acierto += 12.5;
+        acertado = false;
+    } else {
+        acierto += 0;
+        acertado = false;
+    }
+
+    if (acertado == false) {
+        error1.innerHTML = "X";
+        contadorAcertados--;
+    } else {
+        contadorAcertados++;
+        error1.innerHTML = "";
+    }
 };
 
 CompruebaRadios = () => {

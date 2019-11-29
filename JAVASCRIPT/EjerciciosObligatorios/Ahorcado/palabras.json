@@ -1,11 +1,26 @@
 [
     {
-        "palabra": "hola"
+        "nombre": "javascript",
+        "palabras": [
+            "addeventlistener",
+            "getelementbyname",
+            "innerhtml"
+        ]
     },
     {
-        "palabra": "como"
+        "nombre": "php",
+        "palabras": [
+            "include",
+            "echo",
+            "vardump"
+        ]
     },
     {
-        "palabra": "estas"
+        "nombre": "diw",
+        "palabras": [
+            "sass",
+            "flexbox",
+            "bootstrap"
+        ]
     }
 ]

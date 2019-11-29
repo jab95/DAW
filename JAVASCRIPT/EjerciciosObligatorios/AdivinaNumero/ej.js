@@ -4,28 +4,36 @@ let primeraVezPulsada = false;
 let aSidoMayor = false;
 let aSidoMenor = false;
 let btnReset = null;
+let parrafoIntentos;
+let intentos;
 
 main = () => {
   let parrafoRefran = document.getElementById("contenido");
   mensaje = document.getElementById("mensaje");
   btnReset = document.getElementById("reset");
+  parrafoIntentos = document.getElementById("intentos");
 
   parrafoRefran.innerHTML = `<p>`;
   btnReset.innerHTML = "";
 
   for (let i = 1; i <= 100; i++) {
-    parrafoRefran.innerHTML += `<button class="botones" id="boton${i}" onclick="ComprobarNumero(this)">${i}</button>`;
+    parrafoRefran.innerHTML += `<button type="button" id="boton${i}" class="btn btn-info botones" onclick="ComprobarNumero(this)">${i}</button>`
     if (i % 10 == 0) parrafoRefran.innerHTML += `</p><p>`;
   }
 
   numAAdivinar = Math.round(Math.random() * (100 - 1) + parseInt(1));
   mensaje.innerHTML = "";
+  intentos = 0;
+  parrafoIntentos.innerHTML = "";
   //   numAAdivinar = 100;
 };
 
 ComprobarNumero = e => {
   let numeroPulsado = e.innerHTML;
   if (numeroPulsado != numAAdivinar) {
+
+    intentos++;
+
     if (numeroPulsado < numAAdivinar) {
       aSidoMayor = true;
       numeroMenorAnterior = e.innerHTML;
@@ -45,7 +53,9 @@ ComprobarNumero = e => {
       }
       for (let index = numeroPulsado; index >= 1; index--) {
         let boton = document.getElementById("boton" + index);
-        boton.style.borderColor = "red";
+        // boton.style.borderColor = "red";
+        boton.className = "btn btn-secondary botones";
+
       }
     } else {
       aSidoMenor = true;
@@ -64,16 +74,25 @@ ComprobarNumero = e => {
 
       for (let index = numeroPulsado; index <= 100; index++) {
         let boton = document.getElementById("boton" + index);
-        boton.style.borderColor = "red";
+        // boton.style.borderColor = "red";
+        // boton.style.borderWidth = "0.2rem";
+        boton.className = "btn btn-secondary botones";
+
       }
     }
+
+    parrafoIntentos.innerHTML = "Has realizado " + intentos + " intentos";
+
   } else {
+    intentos++;
     e.style.borderColor = "yellow";
     e.style.background = "orange";
 
     mensaje.innerHTML = "¡¡Enhorabuena, has acertado el numero secreto!!<br> ";
-    btnReset.innerHTML =
-      "<button id='btnReset' onclick='main()'>Volver a jugar</button>";
+    btnReset.innerHTML = `<button type="button" id="btnReset" onclick="main()" class="btn btn-warning">Volver a jugar</button>`
+
+    parrafoIntentos.innerHTML = "Has realizado " + intentos + " intentos";
+
   }
 };
 
