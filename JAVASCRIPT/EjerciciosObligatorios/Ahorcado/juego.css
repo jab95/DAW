@@ -11,7 +11,7 @@ span {
 }
 
 #palabra {
-  font-size: 3em;
+  font-size: 2em;
   background: burlywood;
   border-style: groove;
   border-color: firebrick;
@@ -35,10 +35,6 @@ span {
   border-color: firebrick;
 }
 
-h1,
-h3 {
-  text-align: center;
-}
 
 img {
   width: 300px;

@@ -16,7 +16,7 @@ h1 {
   text-align: center;
   margin: 0 0.5% 0.5% 0.5%;
   width: 7%;
-  height: 45px;
+  height: 35px;
   font-size: 70%;
   font-weight: bold;
   border-radius: 6px;
@@ -24,7 +24,7 @@ h1 {
 
 .contenedor {
   width: 1000px;
-  height: 900px;
+  height: fit-content;
   margin: 0 auto;
   background:navajowhite;
   padding: 0;

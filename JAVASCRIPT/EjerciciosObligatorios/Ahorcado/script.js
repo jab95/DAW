@@ -27,9 +27,10 @@ Main = () => {
 
         indicePalabra = Math.floor(Math.random() * (palabras[categoria].palabras.length - 0)) + 0;
         parrafo = document.getElementById("palabra");
-        palabraElegida = palabras[categoria].palabras[indicePalabra];
+        palabraElegida = palabras[categoria].palabras[indicePalabra].palabra;
+        document.getElementById("pista").innerHTML = "Pista: "+palabras[categoria].palabras[indicePalabra].pista;
         imagen = document.getElementsByTagName("img")[0];
-        parrafoResultado = document.getElementsByTagName("h2")[0];
+        parrafoResultado = document.getElementById("resultado");
         terminado = false;
         contadorFallados = 1;
         letras = [];
@@ -111,6 +112,7 @@ ReiniciarJuego = e => {
     parrafoResultado.innerHTML = "";
     parrafo.innerHTML = "";
     document.getElementById("reiniciarMenu").style.display = "none";
+    document.getElementById("pista").innerHTML="";
     Main();
   }
 

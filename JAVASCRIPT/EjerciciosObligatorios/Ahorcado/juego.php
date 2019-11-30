@@ -37,14 +37,14 @@
 
     <div class="container">
       <center>
-        <h1>Adivina la palabra secreta</h1>
-        <h3>Pulsa una letra con el teclado</h2>
-       <h4 id="categoria"></h4>
-</center>
+        <h2>Adivina la palabra secreta</h2>
+        <h5>Pulsa una letra con el teclado</h5>
+        <h5 id="categoria"></h5>
+      </center>
 
 
       <div class="row  justify-content-center">
-        <div class="col-md mt-5">
+        <div class="col-md mt-2">
 
           <center>
             <p id="palabra"></p>
@@ -52,10 +52,11 @@
 
         </div>
       </div>
-      <div class="row  justify-content-center mt-5 ">
+      <div class="row  justify-content-center mt-2">
         <div class="col-md-5">
 
-          <img src="img1Ahor.png" alt="" class="border border-primary" ></img>
+        <h5 id="pista"></h5>
+        <img src="img1Ahor.png" alt="" class="border border-primary" ></img>
 
         </div>
         <div class="col-md-5 " >
@@ -64,7 +65,7 @@
 
         </div>
       </div>
-      <div class="row  justify-content-center mt-5 ">
+      <div class="row  justify-content-center mt-3 ">
         <div class="col-md-2  " >
 
           <button id="reiniciarMenu" onclick="ReiniciarJuego(this)" style="display: none;">Volver a menu inicio</button>
@@ -77,10 +78,10 @@
 
         </div>
       </div>
-      <div class="row  justify-content-center mt-5 ">
+      <div class="row  justify-content-center mt-2 ">
         <div class="col-md  " >
 
-        <center><h2></h2></center>
+        <center><h2 id="resultado"></h2></center>
 
         </div>
       </div>
