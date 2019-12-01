@@ -1,91 +1,79 @@
-let intervalMilisec = null;
+let intervalMilisec;
 let isPaused = true;
-let tiempoCrono = null;
+let tiempoCrono;
 let contadorSegundos = 0;
 let contadorMinutos = 0;
 let contadorHoras = 0;
 let contadorMilisegundos = 0;
-let ss = "00";
-let mm = "00";
-let hh = "00";
-let ms = "00";
-let interval2 = null;
-let activo = true;
+let activo = false;
+let parrafoVueltas;
+let vueltas = [];
 let btnStart;
 let btnStop;
 let btnReset;
-let parrafoVueltas;
-let vueltas = new Array();
+let btnVueltas;
+
 
 
 Main = () => {
     tiempoCrono = document.getElementById("tiempoCrono");
-    CreaIntervalos();
-
+    parrafoVueltas = document.getElementById("vueltas");
 
     btnStart = document.getElementById("start");
     btnStop = document.getElementById("stop");
     btnReset = document.getElementById("reset");
-    parrafoVueltas = document.getElementById("vueltas");
+    btnVueltas = document.getElementById("vuelta");
 
-    btnStart = addEventListener("click", Controlar);
-    btnStop = addEventListener("click", Controlar);
-    btnReset = addEventListener("click", Controlar);
-
+    btnStart.addEventListener("click", Controlar);
+    btnStop.addEventListener("click", Controlar);
+    btnReset.addEventListener("click", Controlar);
+    btnVueltas.addEventListener("click", Controlar);
 }
 
 
-CreaIntervalos = () => {
-
-
-    intervalMilisec = setInterval(() => {
-
-        if (!isPaused) {
-
-            ms = contadorMilisegundos;
-            if (ms < 10) ms = "0" + ms;
-
-            if (contadorMilisegundos > 59) { contadorMilisegundos = 0; contadorSegundos++; }
-
+function cronometro() {
+    if (!isPaused) {
+        if (contadorMilisegundos < 99) {
             contadorMilisegundos++;
-
-            if (contadorSegundos > 59) {
-                contadorMinutos++;
-                contadorSegundos = 0;
-            }
-            if (contadorMinutos > 59) {
-                contadorHoras++;
-                contadorMinutos = 0;
-            }
-            if (contadorHoras > 24) {
-                contadorHoras = 0;
-            }
-
-            ss = contadorSegundos;
-            mm = contadorMinutos;
-            hh = contadorHoras;
-
-            if (ss < 10) ss = "0" + ss;
-            if (mm < 10) mm = "0" + mm;
-            if (hh < 10) hh = "0" + hh;
-
-            tiempoCrono.innerHTML = hh + ":" + mm + ":" + ss + ":" + ms;
+            if (contadorMilisegundos < 10) { contadorMilisegundos = "0" + contadorMilisegundos }
+            document.getElementById("c").innerHTML = ":" + contadorMilisegundos;
         }
+        if (contadorMilisegundos == 99)
+            contadorMilisegundos = -1;
 
-    }, 16.6);
+        if (contadorMilisegundos == 0) {
+            contadorSegundos++;
+            if (contadorSegundos < 10) contadorSegundos = "0" + contadorSegundos
+            document.getElementById("s").innerHTML = ":" + contadorSegundos;
+        }
+        if (contadorSegundos == 59)
+            contadorSegundos = -1;
 
-};
+        if (contadorMilisegundos == 0 && contadorSegundos == 0) {
+            contadorMinutos++;
+            if (contadorMinutos < 10) contadorMinutos = "0" + contadorMinutos
+            document.getElementById("m").innerHTML = ":" + contadorMinutos;
+        }
+        if (contadorMinutos == 59)
+            contadorMinutos = -1;
+
+        if (contadorMilisegundos == 0 && contadorSegundos == 0 && contadorMinutos == 0) {
+            contadorHoras++;
+            if (contadorHoras < 10) contadorHoras = "0" + contadorHoras
+            document.getElementById("h").innerHTML = contadorHoras;
+        }
+    }
+}
 
 Controlar = (e) => {
 
     if (e.target.id == "start") {
 
         isPaused = false;
-        if (activo == false) {
-            CreaIntervalos();
-            horaInicial = new Date();
-        };
+        if (activo == false)
+            intervalMilisec = setInterval(cronometro, 10);
         activo = true;
+
     } else if (e.target.id == "stop") {
 
         activo = true;
@@ -104,18 +92,15 @@ Controlar = (e) => {
         if (activo != false) {
             clearInterval(intervalMilisec);
 
-            tiempoCrono.innerHTML = "00:00:00:00";
+            document.getElementById("h").innerHTML = "00";
+            document.getElementById("m").innerHTML = ":00";
+            document.getElementById("s").innerHTML = ":00";
+            document.getElementById("c").innerHTML = ":00";
             activo = false;
-            ss = "00";
-            mm = "00";
-            hh = "00";
-            ms = "00";
             contadorMinutos = 0;
             contadorSegundos = 0;
             contadorHoras = 0;
             contadorMilisegundos = 0;
-            tiempoAcumulado = 0;
-            tiempoAcumulado2 = 0;
             parrafoVueltas.innerHTML = "";
             vueltas = [];
         }
@@ -127,11 +112,8 @@ MuestraVueltas = () => {
     parrafoVueltas.innerHTML = "";
 
     for (let index = 0; index < vueltas.length; index++) {
-        parrafoVueltas.innerHTML += vueltas[index] + "<br>";
-
-
+        parrafoVueltas.innerHTML += vueltas[index];
     }
-
 }
 
 addEventListener("load", Main);

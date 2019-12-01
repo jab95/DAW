@@ -10,7 +10,6 @@
   <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.0/css/bootstrap.min.css"
     integrity="sha384-SI27wrMjH3ZZ89r4o+fGIJtnzkAnFs3E4qz9DIYioCQ5l9Rd/7UAa8DHcaL8jkWt" crossorigin="anonymous">
   <link href="https://fonts.googleapis.com/css?family=Orbitron&display=swap" rel="stylesheet">
-  <script src="cronometro.js"></script>
 
 </head>
 
@@ -21,12 +20,16 @@
       <h1>CRONÓMETRO</h1>
     </center>
 
-    <div class="row  justify-content-center">
-      <div class="col-md mt-5">
+    <div class="row  justify-content-center ">
+      <div class="col-4 mt-5 reloj" id="tiempoCrono">
 
-        <center>
-          <div class="border border-warning " id="tiempoCrono">00:00:00:00</div>
-        </center>
+        <p class="valores mt-3">
+          <span id="h">00</span>
+          <span id="m">:00</span>
+          <span id="s">:00</span>
+          <span id="c">:00</span>
+        </p>
+
       </div>
     </div>
     <div class="row  justify-content-center mt-5 ">
@@ -38,10 +41,10 @@
 
 
       </div>
-      <div class="col-md-2 ">
+      <div class=" col-md-2 ">
 
         <center>
-          <button type="button" id="stop" class="btn btn-primary  mt-3 mb-5">STOP</button>
+          <button type=" button" id="stop" class="btn btn-primary  mt-3 mb-5">STOP</button>
         </center>
 
       </div>
@@ -82,6 +85,7 @@
   <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.0/js/bootstrap.min.js"
     integrity="sha384-3qaqj0lc6sV/qpzrc1N5DC6i1VRn/HyX4qdPaiEFbn54VjQBEU341pvjz7Dv3n6P"
     crossorigin="anonymous"></script>
+  <script src="cronometro.js"></script>
 
 </body>
 

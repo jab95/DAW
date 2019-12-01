@@ -5,8 +5,6 @@
 
  .container{
   background: linear-gradient(180deg, #63C45A 25%, rgb(0, 167, 154) 100%);
-  height: 100%;
-  margin: 0 auto;
 }
 
 h1{
@@ -21,13 +19,18 @@ h1{
   font-size: 25px;
 
 }
-
-#tiempoCrono {
-  text-align: center;
-  border-width:3px !important;
-  width: 350px;
+.reloj {
   padding: 1rem;
+  display: flex;
+  text-align: center;
   font-size: 35px;
+  width: fit-content;
   background: lightcyan;
   border-style: dashed;
 }
+
+.valores{
+ 
+  margin-left: 2rem;
+ 
+ }
