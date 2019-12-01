@@ -28,7 +28,7 @@ Main = () => {
         indicePalabra = Math.floor(Math.random() * (palabras[categoria].palabras.length - 0)) + 0;
         parrafo = document.getElementById("palabra");
         palabraElegida = palabras[categoria].palabras[indicePalabra].palabra;
-        document.getElementById("pista").innerHTML = "Pista: "+palabras[categoria].palabras[indicePalabra].pista;
+        document.getElementById("pista").innerHTML = "Pista: " + palabras[categoria].palabras[indicePalabra].pista;
         imagen = document.getElementsByTagName("img")[0];
         parrafoResultado = document.getElementById("resultado");
         terminado = false;
@@ -55,10 +55,10 @@ Main = () => {
 
 PulsaLetra = e => {
 
-  console.log(e);
+
   if (e.keyCode >= 65 && e.keyCode <= 90) {
 
-    let letraPulsada = e.key;
+    let letraPulsada = e.key.toLowerCase();
 
     if (!terminado) {
       if (!palabraElegida.includes(letraPulsada)) {
@@ -73,7 +73,6 @@ PulsaLetra = e => {
             letras[index] = "" + letraPulsada;
           else if (letras[index] == undefined)
             letras[index] = "&nbsp;";
-
         }
 
         for (let index = 0; index < letras.length; index++) {
@@ -112,7 +111,7 @@ ReiniciarJuego = e => {
     parrafoResultado.innerHTML = "";
     parrafo.innerHTML = "";
     document.getElementById("reiniciarMenu").style.display = "none";
-    document.getElementById("pista").innerHTML="";
+    document.getElementById("pista").innerHTML = "";
     Main();
   }
 

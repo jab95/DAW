@@ -74,7 +74,7 @@
 
         <div class="col-md-2 ">
 
-          <button id="reiniciar" onclick="ReiniciarJuego(this)" style="display: none;">Reintentar</button>
+          <button id="reiniciar" onclick="ReiniciarJuego(this)" style="display: none;">Volver a jugar</button>
 
         </div>
       </div>
