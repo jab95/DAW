@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>Document</title>
+    <title>AAAAAAAAAAAAAA</title>
 
     <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
@@ -23,7 +23,7 @@
                     <a class="nav-link" href="inicio.php"> Inicio</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="#"> Tiendas</a>
+                    <a class="nav-link" href="tienda.php"> Tiendas</a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" href="#"> Familias</a>
@@ -167,7 +167,7 @@
 
                 <div class="row">
                     <div class="col-sm-12">
-                        <h2>Tabla dinamica facultad autodidacta</h2>
+                        <center><h2>TABLA PRODUCTOS</h2></center>
                         <table class="table table-hover table-condensed table-bordered">
                             <tr>
                                 <td>Cod</td>
@@ -297,7 +297,6 @@
                                                 <?php
 
                                                                 while ($registro2 = $resultadoFamilias->fetch(PDO::FETCH_OBJ)) {
-                                                                    var_dump($registro2->familia == $registro->familia);
                                                                     if ($registro2->cod == $registro->familia) {
 
                                                                         ?>

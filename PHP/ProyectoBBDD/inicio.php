@@ -20,10 +20,10 @@
 
             <ul class="navbar-nav">
                 <li class="nav-item">
-                    <a class="nav-link" href="#"> Inicio</a>
+                    <a class="nav-link" href="inicio.php"> Inicio</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="#"> Tiendas</a>
+                    <a class="nav-link" href="tienda.php"> Tiendas</a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" href="#"> Familias</a>
@@ -38,6 +38,8 @@
             </ul>
         </div>
     </nav>
+
+    
 
 
 
