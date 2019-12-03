@@ -1,0 +1,53 @@
+*{
+  font-family: 'Odibee Sans', cursive;
+
+}
+
+p{
+  font-size: 1.3rem;
+
+}
+
+h1 {
+  text-align: center;
+}
+
+.botones {
+  text-align: center;
+  margin: 0 0.5% 0.5% 0.5%;
+  width: 7%;
+  height: 35px;
+  font-size: 70%;
+  font-weight: bold;
+  border-radius: 6px;
+}
+
+.contenedor {
+  width: 1000px;
+  height: fit-content;
+  margin: 0 auto;
+  background:navajowhite;
+  padding: 0;
+}
+
+#contenido {
+  position: relative;
+  left: 10%;
+}
+
+#mensaje {
+  position: relative;
+  font-weight: bold;
+  font-size: 1.8em;
+}
+
+
+#btnReset {
+  background: bisque;
+  background-color: orange;
+  border-style: solid;
+  border-color: coral;
+  font-weight: bold;
+  width: fit-content;
+  height: 35px;
+}

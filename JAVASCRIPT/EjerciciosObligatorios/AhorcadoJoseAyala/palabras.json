@@ -1,0 +1,54 @@
+[ 
+    { 
+       "nombre":"javascript",
+       "palabras":[ 
+          { 
+             "palabra":"addeventlistener",
+             "pista":"Forma de llamar a los eventos"
+          },
+          { 
+             "palabra":"getelementbyname",
+             "pista":"Forma de obtener elementos del html"
+          },
+          { 
+             "palabra":"innerhtml",
+             "pista":"Obtener texto de los elementos"
+          }
+       ]
+    },
+    { 
+       "nombre":"php",
+       "palabras":[ 
+          { 
+             "palabra":"include",
+             "pista":"Incluir archivos php en otro php"
+          },
+          { 
+             "palabra":"echo",
+             "pista":"Forma de imprimir por pantalla"
+          },
+          { 
+             "palabra":"vardump",
+             "pista":"Forma de hacer depuracion en php"
+          }
+       ]
+    },
+    { 
+
+        "nombre":"diw",
+        "palabras":[ 
+           { 
+              "palabra":"sass",
+              "pista":"Nueva forma de dar estilo a las páginas"
+           },
+           { 
+              "palabra":"flexbox",
+              "pista":"Metodo de diseño de webs"
+           },
+           { 
+              "palabra":"bootstrap",
+              "pista":"Libreria de HTML"
+           }
+        ]
+    }
+ ]

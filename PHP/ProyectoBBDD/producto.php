@@ -65,45 +65,100 @@
             } else {
 
                 $opciones = array(PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES utf8");
-                $dwes = new PDO('mysql:host=172.30.12.10;dbname=dwes', 'dwes', 'abc123', $opciones);
+                $dwes = new PDO('mysql:host=localhost;dbname=dwes', 'dwes', 'abc123', $opciones);
                 $resultado = $dwes->query("SELECT * FROM producto");
-                print "aaaa";
 
                 if (isset($_POST['insertar'])) {
-                    print "aaaa";
 
-                    ?>
-                <div class="container-fluid ">
+                    if(isset($_POST['insertado'])){
 
-                    <div class="row  justify-content-center mt-5 fila-inicio">
-                        <div class="col-lg-3 col-inicio">
-                            <p>Código: <input type="text" name="codigo" id=""></p>
-                        </div>
-                        <div class="col-lg-3 col-inicio">
-                            <p>Nombre: <input type="text" name="nombre" id=""></p>
-                        </div>
-                        <div class="col-lg-3 col-inicio">
+                        $cod = $_POST['codigo'];
+                        $nombre = $_POST['nombre'];
+                        $nombre_corto = $_POST['nombre-corto'];
+                        $descripcion = $_POST['descripcion'];
+                        $pvp = $_POST['pvp'];
+                        $familia = $_POST['familia'];
+                         
+                       
+                        $ok = true;
+                        $dwes->beginTransaction();
+                        if ($dwes->exec("INSERT into producto (cod,nombre,nombre_corto,descripcion,pvp,familia) values('$cod','$nombre','$nombre_corto','$descripcion','$pvp','$familia')") == 0) $ok = false;
 
-                            <p>Nombre corto: <input type="text" name="nombre-corto" id=""></p>
-                        </div>
-                    </div>
-                    <div class="row  justify-content-center mt-5 fila-inicio">
-                        <div class="col-lg-3 col-inicio">
-                            <p>Descripción: <input type="text" name="descripcion" id=""></p>
-                        </div>
-                        <div class="col-lg-3 col-inicio">
-                            <p>PVP: <input type="text" name="pvp" id=""></p>
-                        </div>
-                        <div class="col-lg-3 col-inicio">
-                            <p>Familia: <input type="text" name="familia" id=""></p>
-                        </div>
-                    </div>
+                        if ($ok) {
+                            $dwes->commit();
+                            print '<script type="text/javascript">
+                            alert("Registro insertado con exito");
+                            window.location.href="producto.php";
+                            </script>';
+                        }  // Si todo fue bien confirma los cambios
+                        else {
+                            $dwes->rollback();   //  y si no, los revierte
+                            print '<script type="text/javascript">
+                            alert("El registro no se pudo insertar");
+                            window.location.href="producto.php";
+                            </script>';
+                        }
+                }else{
+
+                      $resultadoFamilias = $dwes->query('SELECT * FROM familia');
+
+                            ?>
+                        <div class="container-fluid ">
+                       
+                        <form action="producto.php" method="post">
+
+                            <div class="row  justify-content-center mt-5 fila-inicio">
+                                <div class="col-lg-3 col-inicio">
+                                    <p>Código: <input type="text" name="codigo" id=""></p>
+                                </div>
+                                <div class="col-lg-3 col-inicio">
+                                    <p>Nombre: <input type="text" name="nombre" id=""></p>
+                                </div>
+                                <div class="col-lg-3 col-inicio">
+
+                                    <p>Nombre corto: <input type="text" name="nombre-corto" id=""></p>
+                                </div>
+                            </div>
+                            <div class="row  justify-content-center mt-5 fila-inicio">
+                                <div class="col-lg-3 col-inicio">
+                                    <p>Descripción: <input type="text" name="descripcion" id=""></p>
+                                </div>
+                                <div class="col-lg-3 col-inicio">
+                                    <p>PVP: <input type="text" name="pvp" id=""></p>
+                                </div>
+                                <div class="col-lg-3 col-inicio">
+                                        <p>Familia: <select name="familia" id="">
+                                                <?php
+
+                                                    while ($registro2 = $resultadoFamilias->fetch(PDO::FETCH_OBJ)) {
+                                                        var_dump($registro2->familia == $registro->familia);
+                                                        if ($registro2->cod == $registro->familia) {
+
+                                                ?>
+                                                        <option value="<?php print $registro2->cod ?>" selected><?php print $registro2->nombre ?></option>
+
+                                                <?php
+                                                        } else {
+                                                ?>
+                                                        <option value="<?php print $registro2->cod ?>"><?php print $registro2->nombre ?></option>
+
+                                                <?php
+                                                         }
+                                                    }
+                                                ?>
+                                            </select> </p>
+                                    </div>
+                            </div>
 
 
-                    <center><button name="aceptar" class="btn btn-primary mt-3">Insertar</button></center>
-                </div>
+                            <center> <input type="submit" value="Insertar" name="insertado" class="btn btn-primary mt-3"></center>
+                            <input type="hidden" name="insertar">
+
+                        </div>
+                    </form>
 
             <?php
+                    }
                 } else if (isset($_POST['leer'])) {
 
                     $resultado = $dwes->query("SELECT * FROM producto");
