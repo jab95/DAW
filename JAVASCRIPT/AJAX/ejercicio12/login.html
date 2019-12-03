@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+    <script>
+
+        ComprobarUsuario = () => {
+
+            var x = new XMLHttpRequest();
+
+            x.onreadystatechange = () => {
+                if (x.responseText = "S") Seguimos();
+                else alert("Usuario o contraseña incorrecta");
+            }
+            x.open("POST", "comprueba_usuario.php");
+            let usuario = document.getElementById("usuario").value;
+            let pass = document.getElementById("password").value;
+            x.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+            x.send("usuario=" + usuario + "&password=" + pass);
+        }
+
+    </script>
+</head>
+
+<body>
+
+    <h1>Login</h1>
+    Usuario <input type="text" name="" id="usuario">
+    Contraseña <input type="password" name="" id="password">
+    <button onclick="ComprobarUsuario()">Acceder</button>
+
+</body>
+
+</html>
