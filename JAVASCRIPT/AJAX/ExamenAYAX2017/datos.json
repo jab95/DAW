@@ -1,0 +1,90 @@
+[
+    {
+        "tema": "Naturaleza",
+        "versos": [
+            "De la mar salió mi nombre",
+            "y tan desgraciada nací",
+            "que huyendo de mi desgracia",
+            "contra una garita di."
+        ],
+        "pista": "Flor",
+        "solucion": "La Margarita"
+    },
+    {
+        "tema": "Naturaleza",
+        "versos": [
+            "Aparece por delante",
+            "por los lados, por la espalda,",
+            "te descuidas un instante",
+            "y te levanta la falda."
+        ],
+        "pista": "Aire en movimiento",
+        "solucion": "El Viento"
+    },
+    {
+        "tema": "Números",
+        "versos": [
+            "Yo no quiero que os canséis",
+            "y por eso os recomiendo",
+            "que esta adivinanza miréis,",
+            "para quitarle un perro",
+            "y su número obtendréis."
+        ],
+        "pista": "Está en la adivinanza",
+        "solucion": "El Séis"
+    },
+    {
+        "tema": "Números",
+        "versos": [
+            "Soy más de uno",
+            "sin llegar al tres,",
+            "y llego a cuatro",
+            "cuando dos me des."
+        ],
+        "pista": "Entre el uno y el tres",
+        "solucion": "El Dos"
+    },
+    {
+        "tema": "Números",
+        "versos": [
+            "¿Qué cosa será esa",
+            "que cuando la miras del derecho",
+            "y mirada del revés",
+            " siempre un número es?"
+        ],
+        "pista": "Gira un número de posición",
+        "solucion": "El Nueve"
+    },
+    {
+        "tema": "Animales",
+        "versos": [
+            "¿Cuál es de los animales",
+            "aquel que en su nombre",
+            "tiene las cinco vocales?"
+        ],
+        "pista": "Duerme boca abajo",
+        "solucion": "El Murciélago"
+    },
+    {
+        "tema": "Animales",
+        "versos": [
+            "Si lo escribes como es,",
+            "soy de la selva el rey.",
+            "Si lo escribes al revés",
+            "soy tu Papá Noel."
+        ],
+        "pista": "Es un gran felino",
+        "solucion": "El León"
+    },
+    {
+        "tema": "Animales",
+        "versos": [
+            "Es la reina de los mares,",
+            "su dentadura es muy buena,",
+            "y por no ir nunca vacía,",
+            "siempre dicen que va llena."
+        ],
+        "pista": "Es un mamífero, aunque vive en el mar",
+        "solucion": "La Ballena"
+    }
+]
