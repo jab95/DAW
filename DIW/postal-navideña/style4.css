@@ -1,0 +1,91 @@
+@import url(https://fonts.googleapis.com/css?family=Josefin+Sans:300);
+body{
+background:#134;
+margin:0 auto;
+box-shadow:none;
+}
+
+h2{
+color:black;
+font-size:24px;
+margin-top:720px;
+margin-left:20px;
+font-family:'Josefin Sans', sans-serif;  
+}
+
+
+#wrapper{
+width:100%;
+Height:20px;
+}
+
+#snow{
+background:white;
+width:100%;
+margin-top:85vh;
+height: 15%;
+display:inline-block;
+}
+
+.gran{
+height:400px;
+width:200px;
+margin-top:-270px;
+}
+
+.leaves{
+	
+	width: 0;
+	height: 0;
+	border-left: 85px solid transparent;
+	border-right: 85px solid transparent;
+	border-bottom: 300px solid #228b57;
+  z-index:50;
+   position:relative; 
+}
+
+.left{
+
+	width: 0;
+	height: 0;
+	border-left: 85px solid transparent;
+	border-bottom: 300px solid #1e7b4d;
+  display:inline-block;
+  margin-left:-85px;
+  z-index:-1231;
+  position:relative;
+  
+}
+.top{
+  width: 0;
+	height: 0;
+		border-left: 28px solid transparent;
+	border-right: 28px solid transparent;
+	border-bottom: 100px solid white;
+  display:inline-block;
+  margin-left:-85px;
+  z-index:100;
+    position:absolute;
+  margin-top:-0px;
+  margin-left:-28px;
+}
+
+.foot{
+background:#38230e;
+width:30px;
+height:60px;
+margin-top:-5px;
+margin-right:20px;
+display:inline-block;
+margin-left:-14px;
+}
+
+#subfoot{
+background:green;
+width:30px;
+height:60px;
+display:inline-block;
+
+}
+
+

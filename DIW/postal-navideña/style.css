@@ -1,0 +1,73 @@
+@import url(https://fonts.googleapis.com/css?family=Mountains+of+Christmas:700);
+
+body { 
+  background-size:100%; 
+  height:100vh;
+  background-repeat: no-repeat;
+  overflow:hidden;
+  margin:0;
+  width:100%;
+}
+.christmas-red {
+color: red;
+    background: -webkit-linear-gradient(transparent, transparent), url(https://s3-us-west-2.amazonaws.com/s.cdpn.io/191814/blue_glitter.gif) repeat;
+    background: -o-linear-gradient(transparent, transparent) !important;
+    -webkit-background-clip: text !important;
+    -webkit-text-fill-color: transparent !important;
+    margin: 0;
+    padding: 0;
+
+    font-weight: 900;
+    width: 100%;
+    text-align: center;
+    letter-spacing: 1px;
+    z-index: 999999;
+    -webkit-background-clip: text;
+}
+
+.christmas-gold {
+    color: #D81E1E;
+  
+color: gold;
+    background: -webkit-linear-gradient(transparent, transparent), url(https://s3-us-west-2.amazonaws.com/s.cdpn.io/191814/gold_glitter.gif) repeat;
+    background: -o-linear-gradient(transparent, transparent) !important;
+    -webkit-background-clip: text !important;
+    -webkit-text-fill-color: transparent !important;
+    margin: 0;
+    padding: 0;
+
+    font-weight: 900;
+    width: 100%;
+    text-align: center;
+    letter-spacing: 1px;
+    z-index: 999999;
+    -webkit-background-clip: text;
+}
+
+
+
+h1:first-child {
+    font-size: 8.5vw;
+    position: absolute;
+    top: 5vh;
+
+}
+
+h1 {
+    font-size: 5.5vw;
+    width:100%;
+  height:100%;
+  text-align:center;
+  max-height:100px;
+  z-index:-1;
+    line-height:0;
+  margin-top:150px;
+  color:#fff;
+    font-family: 'Mountains of Christmas', cursive;
+}
+h1:last-child{
+    top: 15vh;
+    position: absolute;
+
+}
+
