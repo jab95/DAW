@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>AAAAAAAAAAAAAA</title>
+    <title>Productos</title>
 
     <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
@@ -26,13 +26,13 @@
                     <a class="nav-link" href="tienda.php"> Tiendas</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="#"> Familias</a>
+                    <a class="nav-link" href="familia.php"> Familias</a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" href="producto.php">Productos</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="#"> Stock</a>
+                    <a class="nav-link" href="stock.php"> Stock</a>
                 </li>
 
             </ul>
@@ -244,18 +244,21 @@
                                 $codAEditar = $_POST['cod'];
                                 $ok = true;
                                 $dwes->beginTransaction();
-                                if ($dwes->exec('DELETE * FROM producto where producto.cod="' . $codAEditar . '"') == 0) $ok = false;
+                                if ($dwes->exec('DELETE  FROM `stock` where producto="' . $codAEditar . '"') == 0) $ok = false;
+                                if ($dwes->exec('DELETE  FROM `producto` where cod="' . $codAEditar . '"') == 0) $ok = false;
                                 if ($ok) {
                                     $dwes->commit();
                                     print '<script type="text/javascript">
-                        alert("Registro eliminado con exito");
+                        alert("El registrose elimino junto a todas sus referencias en otras tablas");
                         window.location.href="producto.php";
                         </script>';
+
+
                                 }  // Si todo fue bien confirma los cambios
                                 else {
                                     $dwes->rollback();   //  y si no, los revierte
                                     print '<script type="text/javascript">
-                        alert("El registro no se pudo eliminar, compruebe que no tenga claves foraneas");
+                        alert("El registro no se pudo eliminar");
                         window.location.href="producto.php";
                         </script>';
                                 }
