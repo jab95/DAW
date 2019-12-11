@@ -15,8 +15,7 @@
 </head>
 
 <body>
-    <nav class="d-flex justify-content-around nav-principal navbar navbar-expand-lg navbar-dark">
-        <div class="collapse navbar-collapse" id="navbarNav">
+    <nav id="navbarNav" class="d-flex justify-content-around nav-principal navbar navbar-expand-lg navbar-dark">
 
             <ul class="navbar-nav">
                 <li class="nav-item">
@@ -36,9 +35,11 @@
                 </li>
 
             </ul>
-        </div>
     </nav>
     <?php
+
+    require "config.php";
+
     if (
         !isset($_POST['insertar']) && !isset($_POST['editar']) && !isset($_POST['leer'])
         && !isset($_POST['actualizar']) && !isset($_POST['eliminar'])
@@ -64,9 +65,7 @@
 
             } else {
 
-                $opciones = array(PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES utf8");
-                $dwes = new PDO('mysql:host=localhost;dbname=dwes', 'dwes', 'abc123', $opciones);
-
+            
                 if (isset($_POST['insertar'])) {
 
                     if(isset($_POST['insertado'])){

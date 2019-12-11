@@ -15,8 +15,7 @@
 </head>
 
 <body>
-    <nav class="d-flex justify-content-around nav-principal navbar navbar-expand-lg navbar-dark">
-        <div class="collapse navbar-collapse" id="navbarNav">
+    <nav id="navbarNav" class="d-flex justify-content-around nav-principal navbar navbar-expand-lg navbar-dark">
 
             <ul class="navbar-nav">
                 <li class="nav-item">
@@ -36,7 +35,6 @@
                 </li>
 
             </ul>
-        </div>
     </nav>
 
 
