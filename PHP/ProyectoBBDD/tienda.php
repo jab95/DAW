@@ -69,17 +69,17 @@
 
                 if (isset($_POST['insertar'])) {
 
-                    if(isset($_POST['insertado'])){
+                    if (isset($_POST['insertado'])) {
 
                         $cod = $_POST['codigo'];
                         $nombre = $_POST['nombre'];
                         $nombre_corto = $_POST['tlf'];
-                      
-                         
-                       
+
+
+
                         $ok = true;
                         $dwes->beginTransaction();
-                        if ($dwes->exec("INSERT into tienda (cod,nombre,tlf) values('$cod','$nombre','$tlf')") == 0) $ok = false;
+                        if ($dwes->exec("INSERT into tienda (cod,nombre,tlf) values($cod,'$nombre','$tlf')") == 0) $ok = false;
 
                         if ($ok) {
                             $dwes->commit();
@@ -95,12 +95,12 @@
                             window.location.href="tienda.php";
                             </script>';
                         }
-                }else{
+                    } else {
 
 
-                            ?>
-                        <div class="container-fluid ">
-                       
+                        ?>
+                    <div class="container-fluid ">
+
                         <form action="tienda.php" method="post">
 
                             <div class="row  justify-content-center mt-5 fila-inicio">
@@ -115,178 +115,180 @@
                                     <p>Telefono: <input type="text" name="tlf" id=""></p>
                                 </div>
                             </div>
-                              
+
                             <center> <input type="submit" value="Insertar" name="insertado" class="btn btn-primary mt-3"></center>
                             <input type="hidden" name="insertar">
 
-                        </div>
-                    </form>
-
-            <?php
-                    }
-                } else if (isset($_POST['leer'])) {
-
-                    $resultado = $dwes->query("SELECT * FROM tienda");
-
-                    ?>
-
-                <div class="row">
-                    <div class="col-sm-12">
-                        <center><h2>TABLA TIENDA</h2></center>
-                        <table class="table table-hover table-condensed table-bordered">
-                            <tr>
-                                <td>Código</td>
-                                <td>Nombre</td>
-                                <td>Teléfono</td>
-                            </tr>
-
-                            <?php
-
-                                    while ($registro = $resultado->fetch(PDO::FETCH_OBJ)) {
-                                        ?>
-                                <tr>
-                                    <td><?php print $registro->cod ?></td>
-                                    <td><?php print $registro->nombre ?></td>
-                                    <td><?php print $registro->tlf ?></td>
-                                </tr>
-                            <?php
-
-                                    }
-                                    ?>
-                        </table>
                     </div>
-                </div>
+        </form>
 
+    <?php
+            }
+        } else if (isset($_POST['leer'])) {
+
+            $resultado = $dwes->query("SELECT * FROM tienda");
+
+            ?>
+
+    <div class="row">
+        <div class="col-sm-12">
+            <center>
+                <h2>TABLA TIENDA</h2>
+            </center>
+            <table class="table table-hover table-condensed table-bordered">
+                <tr>
+                    <td>Código</td>
+                    <td>Nombre</td>
+                    <td>Teléfono</td>
+                </tr>
 
                 <?php
 
-                    } else if (isset($_POST['editar'])) {
-
-                        if (!isset($_POST['eliminar']) && !isset($_POST['actualizar'])) {
-
-                            $resultado = $dwes->query("SELECT cod FROM tienda");
-
+                        while ($registro = $resultado->fetch(PDO::FETCH_OBJ)) {
                             ?>
-                    <div class="container-fluid ">
+                    <tr>
+                        <td><?php print $registro->cod ?></td>
+                        <td><?php print $registro->nombre ?></td>
+                        <td><?php print $registro->tlf ?></td>
+                    </tr>
+                <?php
 
-                        <form action="tienda.php" method="post">
-                            <div class="row  justify-content-center  mt-5">
-                                <div class="col-lg-3 col-inicio align-self-end">
-                                    <p>Código:
-                                        <select name="cod" id="">
-                                            <?php
+                        }
+                        ?>
+            </table>
+        </div>
+    </div>
 
-                                                        while ($registro = $resultado->fetch(PDO::FETCH_OBJ)) {
-                                                            ?>
-                                                <option value="<?php print $registro->cod ?>"><?php print $registro->cod ?></option>
 
-                                            <?php
-                                                        }
-                                                        ?>
-                                        </select>
-                                    </p>
-                                </div>
-                                <div class="col-lg-3 col-inicio">
-                                    <center> <input type="submit" value="Eliminar" name="eliminar" class="btn btn-primary mt-3"></center>
-                                </div>
-                                <div class="col-lg-3 col-inicio">
-                                    <center> <input type="submit" value="Actualizar" name="actualizar" class="btn btn-primary mt-3"></center>
-                                </div>
-                                <input type="hidden" name="editar">
+    <?php
 
-                            </div>
-                        </form>
+        } else if (isset($_POST['editar'])) {
+
+            if (!isset($_POST['eliminar']) && !isset($_POST['actualizar'])) {
+
+                $resultado = $dwes->query("SELECT cod FROM tienda");
+
+                ?>
+        <div class="container-fluid ">
+
+            <form action="tienda.php" method="post">
+                <div class="row  justify-content-center  mt-5">
+                    <div class="col-lg-3 col-inicio align-self-end">
+                        <p>Código:
+                            <select name="cod" id="">
+                                <?php
+
+                                            while ($registro = $resultado->fetch(PDO::FETCH_OBJ)) {
+                                                ?>
+                                    <option value="<?php print $registro->cod ?>"><?php print $registro->cod ?></option>
+
+                                <?php
+                                            }
+                                            ?>
+                            </select>
+                        </p>
                     </div>
-                    <?php
-                            } else if (isset($_POST['eliminar'])) {
+                    <div class="col-lg-3 col-inicio">
+                        <center> <input type="submit" value="Eliminar" name="eliminar" class="btn btn-primary mt-3"></center>
+                    </div>
+                    <div class="col-lg-3 col-inicio">
+                        <center> <input type="submit" value="Actualizar" name="actualizar" class="btn btn-primary mt-3"></center>
+                    </div>
+                    <input type="hidden" name="editar">
 
-                                $codAEditar = $_POST['cod'];
-                                $ok = true;
-                                $dwes->beginTransaction();
-                                if ($dwes->exec('DELETE FROM `stock` WHERE tienda="'.$codAEditar.'"') == 0) $ok = false;
-                                if ($dwes->exec('DELETE FROM `tienda` WHERE cod="'.$codAEditar.'"') == 0) $ok = false;
-                                if ($ok) {
-                                    $dwes->commit();
-                                    print '<script type="text/javascript">
+                </div>
+            </form>
+        </div>
+        <?php
+                } else if (isset($_POST['eliminar'])) {
+
+                    $codAEditar = $_POST['cod'];
+                    $ok = true;
+                    $dwes->beginTransaction();
+                    if ($dwes->exec('DELETE FROM `stock` WHERE tienda=' . $codAEditar . '') == 0) $ok = false;
+                    if ($dwes->exec('DELETE FROM `tienda` WHERE cod=' . $codAEditar . '') == 0) $ok = false;
+                    if ($ok) {
+                        $dwes->commit();
+                        print '<script type="text/javascript">
                         alert("Registro eliminado junto a sus referencias en otras tablas");
                         window.location.href="tienda.php";
                         </script>';
-                                }  // Si todo fue bien confirma los cambios
-                                else {
-                                    $dwes->rollback();   //  y si no, los revierte
-                                    print '<script type="text/javascript">
+                    }  // Si todo fue bien confirma los cambios
+                    else {
+                        $dwes->rollback();   //  y si no, los revierte
+                        print '<script type="text/javascript">
                         alert("El registro no se pudo eliminar");
                         window.location.href="tienda.php";
                         </script>';
-                                }
-                            } else if (isset($_POST['actualizar'])) {
+                    }
+                } else if (isset($_POST['actualizar'])) {
 
-                                if (!isset($_POST['actualizado'])) {
+                    if (!isset($_POST['actualizado'])) {
 
-                                    $codAEditar = $_POST['cod'];
-                                    $resultado = $dwes->query('SELECT * FROM tienda where cod="' . $codAEditar . '"');
-                                    $registro = $resultado->fetch(PDO::FETCH_OBJ);
-                                    ?>
+                        $codAEditar = $_POST['cod'];
+                        $resultado = $dwes->query('SELECT * FROM tienda where cod=' . $codAEditar . '');
+                        $registro = $resultado->fetch(PDO::FETCH_OBJ);
+                        ?>
 
-                                    <form action="tienda.php" method="post">
-                                        <div class="container-fluid ">
+            <form action="tienda.php" method="post">
+                <div class="container-fluid ">
 
-                                            <div class="row  justify-content-center mt-5 fila-inicio">
-                                                <div class="col-lg-3 col-inicio">
-                                                    <p>Codigo: <input type="text" name="cod" value="<?php print $codAEditar ?>" id="" disabled></p>
-                                                    <!-- NO SE PUEDEN PASAR CAMPOS DESABILITADOS EN EL FORM -->
-                                                </div>
-                                                <div class="col-lg-3 col-inicio">
-                                                    <p>Nombre: <input type="text" name="nombre" id="" value="<?php print $registro->nombre ?>"></p>
-                                                </div>
-                                                <div class="col-lg-3 col-inicio">
+                    <div class="row  justify-content-center mt-5 fila-inicio">
+                        <div class="col-lg-3 col-inicio">
+                            <p>Codigo: <input type="text" name="cod" value="<?php print $codAEditar ?>" id="" disabled></p>
+                            <!-- NO SE PUEDEN PASAR CAMPOS DESABILITADOS EN EL FORM -->
+                        </div>
+                        <div class="col-lg-3 col-inicio">
+                            <p>Nombre: <input type="text" name="nombre" id="" value="<?php print $registro->nombre ?>"></p>
+                        </div>
+                        <div class="col-lg-3 col-inicio">
 
-                                                    <p>Teléfono: <input type="text" name="tlf" id="" value="<?php print $registro->tlf ?>"></p>
-                                                </div>
-                                                </div>
-                                            </div>
-                                            <div class="row  justify-content-center mt-5 fila-inicio">
-                                                <div class="col-lg-3 col-inicio">
-                                                    <center> <input type="submit" value="Actualizar" name="actualizado" class="btn btn-primary mt-3"></center>
-                                                </div>
+                            <p>Teléfono: <input type="text" name="tlf" id="" value="<?php print $registro->tlf ?>"></p>
+                        </div>
+                    </div>
+                </div>
+                <div class="row  justify-content-center mt-5 fila-inicio">
+                    <div class="col-lg-3 col-inicio">
+                        <center> <input type="submit" value="Actualizar" name="actualizado" class="btn btn-primary mt-3"></center>
+                    </div>
 
-                                            </div>
-                                            <input type="hidden" name="editar">
-                                            <input type="hidden" name="actualizar">
-                                            <input type="hidden" value="<?php print $codAEditar ?>" name="cod2">
+                </div>
+                <input type="hidden" name="editar">
+                <input type="hidden" name="actualizar">
+                <input type="hidden" value="<?php print $codAEditar ?>" name="cod2">
 
-                                    </form>
-        <?php
-                    } else {
+            </form>
+<?php
+            } else {
 
-                        $cod = $_POST['cod2'];
-                        $nombre = $_POST['nombre'];
-                        $nombre_corto = $_POST['tlf'];
+                $cod = $_POST['cod2'];
+                $nombre = $_POST['nombre'];
+                $nombre_corto = $_POST['tlf'];
 
-                        $ok = true;
-                        $dwes->beginTransaction();
-                        if ($dwes->exec('UPDATE tienda set nombre="' . $nombre . '", tlf="' . $nombre_corto . '" where cod='.$cod) == 0) $ok = false;
+                $ok = true;
+                $dwes->beginTransaction();
+                if ($dwes->exec('UPDATE tienda set nombre="' . $nombre . '", tlf="' . $nombre_corto . '" where cod=' . $cod) == 0) $ok = false;
 
-                        if ($ok) {
-                            $dwes->commit();
-                            print '<script type="text/javascript">
+                if ($ok) {
+                    $dwes->commit();
+                    print '<script type="text/javascript">
                             alert("Registro actualizado con exito");
                             window.location.href="tienda.php";
                             </script>';
-                        }  // Si todo fue bien confirma los cambios
-                        else {
-                            $dwes->rollback();   //  y si no, los revierte
-                            print '<script type="text/javascript">
+                }  // Si todo fue bien confirma los cambios
+                else {
+                    $dwes->rollback();   //  y si no, los revierte
+                    print '<script type="text/javascript">
                             alert("El registro no se pudo actualizar");
                             window.location.href="tienda.php";
                             </script>';
-                        }
-                    }
                 }
             }
         }
-        ?>
-        </form>
+    }
+}
+?>
+</form>
 
 </body>
 
