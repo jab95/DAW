@@ -41,4 +41,24 @@ String.prototype.eliminaHTML = function () {
     return this.replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
+
+/*
+
+CUANDO SE MODIFICO POR ULTIMA VEZ EL ARCHIVO 
+
+var xhttp = new XMLHttpRequest();
+xhttp.onreadystatechange = function() {
+  if (this.readyState == 4 && this.status == 200) {
+    document.getElementById("demo").innerHTML =
+    this.getResponseHeader("Last-Modified");
+  }
+};
+xhttp.open("GET", "ajax_info.txt", true);
+xhttp.send();
+
+
+
+*/
+
+
 addEventListener("load", Main);
