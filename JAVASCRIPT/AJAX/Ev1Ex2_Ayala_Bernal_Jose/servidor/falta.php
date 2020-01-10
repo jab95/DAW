@@ -11,6 +11,7 @@ $hora = $_POST['hora'];
 $c = new MySQLi($host,$user,$pass,$bd);
 $sql = "SELECT id FROM falta WHERE 
                alumno_id = $alumno AND fecha='$fecha' AND hora='$hora'";
+
 $resultado = $c->query($sql);
 if ($resultado->num_rows>0){
     echo "error";

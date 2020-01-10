@@ -104,7 +104,7 @@ MuestraTelefono = (e, telefono) => {
 
 
     for (let index = 0; index < trs.length; index++) {
-        trs[index].style.backgroundColor = "black";
+        trs[index].style.backgroundColor = "White";
 
     }
 
@@ -117,7 +117,7 @@ MuestraTelefono = (e, telefono) => {
 
 Descolorea = (e) => {
 
-    e.style.color = "Black";
+    e.style.backgroundColor = "White";
 
     document.getElementById("telefono").innerHTML = "";
 }

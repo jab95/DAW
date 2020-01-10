@@ -1,6 +1,6 @@
 <?php
 $host = "localhost";
 $user = "root";
-$pass = "";
+$pass = "madre";
 $bd = "montielmusicadaw2";
 ?>

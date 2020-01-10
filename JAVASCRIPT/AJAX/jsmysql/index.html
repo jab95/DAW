@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+
+    <script>
+        const Main = () => {
+            var x = new XMLHttpRequest();
+
+            x.onreadystatechange = () => {
+                if (x.readyState == 4) {
+                    if (x.status == 200) {
+                        CargaAutonomias(JSON.parse(x.responseText));
+                    }
+                }
+            }
+
+            x.open("GET", "autonomias.php", true);
+            x.send();
+        }
+
+        const CargaAutonomias = (autonomias) => {
+
+            for (let index = 0; index < autonomias.length; index++) {
+                document.getElementById("autonomia").innerHTML += `<option value="${autonomias[index].id}">${autonomias[index].autonomia}</option>`
+
+            }
+        }
+
+        addEventListener("load", Main);
+
+    </script>
+
+</head>
+
+<body>
+
+    <h1>Municipios de España</h1>
+    Autonomía
+    <select name="" id="autonomia">
+        <option value="-1">--Elegir--</option>
+    </select>
+</body>
+
+</html>

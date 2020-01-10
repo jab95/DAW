@@ -1,0 +1,54 @@
+.container-fluid {
+    padding: 0;
+  }
+  
+  .nav-contact,
+  .dropdown-menu {
+    background-color: #00B77B;
+  }
+  
+  .btn-location-phone {
+    margin: 10px 0;
+  }
+  
+  .disabled {
+    cursor: none;
+  }
+  
+  .svg {
+    width: 1.4rem;
+    height: 1.4rem;
+    margin-top: 10px;
+  }
+  
+  .svg img {
+    max-width: 1.4rem;
+  }
+  
+  /* principal */
+  .navbar-collapse {
+    flex-grow: 0;
+    /*  Conseguimos "centrar" logo y menus */
+  }
+  
+  .nav-principal {
+    background-color: #63C45A;
+  }
+  
+  #navbarNav a {
+    color: white;
+  }
+  
+  #navbarNav a:hover {
+    color: #00B77B;
+  }
+  
+  
+  .navbar-nav li {
+    margin: 0 0.5rem;
+  }
+
+  .custom-toggler.navbar-toggler {
+    border-color: white;
+  }
+  
