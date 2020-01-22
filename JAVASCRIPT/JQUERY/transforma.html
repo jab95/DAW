@@ -11,13 +11,14 @@
     <script>
 
         $(function () {
+
             $("#informacion").html("Numero de enlaces = " + $("a").length);
             $("#informacion").html(function (i, original) {
                 let pen = $("a").length - 2;
                 return original + "<br>El penultimo nelace apunta a: " + $("a:eq( " + pen + " )").attr("href");
             });
             $("#informacion").html(function (i, original) {
-                return original + "<br>" + $("a[href='http://prueba']").length + " enlaces apuntan a prueba4";
+                return original + "<br>" + $("a[href='http://prueba']").length + " enlaces apuntan a prueba";
             });
             $("#informacion").html(function (i, original) {
                 return original + "<br>Numero de enlaces del tercer parrafo: " + $("p:eq(2) a").length;

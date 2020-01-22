@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+    <style>
+        img {
+            display: block;
+            margin: 0 auto;
+        }
+    </style>
+
+</head>
+
+<body>
+
+    <p>Dependiendo de la anchura de pantalla</p>
+    <picture>
+
+        <source media="(min-width: 650px)" srcset="gato.png 900w , gato-500x250 850w, gato-400x120 750w ,  ">
+        <source media="(min-width: 165px)" sizes="80vw" srcset="gato2.png 465w gato2-360.png 360w, gato2-300.png 300w">
+        <img src="gato2.png" alt="a cute kitten">
+
+
+    </picture>
+
+    <p>Dependiendo del formato de la imagen</p>
+    <picture>
+        <source type="image/webp" srcset="gato.webp">
+        <img src="gato.png" alt="a butterfly">
+    </picture>
+    <p>Dependiendo de la densiadad de pixeles</p>
+    <picture>
+        <source media="(min-width: 650px)" srcset="gato.png,
+                  gato-500x250.png 1.5x,
+                  gato-400x120.png 2x">
+        <source media="(min-width: 165px)" srcset="gato2.png,
+                  gato2-360.png 1.5x
+                  gato2-300.png 2x">
+        <img src="gato.png" srcset="gato-500x250.png 1.5x,
+                  gato-400x120 2x" alt="a cute kitten">
+    </picture>
+</body>
+
+</html>

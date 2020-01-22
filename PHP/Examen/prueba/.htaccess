@@ -1,0 +1,4 @@
+ErrorDocument 404 http://example.com/
+
+RewriteEngine on
+Rewriterule ^detalle/(\d+)$ pagdetalle.php?id=$1

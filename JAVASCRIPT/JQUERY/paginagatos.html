@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Ejercicio gatos</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+
+    <script>
+
+        $(function () {
+
+            ObtieneGatos();
+
+
+            $("#btn-insert").click(function () {
+                $.ajax({
+                    method: "POST",
+                    url: "gatos_insert.php",
+                    data: { nombre: $("#nombre-gat").val(), fecha_nacimiento: $("#fecha-nac").val() },
+                    success: function (result) {
+                        ObtieneGatos();
+                    },
+                    error: function (result) {
+                        alert("No se ha podido insertar el gato");
+                    }
+                })
+
+            })
+        })
+
+        ObtieneGatos = () => {
+            $.ajax({
+                url: "gatos.php", success: function (result) {
+                    let gatos = JSON.parse(result);
+
+                    CreaTabla(gatos);
+
+                }
+            });
+        }
+
+        CreaTabla = array => {
+            let tabla = "<table border='1'><tr><th>Nombre</th><th>Fecha nacimiento</th></tr>";
+            for (let index = 0; index < array.length; index++) {
+                tabla += `<tr><td>${array[index].nombre}</td><td>${array[index].fecha_nacimiento}</td></tr>`;
+
+            }
+
+            tabla += "</table>";
+
+            $("#tabla").html(tabla);
+        }
+
+
+    </script>
+</head>
+
+<body>
+
+    <h1>Ejercicio gatos</h1>
+    <h2>Datos de los gatos</h2>
+
+    <div id="tabla"></div>
+
+    <div id="formulario">
+        <h3>Inserta un gato</h3>
+        <p>Nombre: <input type="text" name="nombre-gat" id="nombre-gat"></p>
+        <p>Fecha nacimiento <input type="date" name="fecha-nac" id="fecha-nac"></p>
+        <button id="btn-insert">Insertar gato</button>
+
+    </div>
+
+</body>
+
+</html>
+
+<!-- 
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+    <script>
+        $(function () {
+            $("#form").submit(function (evento) {
+                evento.preventDefault();
+                // var form_data = $(this); //Encode form elements for submission
+                var formData = new FormData(document.getElementById("form"));
+                //            objeto.append();
+                $.ajax({
+                    url: "gatos_insert.php",
+                    method: "POST",
+                    contentType: false,
+                    processData: false,
+                    data: formData,
+                    success: function (data) {
+                        console.log(data);
+                    }
+                });
+            });
+        });
+    </script>
+</head>
+
+<body>
+    <form id="form">
+        Nombre: <input type="text" name="nombre">
+        Fecha <input type="date" name="fecha_nacimiento">
+        <input type="submit">
+    </form>
+</body>
+
+</html> -->

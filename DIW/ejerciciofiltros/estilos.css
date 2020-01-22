@@ -1,0 +1,71 @@
+.fotos{
+    display: flex;
+    flex-wrap: wrap;
+    text-align: center;
+}
+
+header{
+    background-color: black;
+    color: white;
+}
+p{
+    background-color: black;
+    color: white;
+}
+.foto{
+    width: 18%;
+    height: 15rem;
+    border: #555;
+    border-style: solid;
+    border-width: 1px;
+}
+
+img{
+    width: 150px;
+}
+
+.foto1{
+    Filter:grayscale( 100%)
+}
+
+.foto2{
+    filter:blur(3px)
+}
+
+.foto3{
+    filter:sepia(100%);
+}
+
+.foto4{
+    filter:saturate(800%);
+}
+
+
+.foto5{
+    filter:opacity(40%);
+}
+
+
+.foto6{
+    filter:brightness(200%);
+}
+
+
+.foto7{
+    filter:contrast(400%);
+}
+
+
+.foto8{
+    filter:hue-rotate(90deg);
+}
+
+
+.foto9{
+    filter:invert(100%);
+}
+
+
+.foto10{
+    filter:drop-shadow(5px 5px 5px #555);
+}
